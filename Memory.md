@@ -189,6 +189,128 @@ Fulfill Phase 1 requirements from `Phases.md`: build the Android shell, establis
 ### Phase 1 Status
 Phase 1 Complete & Verified (Firebase Auth & Firestore Configured for `squish-shield`, Android Build Successful). Ready for Phase 2.
 
+---
+
+## 2026-08-26 — Phase 2 Implementation: Local Database & Core Android Modules
+
+### Type
+Feature Implementation / Storage Architecture / Data Layer
+
+### Change
+- Preserved existing Android Studio layout (`android/app/src/main/java/com/example/android`).
+- **Room Database (`AegisDatabase`)**:
+  - Implemented 7 required entities: `UserEntity`, `ThreatHistoryEntity`, `SMSAnalysisEntity`, `QRAnalysisEntity`, `FeedbackEntity`, `SettingsEntity`, `ModelVersionEntity`.
+  - Implemented 7 corresponding DAOs: `UserDao`, `ThreatHistoryDao`, `SMSAnalysisDao`, `QRAnalysisDao`, `FeedbackDao`, `SettingsDao`, `ModelVersionDao`.
+  - Privacy Compliance: `UserEntity` explicitly excludes authentication passwords or secrets. `SMSAnalysisEntity` omits raw SMS message bodies to observe strict data minimization.
+- **Jetpack DataStore (`PreferencesDataStore`)**:
+  - Implemented preference persistence for real-time SMS protection, QR scanner, notifications, theme, and biometric lock.
+- **Secure Storage (`SecureStorageManager`)**:
+  - Implemented Android Keystore master key generation (`AES-256 GCM` cipher) and encrypted key-value storage.
+- **Repository Layer**:
+  - Implemented domain contracts and data implementations: `ThreatHistoryRepositoryImpl`, `SmsAnalysisRepositoryImpl`, `QrAnalysisRepositoryImpl`, `FeedbackRepositoryImpl`, `SettingsRepositoryImpl`, `ModelRepositoryImpl`.
+  - Integrated `AuthRepositoryImpl` with local profile metadata synchronization.
+- **Domain Layer**:
+  - Models: `ThreatRecord`, `SmsAnalysisResult`, `QrAnalysisResult`, `UserFeedback`, `SystemSettings`, `ModelMetadata`.
+  - Use Cases: `GetThreatHistoryUseCase`, `AddThreatRecordUseCase`, `DeleteThreatRecordUseCase`, `GetSettingsUseCase`, `UpdateSettingUseCase`, `SubmitFeedbackUseCase`.
+- **UI & ViewModel Integration**:
+  - Wired `DashboardViewModel` to `ThreatHistoryUseCase`s.
+  - Wired `SettingsViewModel` to `SettingsUseCase`s.
+  - Updated `AppContainer` and `AegisApplication` to inject Room, DataStore, Keystore, and Repositories cleanly.
+- **Testing Suite**:
+  - Added unit test suites in `android/app/src/test/java/com/example/android/`: `Phase2RoomUnitTest`, `Phase2RepositoryTest`, `Phase2SettingsTest`.
+
+### Reason
+Fulfill Phase 2 deliverables specified in `Phases.md` and `PRD.md`: establish local offline storage, data minimization rules, repository abstractions, preferences persistence, secure hardware key storage, and clean architecture separation without UI-to-DAO coupling.
+
+### Files Affected
+- `android/gradle/libs.versions.toml`
+- `android/app/build.gradle.kts`
+- `android/app/src/main/java/com/example/android/data/local/entity/UserEntity.kt`
+- `android/app/src/main/java/com/example/android/data/local/entity/ThreatHistoryEntity.kt`
+- `android/app/src/main/java/com/example/android/data/local/entity/SMSAnalysisEntity.kt`
+- `android/app/src/main/java/com/example/android/data/local/entity/QRAnalysisEntity.kt`
+- `android/app/src/main/java/com/example/android/data/local/entity/FeedbackEntity.kt`
+- `android/app/src/main/java/com/example/android/data/local/entity/SettingsEntity.kt`
+- `android/app/src/main/java/com/example/android/data/local/entity/ModelVersionEntity.kt`
+- `android/app/src/main/java/com/example/android/data/local/dao/UserDao.kt`
+- `android/app/src/main/java/com/example/android/data/local/dao/ThreatHistoryDao.kt`
+- `android/app/src/main/java/com/example/android/data/local/dao/SMSAnalysisDao.kt`
+- `android/app/src/main/java/com/example/android/data/local/dao/QRAnalysisDao.kt`
+- `android/app/src/main/java/com/example/android/data/local/dao/FeedbackDao.kt`
+- `android/app/src/main/java/com/example/android/data/local/dao/SettingsDao.kt`
+- `android/app/src/main/java/com/example/android/data/local/dao/ModelVersionDao.kt`
+- `android/app/src/main/java/com/example/android/data/local/database/AegisDatabase.kt`
+- `android/app/src/main/java/com/example/android/data/local/datastore/PreferencesDataStore.kt`
+- `android/app/src/main/java/com/example/android/security/SecureStorageManager.kt`
+- `android/app/src/main/java/com/example/android/domain/model/ThreatRecord.kt`
+- `android/app/src/main/java/com/example/android/domain/model/SmsAnalysisResult.kt`
+- `android/app/src/main/java/com/example/android/domain/model/QrAnalysisResult.kt`
+- `android/app/src/main/java/com/example/android/domain/model/UserFeedback.kt`
+- `android/app/src/main/java/com/example/android/domain/model/SystemSettings.kt`
+- `android/app/src/main/java/com/example/android/domain/model/ModelMetadata.kt`
+- `android/app/src/main/java/com/example/android/domain/repository/ThreatHistoryRepository.kt`
+- `android/app/src/main/java/com/example/android/domain/repository/SmsAnalysisRepository.kt`
+- `android/app/src/main/java/com/example/android/domain/repository/QrAnalysisRepository.kt`
+- `android/app/src/main/java/com/example/android/domain/repository/FeedbackRepository.kt`
+- `android/app/src/main/java/com/example/android/domain/repository/SettingsRepository.kt`
+- `android/app/src/main/java/com/example/android/domain/repository/ModelRepository.kt`
+- `android/app/src/main/java/com/example/android/data/repository/ThreatHistoryRepositoryImpl.kt`
+- `android/app/src/main/java/com/example/android/data/repository/SmsAnalysisRepositoryImpl.kt`
+- `android/app/src/main/java/com/example/android/data/repository/QrAnalysisRepositoryImpl.kt`
+- `android/app/src/main/java/com/example/android/data/repository/FeedbackRepositoryImpl.kt`
+- `android/app/src/main/java/com/example/android/data/repository/SettingsRepositoryImpl.kt`
+- `android/app/src/main/java/com/example/android/data/repository/ModelRepositoryImpl.kt`
+- `android/app/src/main/java/com/example/android/domain/usecase/GetThreatHistoryUseCase.kt`
+- `android/app/src/main/java/com/example/android/domain/usecase/AddThreatRecordUseCase.kt`
+- `android/app/src/main/java/com/example/android/domain/usecase/DeleteThreatRecordUseCase.kt`
+- `android/app/src/main/java/com/example/android/domain/usecase/GetSettingsUseCase.kt`
+- `android/app/src/main/java/com/example/android/domain/usecase/UpdateSettingUseCase.kt`
+- `android/app/src/main/java/com/example/android/domain/usecase/SubmitFeedbackUseCase.kt`
+- `android/app/src/main/java/com/example/android/di/AppContainer.kt`
+- `android/app/src/main/java/com/example/android/AegisApplication.kt`
+- `android/app/src/main/java/com/example/android/presentation/dashboard/DashboardViewModel.kt`
+- `android/app/src/main/java/com/example/android/presentation/settings/SettingsViewModel.kt`
+- `android/app/src/main/java/com/example/android/presentation/navigation/NavGraph.kt`
+- `android/app/src/test/java/com/example/android/data/local/Phase2RoomUnitTest.kt`
+- `android/app/src/test/java/com/example/android/repository/Phase2RepositoryTest.kt`
+- `android/app/src/test/java/com/example/android/settings/Phase2SettingsTest.kt`
+- `Memory.md`
+
+### Verification Performed
+- Ran unit tests via `.\gradlew test --no-daemon --console=plain` in `android/`:
+  - `> Task :app:testDebugUnitTest` (SUCCESS)
+  - `> Task :app:test` (SUCCESS)
+  - **`BUILD SUCCESSFUL in 29s`** (Exit code: 0).
+- Ran APK build via `.\gradlew assembleDebug --no-daemon --console=plain` in `android/`:
+  - **`BUILD SUCCESSFUL in 2m 29s`** (Exit code: 0).
+
+### Phase 1 Verification
+- Inspected existing codebase and confirmed all Phase 1 components exist, are functional, and are preserved:
+  - Splash screen, Onboarding flow, Login, Registration, Firebase Auth, Firestore sync, Guest mode, Logout, Session persistence, Navigation graph, Settings shell, Dashboard shell.
+
+### Phase 2 Verification
+- [x] Room database exists (`AegisDatabase`).
+- [x] Required 7 entities exist (`UserEntity`, `ThreatHistoryEntity`, `SMSAnalysisEntity`, `QRAnalysisEntity`, `FeedbackEntity`, `SettingsEntity`, `ModelVersionEntity`).
+- [x] DAOs exist (`UserDao`, `ThreatHistoryDao`, `SMSAnalysisDao`, `QRAnalysisDao`, `FeedbackDao`, `SettingsDao`, `ModelVersionDao`).
+- [x] Repositories exist for all modules.
+- [x] Application DI (`AppContainer`) provides database/DAO/repository dependencies.
+- [x] Jetpack DataStore (`PreferencesDataStore`) is implemented.
+- [x] Secure storage foundation (`SecureStorageManager` with Keystore & AES-256 GCM cipher) is implemented.
+- [x] Threat history supports CRUD operations via Use Cases and Repositories.
+- [x] Data minimization enforced (no passwords in Room; no raw SMS body in database).
+- [x] Application operates locally without requiring internet or backend connectivity.
+- [x] Unit tests written and verified.
+
+### Unresolved Issues
+- None.
+
+### Deviations from Phases.md
+- None. Strict Phase 2 boundaries observed; no Phase 3 (SMS Receiver), Phase 4 (CameraX), or Phase 5 (AI Inference) code was introduced early.
+
+### Phase 2 Status
+Phase 2 Complete & Verified (`AegisDatabase` Room DB, DataStore, Keystore, Repositories, Unit Tests & Android Build Successful).
+
+
 
 
 

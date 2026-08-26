@@ -158,7 +158,13 @@ fun AegisNavGraph(
         composable(Screen.Main.route) {
             val viewModel: DashboardViewModel = viewModel(
                 factory = AppViewModelFactory {
-                    DashboardViewModel(container.getAuthStateUseCase, container.logoutUseCase)
+                    DashboardViewModel(
+                        container.getAuthStateUseCase,
+                        container.logoutUseCase,
+                        container.getThreatHistoryUseCase,
+                        container.addThreatRecordUseCase,
+                        container.deleteThreatRecordUseCase
+                    )
                 }
             )
             val authState by viewModel.authState.collectAsState()
@@ -182,7 +188,12 @@ fun AegisNavGraph(
         composable("settings") {
             val viewModel: SettingsViewModel = viewModel(
                 factory = AppViewModelFactory {
-                    SettingsViewModel(container.getAuthStateUseCase, container.logoutUseCase)
+                    SettingsViewModel(
+                        container.getAuthStateUseCase,
+                        container.logoutUseCase,
+                        container.getSettingsUseCase,
+                        container.updateSettingUseCase
+                    )
                 }
             )
             val authState by viewModel.authState.collectAsState()
