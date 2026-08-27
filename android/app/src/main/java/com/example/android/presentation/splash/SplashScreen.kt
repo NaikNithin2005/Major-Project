@@ -76,7 +76,7 @@ fun SplashScreen(
             ) {
                 Icon(
                     imageVector = Icons.Default.Shield,
-                    contentDescription = "AegisShield Logo",
+                    contentDescription = "Squish Shield Logo",
                     tint = Color(0xFF38BDF8),
                     modifier = Modifier.size(60.dp)
                 )
@@ -85,7 +85,7 @@ fun SplashScreen(
             Spacer(modifier = Modifier.height(24.dp))
 
             Text(
-                text = "AegisShield AI",
+                text = "Squish Shield AI",
                 fontSize = 28.sp,
                 fontWeight = FontWeight.Bold,
                 color = Color.White

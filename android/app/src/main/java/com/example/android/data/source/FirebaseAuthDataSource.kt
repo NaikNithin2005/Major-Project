@@ -25,7 +25,7 @@ class FirebaseAuthDataSource @Inject constructor() {
             ?: "User"
         return User(
             uid = fbUser.uid,
-            email = fbUser.email ?: "user@aegisshield.local",
+            email = fbUser.email ?: "user@squishshield.local",
             displayName = calculatedName,
             isGuest = false
         )

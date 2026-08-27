@@ -66,7 +66,7 @@ class AuthRepositoryImpl @Inject constructor(
         _authState.value = AuthState.Loading
         val guestUser = User(
             uid = "guest_${System.currentTimeMillis()}",
-            email = "guest@aegisshield.local",
+            email = "guest@squishshield.local",
             displayName = "User",
             isGuest = true
         )

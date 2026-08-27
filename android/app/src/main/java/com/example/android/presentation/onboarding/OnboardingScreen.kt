@@ -27,7 +27,7 @@ data class OnboardingStep(
 
 val onboardingSteps = listOf(
     OnboardingStep(
-        title = "Welcome to AegisShield",
+        title = "Welcome to Squish Shield",
         description = "Advanced AI security system designed to protect you from malicious SMS links and QR codes.",
         icon = Icons.Default.Shield
     ),

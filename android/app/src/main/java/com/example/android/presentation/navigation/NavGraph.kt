@@ -22,6 +22,8 @@ import com.example.android.presentation.onboarding.OnboardingScreen
 import com.example.android.presentation.onboarding.OnboardingViewModel
 import com.example.android.presentation.settings.SettingsScreen
 import com.example.android.presentation.settings.SettingsViewModel
+import com.example.android.presentation.sms.SmsMonitoringScreen
+import com.example.android.presentation.sms.SmsMonitoringViewModel
 import com.example.android.presentation.splash.SplashScreen
 import com.example.android.presentation.splash.SplashViewModel
 
@@ -161,25 +163,54 @@ fun AegisNavGraph(
                     DashboardViewModel(
                         container.getAuthStateUseCase,
                         container.logoutUseCase,
-                        container.getThreatHistoryUseCase,
+                        container.threatHistoryRepository,
+                        container.smsAnalysisRepository,
                         container.addThreatRecordUseCase,
                         container.deleteThreatRecordUseCase
                     )
                 }
             )
             val authState by viewModel.authState.collectAsState()
+            val uiState by viewModel.uiState.collectAsState()
             val currentUser = (authState as? AuthState.Authenticated)?.user
 
             DashboardScreen(
                 currentUser = currentUser,
+                uiState = uiState,
+                onDeleteThreat = viewModel::deleteThreat,
                 onNavigateToSettings = {
                     navController.navigate("settings")
+                },
+                onNavigateToSmsMonitoring = {
+                    navController.navigate(Screen.SmsMonitoring.route)
                 },
                 onLogoutClicked = {
                     viewModel.logout()
                     navController.navigate(Screen.Login.route) {
                         popUpTo(Screen.Main.route) { inclusive = true }
                     }
+                }
+            )
+        }
+
+        // SMS Monitoring Screen
+        composable(Screen.SmsMonitoring.route) {
+            val viewModel: SmsMonitoringViewModel = viewModel(
+                factory = AppViewModelFactory {
+                    SmsMonitoringViewModel(
+                        container.checkSmsPermissionUseCase,
+                        container.getSettingsUseCase,
+                        container.updateSettingUseCase,
+                        container.smsAnalysisRepository,
+                        container.processIncomingSmsUseCase
+                    )
+                }
+            )
+
+            SmsMonitoringScreen(
+                viewModel = viewModel,
+                onNavigateBack = {
+                    navController.popBackStack()
                 }
             )
         }

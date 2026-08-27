@@ -67,7 +67,7 @@ fun RegisterScreen(
                 )
 
                 Text(
-                    text = "Join AegisShield for real-time mobile protection",
+                    text = "Join Squish Shield for real-time mobile protection",
                     fontSize = 13.sp,
                     color = Color(0xFF94A3B8),
                     textAlign = TextAlign.Center

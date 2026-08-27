@@ -108,4 +108,31 @@ class AppContainer(private val context: Context) {
     val submitFeedbackUseCase: SubmitFeedbackUseCase by lazy {
         SubmitFeedbackUseCase(feedbackRepository)
     }
+
+    // Phase 3 SMS Pipeline Components
+    val smsParser: com.example.android.data.parser.SmsParser by lazy {
+        com.example.android.data.parser.SmsParser()
+    }
+
+    val smsPreprocessor: com.example.android.data.preprocessor.SmsPreprocessor by lazy {
+        com.example.android.data.preprocessor.SmsPreprocessor()
+    }
+
+    val smishingClassifier: com.example.android.domain.classifier.SmishingClassifier by lazy {
+        com.example.android.domain.classifier.DefaultSmishingClassifier()
+    }
+
+    val processIncomingSmsUseCase: ProcessIncomingSmsUseCase by lazy {
+        ProcessIncomingSmsUseCase(
+            smsParser = smsParser,
+            smsPreprocessor = smsPreprocessor,
+            classifier = smishingClassifier,
+            smsAnalysisRepository = smsAnalysisRepository,
+            threatHistoryRepository = threatHistoryRepository
+        )
+    }
+
+    val checkSmsPermissionUseCase: CheckSmsPermissionUseCase by lazy {
+        CheckSmsPermissionUseCase(context)
+    }
 }

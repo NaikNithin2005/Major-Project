@@ -34,7 +34,7 @@ fun SettingsScreen(
         AlertDialog(
             onDismissRequest = { showLogoutDialog = false },
             title = { Text("Sign Out", color = Color.White) },
-            text = { Text("Are you sure you want to log out of AegisShield?", color = Color(0xFF94A3B8)) },
+            text = { Text("Are you sure you want to log out of Squish Shield?", color = Color(0xFF94A3B8)) },
             confirmButton = {
                 TextButton(
                     onClick = {

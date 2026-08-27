@@ -310,6 +310,75 @@ Fulfill Phase 2 deliverables specified in `Phases.md` and `PRD.md`: establish lo
 ### Phase 2 Status
 Phase 2 Complete & Verified (`AegisDatabase` Room DB, DataStore, Keystore, Repositories, Unit Tests & Android Build Successful).
 
+---
+
+## 2026-08-27 — Phase 3 SMS Monitoring and Smishing Pipeline
+
+### Status: COMPLETE
+
+### Implementation Details
+- **Manifest & Permissions (`AndroidManifest.xml`)**:
+  - Registered `RECEIVE_SMS` and `READ_SMS` permissions.
+  - Registered `SmsReceiver` with high-priority intent filter for `android.provider.Telephony.SMS_RECEIVED`.
+- **Broadcast Receiver (`SmsReceiver.kt`)**:
+  - Extends `BroadcastReceiver`, parses incoming PDU bundles into `SmsMessage` objects.
+  - Handles multipart SMS by concatenating message segments by originating address.
+  - Asynchronously delegates processing using `goAsync()` and `CoroutineScope(Dispatchers.IO)`.
+  - Respects user preference `realtimeSmsProtection` from `SettingsRepository`.
+- **Data Models (`RawSms.kt`, `ParsedSmsData.kt`, `ProcessedSms.kt`, `SmsFeatureEvidence.kt`)**:
+  - Encapsulate raw input, parsed structural data, normalized tokens, and feature evidence for XAI explanations.
+  - Maintained strict data minimization: raw body is processed in memory and never written to Room DB (`SMSAnalysisEntity`).
+- **Parsing & Extraction Layer (`SmsParser.kt`, `UrlExtractor.kt`)**:
+  - `UrlExtractor`: Extracted HTTP, HTTPS, WWW, IP-based, and TLD URLs using boundary-aware regex.
+  - `SmsParser`: Extracted safe sender, OTP codes, brand identifiers (e.g. HDFC, SBI, PAYTM), phone numbers, and special character ratios.
+- **Preprocessing Layer (`SmsPreprocessor.kt`)**:
+  - Performed text normalization (lowercasing, whitespace collapsing, tokenization).
+  - Extracted suspicious keywords (e.g. `blocked`, `suspended`, `verify`, `claim`) and urgency indicators (`immediately`, `today`, `urgent`).
+  - Classified sender patterns (`ALPHANUMERIC_SHORTCODE`, `INTERNATIONAL_PHONE`, `LOCAL_PHONE`, `NUMERIC_SHORTCODE`).
+- **TinyBERT Interface Contract (`SmishingClassifier.kt`, `DefaultSmishingClassifier.kt`)**:
+  - Defined abstract `SmishingClassifier` interface returning `SmsClassificationResult`.
+  - Implemented `DefaultSmishingClassifier` (rule-heuristic baseline for immediate functional testing).
+  - Decoupled acquisition from future Phase 5 TinyBERT inference; Phase 5 will implement `TinyBERTClassifier : SmishingClassifier`.
+- **Use Case & Integration (`ProcessIncomingSmsUseCase.kt`, `CheckSmsPermissionUseCase.kt`)**:
+  - Orchestrated SMS parsing, preprocessing, classification, Room database persistence (`SmsAnalysisRepository`), and threat recording (`ThreatHistoryRepository`).
+  - Built permission checker for Android `RECEIVE_SMS` and `READ_SMS`.
+- **Dependency Injection (`AppContainer.kt`)**:
+  - Registered `SmsParser`, `SmsPreprocessor`, `SmishingClassifier`, `ProcessIncomingSmsUseCase`, and `CheckSmsPermissionUseCase`.
+- **Presentation Layer (`SmsMonitoringViewModel.kt`, `SmsMonitoringScreen.kt`, `DashboardScreen.kt`, `NavGraph.kt`)**:
+  - Created Compose UI for live SMS monitoring, permission request banner, protection toggle, and analysis history cards.
+  - Connected SMS monitoring screen to navigation graph and dashboard stat card.
+  - App name updated to **Squish Shield** in `strings.xml`.
+  - Wired real-time data flows in `DashboardViewModel` to dynamically update **SMS Scanned**, **Threats**, **Security Score**, and the **History** tab using Room DB reactive flows (`smsAnalysisRepository` & `threatHistoryRepository`).
+
+### Dataset Inspection & Validation
+- **Inspected Datasets**:
+  - Primary: `Datasets/Combined-Labeled-Dataset.csv` (84,863 rows, 8.75 MB, columns: `message`, `spam label`, `smishing label`). Distribution: 60,777 Ham (0), 24,086 Smishing (1). URL presence: 6,867 rows.
+  - Regional: `Datasets/spam_ham_india.csv` (2,267 rows, 238 KB, columns: `Msg`, `Label`). Distribution: 1,522 Ham, 745 Spam.
+- **Validation**:
+  - Confirmed compatibility between `RawSms.body` / `ProcessedSms.normalizedText` and dataset `message` / `Msg` text fields.
+  - Dataset validated/prepared for future TinyBERT training in Phase 5.
+  - Original dataset CSV source files left completely unmodified.
+
+### Verification Results
+- **Unit Tests (`.\gradlew test --no-daemon --console=plain`)**:
+  - `Phase3UrlExtractorTest`: Tested single HTTP/HTTPS URLs, multiple URLs, query parameters, IP URLs, non-URL text, and URL normalization (8/8 passed).
+  - `Phase3SmsParserTest`: Tested normal parsing, empty body, missing sender, unicode/special characters, long payload, OTP & phone detection (6/6 passed).
+  - `Phase3SmsPreprocessorTest`: Tested text normalization, tokenization, suspicious keywords, urgency indicators, sender pattern classification (5/5 passed).
+  - `Phase3SmsPipelineTest`: Tested end-to-end smishing and safe SMS pipeline processing with mock repositories (2/2 passed).
+  - **Overall Test Result**: **33/33 Unit Tests PASSED (Exit code 0)**.
+- **APK Build (`.\gradlew assembleDebug --no-daemon --console=plain`)**:
+  - **`BUILD SUCCESSFUL in 15s`** (Exit code 0).
+
+### Known Issues
+- None.
+
+### Open Items
+- TinyBERT model fine-tuning, evaluation, ONNX conversion, and Android runtime inference execution belong strictly to **Phase 5**.
+
+### Phase 3 Status
+Phase 3 Complete & Verified (Android SMS Broadcast Receiver, Safe Parser, Preprocessor, Privacy-Preserving Persistence, SmishingClassifier Contract, UI Screens, 33/33 Unit Tests Passed, Build Successful).
+
+
 
 
 
