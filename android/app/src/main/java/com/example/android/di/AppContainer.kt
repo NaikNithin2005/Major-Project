@@ -135,4 +135,21 @@ class AppContainer(private val context: Context) {
     val checkSmsPermissionUseCase: CheckSmsPermissionUseCase by lazy {
         CheckSmsPermissionUseCase(context)
     }
+
+    // Phase 4 QR Scanner Pipeline Components
+    val urlClassifier: com.example.android.domain.classifier.UrlClassifier by lazy {
+        com.example.android.domain.classifier.DefaultUrlClassifier()
+    }
+
+    val processQrCodeUseCase: ProcessQrCodeUseCase by lazy {
+        ProcessQrCodeUseCase(
+            urlClassifier = urlClassifier,
+            qrAnalysisRepository = qrAnalysisRepository,
+            threatHistoryRepository = threatHistoryRepository
+        )
+    }
+
+    val checkCameraPermissionUseCase: CheckCameraPermissionUseCase by lazy {
+        CheckCameraPermissionUseCase(context)
+    }
 }

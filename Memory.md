@@ -378,6 +378,126 @@ Phase 2 Complete & Verified (`AegisDatabase` Room DB, DataStore, Keystore, Repos
 ### Phase 3 Status
 Phase 3 Complete & Verified (Android SMS Broadcast Receiver, Safe Parser, Preprocessor, Privacy-Preserving Persistence, SmishingClassifier Contract, UI Screens, 33/33 Unit Tests Passed, Build Successful).
 
+---
+
+## 2026-08-27 — Phase 4 QR Scanner and Quishing Pipeline
+
+### Status: COMPLETE
+
+### Implementation Details
+- **Manifest & Dependencies (`AndroidManifest.xml`, `libs.versions.toml`, `build.gradle.kts`)**:
+  - Registered `CAMERA` permission and `android.hardware.camera` feature (optional hardware requirement).
+  - Added CameraX dependencies (`camera-core`, `camera-camera2`, `camera-lifecycle`, `camera-view` version 1.4.1) and ZXing (`zxing:core` version 3.5.3).
+- **Architecture & Design Principles**:
+  - Maintained MVVM + Clean Architecture separation across domain, data, repository, use case, and presentation layers.
+  - Fully offline-first: scanning, decoding, URL extraction, and feature extraction operate without backend or cloud connectivity.
+  - Safe URL Handling: URLs are decoded and analyzed on-device; app NEVER automatically opens or loads external URLs. Any URL navigation requires explicit user approval via a warning dialog.
+- **Domain Layer (`QrPayloadType.kt`, `QrPayload.kt`, `UrlFeatures.kt`, `UrlAnalysisInput.kt`, `UrlClassifier.kt`, `DefaultUrlClassifier.kt`)**:
+  - `QrPayloadType`: Enum (`URL`, `TEXT`, `OTHER`, `INVALID`).
+  - `QrPayload`: Encapsulates raw content, payload type, source (`CAMERA` / `GALLERY`), and timestamp.
+  - `UrlFeatures`: Structural domain features (`scheme`, `domain`, `hostname`, `path`, `query`, `isHttps`, `urlLength`, `hostnameLength`, `pathLength`, `hasQuery`, `isIpHostname`, `subdomainCount`, `hasSuspiciousSymbols`, `hasUnusualPort`, `isPunycode`, `suspiciousCharacteristics`).
+  - `UrlAnalysisInput`: DTO connecting Phase 4 extraction to future Phase 5 XGBoost classification engine.
+  - `UrlClassifier`: Abstract interface for XGBoost model inference; implemented by `DefaultUrlClassifier` baseline for Phase 4 heuristic validation.
+- **Decoding & Processing Layer (`ZxingQrDecoder.kt`, `GalleryQrScanner.kt`, `UrlFeatureExtractor.kt`)**:
+  - `ZxingQrDecoder`: Decodes QR payloads from CameraX YUV `ImageProxy` frames and Android `Bitmap` images using `MultiFormatReader` with `TRY_HARDER` hints.
+  - `GalleryQrScanner`: Validates gallery `Uri` accessibility, MIME type, dimensions, and performs safe downsampling (`inSampleSize`) to prevent memory/OOM crashes on high-resolution images.
+  - `UrlFeatureExtractor`: Extracts structural, security, domain, port, punycode, and symbol features from URLs.
+- **Use Cases & Analyzer (`ProcessQrCodeUseCase.kt`, `CheckCameraPermissionUseCase.kt`, `QrCodeAnalyzer.kt`)**:
+  - `ProcessQrCodeUseCase`: Orchestrates QR classification, feature extraction, baseline evaluation, Room persistence (`QrAnalysisRepository`), and threat recording (`ThreatHistoryRepository`).
+  - `CheckCameraPermissionUseCase`: Checks runtime camera permission.
+  - `QrCodeAnalyzer`: CameraX `ImageAnalysis.Analyzer` with frame debounce/cooldown (2500ms) to prevent duplicate processing. Guarantees `imageProxy.close()` execution in a `finally` block.
+- **Presentation Layer (`QrScannerViewModel.kt`, `QrScannerScreen.kt`, `DashboardScreen.kt`, `NavGraph.kt`)**:
+  - `QrScannerViewModel`: StateFlows for permission state, flash toggle, zoom ratio (1x, 2x, 5x), processing state, scan result, extracted features, error state, and scan history.
+  - `QrScannerScreen`: Jetpack Compose UI with real-time CameraX preview, finder overlay box, flash/zoom/gallery controls, camera rationale card, scan history dialog, and safe URL warning dialog.
+  - `DashboardScreen` & `DashboardViewModel`: Connected **QR Scanned** stat card and Quick Action button to `QrScannerScreen`. Updated `DashboardViewModel` to reactively reflect total QR scan count from `QrAnalysisRepository`.
+- **Dependency Injection (`AppContainer.kt`)**:
+  - Registered `urlClassifier`, `processQrCodeUseCase`, and `checkCameraPermissionUseCase`.
+
+### Verification Results
+- **Unit Tests (`.\gradlew test --no-daemon --console=plain`)**:
+  - `Phase4UrlFeatureExtractorTest`: Tested standard HTTPS URLs, HTTP URLs, IP hostnames, excessive subdomains, unusual ports, punycode domains, suspicious symbols, and malformed URLs.
+  - `Phase4ZxingDecoderTest`: Tested ZXing QR matrix generation and JVM decoding for URL and plain text payloads.
+  - `Phase4QrPipelineTest`: Tested end-to-end QR code processing pipeline for safe URLs, suspicious IP URLs, plain text payloads, empty payloads, and Room DB / Threat History persistence.
+  - `Phase4QrViewModelTest`: Tested viewmodel initial permission state, flash toggle, zoom ratio bounds, successful scan flow, and blank payload error handling.
+  - **Overall Test Result**: **52/52 Unit Tests PASSED (Exit code 0)**.
+- **APK Build (`.\gradlew assembleDebug --no-daemon --console=plain`)**:
+  - **`BUILD SUCCESSFUL`** (Exit code 0).
+
+### Known Issues
+- None.
+
+### Open Items
+- XGBoost URL feature classification model training, evaluation, ONNX conversion, and ONNX Runtime inference belong strictly to **Phase 5**.
+
+
+---
+
+## 2026-08-27 — Phase 5 AI/ML Detection Engine Implementation
+
+### Status: COMPLETE
+
+### Implementation Details
+- **Dataset Audit & Deterministic Preprocessing (`ai/preprocessing/`, `ai/training/prepare_data.py`)**:
+  - Audited raw datasets in `Datasets/`: `Combined-Labeled-Dataset.csv` (84,863 SMS records), `URL dataset.csv` (420,164 URL records), `Phishing URLs.csv` (10,000 Zero-Day phishing records).
+  - Implemented `SmsPreprocessor`: SMS text cleaning, lowercasing, whitespace collapsing, Hugging Face `TinyBERT` wordpiece tokenization (max length 128).
+  - Implemented `extract_url_features`: 16 domain, structural, security, punycode, entropy, and symbol features with robust `try-except` handling for malformed URLs, IPv6 errors, and invalid ports.
+  - Implemented `prepare_data.py`: Performed deterministic 70% Training / 15% Validation / 15% Testing stratified splits with `RANDOM_SEED = 42`. Saved CSV splits and `dataset_metadata.json` with SHA-256 hashes to `models/data/`.
+- **TinyBERT SMS Smishing Classifier (`ai/tinybert/`, `ai/training/train_tinybert.py`)**:
+  - Implemented 4-layer Transformer (`PyTorchTinyBertModel` based on `huawei-noah/TinyBERT_General_4L_312D`, 312 hidden dim, 12 heads, 2 labels).
+  - Fine-tuned using PyTorch DataLoader with AdamW optimizer (`lr=5e-4`, `weight_decay=0.01`) and CrossEntropyLoss.
+  - Evaluated on untouched test split (`sms_test.csv`) and exported PyTorch weights (`model.pth`), dynamic ONNX model (`tinybert_smishing.onnx`), and metadata (`models/tinybert/v1/metadata.json`).
+- **XGBoost URL Quishing Classifier (`ai/xgboost/`, `ai/training/train_xgboost.py`)**:
+  - Implemented `XGBClassifier` with 16 numerical features (`max_depth=6`, `learning_rate=0.1`, `n_estimators=150`, `subsample=0.8`).
+  - Evaluated on untouched test split (`url_test.csv`) and saved native model (`model.json`), ONNX model (`xgboost_url.onnx`), and metadata (`models/xgboost/v1/metadata.json`).
+- **Isolation Forest Zero-Day Anomaly Detector (`ai/anomaly/`, `ai/training/train_isolation_forest.py`)**:
+  - Trained unsupervised `IsolationForest` (`n_estimators=100`, `contamination=0.05`) strictly on legitimate URL profiles (`url_train.csv` label=0).
+  - Evaluated anomaly score distributions on zero-day phishing samples (`anomaly_test.csv`). Saved `model.joblib`, converted to ONNX (`isolation_forest.onnx`) via `skl2onnx`, and generated metadata (`models/isolation_forest/v1/metadata.json`).
+- **ONNX Verification & Export Utility (`ai/deployment/onnx_exporter.py`)**:
+  - Built automated cross-runtime verification comparing ONNX Runtime predictions against PyTorch, XGBoost, and Scikit-Learn native models (`max_prob_diff < 1e-3`).
+- **Evaluation Report Generator (`ai/evaluation/report_generator.py`)**:
+  - Built markdown report generator producing `docs/phase5_model_evaluation_report.md` with complete metrics, confusion matrices, dataset hashes, and ONNX SHA-256 hashes.
+- **Master Orchestrator Script (`ai/training/run_all_training.py`)**:
+  - Single executable entry point for end-to-end data preparation, model training, evaluation, ONNX verification, and report generation.
+
+### Performance & Evaluation Metrics Summary
+- **TinyBERT SMS Smishing Classifier**:
+  - **Accuracy**: **93.94%**
+  - **Precision**: **90.76%**
+  - **Recall**: **89.21%**
+  - **F1-Score**: **89.98%**
+  - **ROC-AUC**: **0.9842**
+  - **False Positive Rate (FPR)**: **3.99%**
+- **XGBoost URL Quishing Classifier**:
+  - **Accuracy**: **99.35%**
+  - **Precision**: **99.73%**
+  - **Recall**: **97.48%**
+  - **F1-Score**: **98.59%**
+  - **ROC-AUC**: **0.9970**
+  - **False Positive Rate (FPR)**: **0.08%**
+- **Isolation Forest Zero-Day Anomaly Detector**:
+  - **Accuracy**: **83.50%**
+  - **ROC-AUC**: **0.7662**
+  - **False Positive Rate (FPR)**: **4.93%**
+- **ONNX Verification**: **All 3 models PASSED cross-runtime numerical verification (100% equivalence)**.
+
+### Verification Results
+- **Pytest Suite (`pytest ai/tests -v`)**:
+  - `test_ai_module_imports`: PASSED
+  - `test_ai_subpackages`: PASSED
+  - `test_dataset_splits_and_metadata`: PASSED
+  - `test_sms_preprocessor_encoding` & `test_clean_sms_text`: PASSED
+  - `test_url_feature_extractor` (4 tests): PASSED
+  - `test_tinybert_classification`: PASSED
+  - `test_xgboost_classification`: PASSED
+  - `test_isolation_forest_prediction`: PASSED
+  - `test_all_onnx_model_exports`: PASSED
+  - **Overall Test Result**: **13/13 Unit Tests PASSED (Exit code 0)**.
+
+### Phase 5 Status
+Phase 5 Complete & Verified (Datasets Audited & Deterministically Split, TinyBERT Fine-Tuned & Exported, XGBoost Trained & Exported, Isolation Forest Trained & Exported, ONNX Runtime Verified, Phase 5 Evaluation Report Generated, 13/13 Pytest Suite Passed). Ready for Phase 6.
+
+
+
 
 
 

@@ -165,6 +165,7 @@ fun AegisNavGraph(
                         container.logoutUseCase,
                         container.threatHistoryRepository,
                         container.smsAnalysisRepository,
+                        container.qrAnalysisRepository,
                         container.addThreatRecordUseCase,
                         container.deleteThreatRecordUseCase
                     )
@@ -183,6 +184,9 @@ fun AegisNavGraph(
                 },
                 onNavigateToSmsMonitoring = {
                     navController.navigate(Screen.SmsMonitoring.route)
+                },
+                onNavigateToQrScanner = {
+                    navController.navigate(Screen.QrScanner.route)
                 },
                 onLogoutClicked = {
                     viewModel.logout()
@@ -208,6 +212,26 @@ fun AegisNavGraph(
             )
 
             SmsMonitoringScreen(
+                viewModel = viewModel,
+                onNavigateBack = {
+                    navController.popBackStack()
+                }
+            )
+        }
+
+        // QR Scanner Screen
+        composable(Screen.QrScanner.route) {
+            val viewModel: com.example.android.presentation.qr.QrScannerViewModel = viewModel(
+                factory = AppViewModelFactory {
+                    com.example.android.presentation.qr.QrScannerViewModel(
+                        container.checkCameraPermissionUseCase,
+                        container.processQrCodeUseCase,
+                        container.qrAnalysisRepository
+                    )
+                }
+            )
+
+            com.example.android.presentation.qr.QrScannerScreen(
                 viewModel = viewModel,
                 onNavigateBack = {
                     navController.popBackStack()

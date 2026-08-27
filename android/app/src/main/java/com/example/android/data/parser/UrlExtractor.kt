@@ -8,10 +8,10 @@ import java.util.regex.Pattern
  */
 object UrlExtractor {
 
-    // Regex matching http://, https://, www., or standard TLD domains with optional paths/queries
-    private val URL_PATTERN: Pattern = Pattern.compile(
+    // Strict URL matching requiring explicit scheme, www prefix, or valid standalone domain token without spaces
+    private val EXPLICIT_URL_PATTERN: Pattern = Pattern.compile(
         "(?i)\\b(?:https?://|www\\.)[a-zA-Z0-9\\-._~:/?#\\[\\]@!$&'()*+,;=%]+|" +
-        "\\b[a-zA-Z0-9\\-]+\\.(?:com|org|net|edu|gov|mil|biz|info|in|co|us|uk|io|ai|app|dev|link|xyz|top|site|online|tech|store|cc|tk|me)(?::\\d{1,5})?(?:/[^\\s()<>]*)?",
+        "\\b[a-zA-Z0-9\\-]+\\.(?:com|org|net|edu|gov|mil|biz|info|in|co|us|uk|io|ai|app|dev|link|xyz|top|site|online|tech|store|cc|tk)(?::\\d{1,5})?(?:/[^\\s()<>]*)?",
         Pattern.CASE_INSENSITIVE
     )
 
@@ -27,7 +27,7 @@ object UrlExtractor {
 
         val results = mutableSetOf<String>()
 
-        val matcher = URL_PATTERN.matcher(text)
+        val matcher = EXPLICIT_URL_PATTERN.matcher(text)
         while (matcher.find()) {
             val rawMatch = matcher.group()
             val cleaned = cleanUrlMatch(rawMatch)

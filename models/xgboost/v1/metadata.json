@@ -1,0 +1,78 @@
+{
+  "model_name": "XGBoost URL Quishing Classifier",
+  "version": "xgboost-url-v1",
+  "training_date": "2026-08-27 22:16:40",
+  "random_seed": 42,
+  "feature_count": 16,
+  "feature_names": [
+    "url_length",
+    "domain_length",
+    "subdomain_count",
+    "path_length",
+    "query_length",
+    "has_ip",
+    "has_at_symbol",
+    "has_double_slash_redirect",
+    "has_dash_in_domain",
+    "suspicious_tld",
+    "digit_count",
+    "special_char_count",
+    "entropy",
+    "https_enabled",
+    "port_specified",
+    "encoding_present"
+  ],
+  "hyperparameters": {
+    "objective": "binary:logistic",
+    "eval_metric": "logloss",
+    "max_depth": 6,
+    "learning_rate": 0.1,
+    "n_estimators": 150,
+    "subsample": 0.8,
+    "colsample_bytree": 0.8,
+    "random_state": 42
+  },
+  "feature_importances": {
+    "url_length": 0.0008294544531963766,
+    "domain_length": 0.0017030498711392283,
+    "subdomain_count": 0.02148011513054371,
+    "path_length": 0.0014851810410618782,
+    "query_length": 0.0019224440911784768,
+    "has_ip": 0.010290722362697124,
+    "has_at_symbol": 0.0036529856733977795,
+    "has_double_slash_redirect": 0.0011476442450657487,
+    "has_dash_in_domain": 0.0035408514086157084,
+    "suspicious_tld": 0.0008737716707400978,
+    "digit_count": 0.001966269686818123,
+    "special_char_count": 0.0020998974796384573,
+    "entropy": 0.0012529055820778012,
+    "https_enabled": 0.9381718635559082,
+    "port_specified": 0.008956298232078552,
+    "encoding_present": 0.0006265020929276943
+  },
+  "label_mapping": {
+    "0": "legitimate",
+    "1": "phishing"
+  },
+  "evaluation_metrics": {
+    "accuracy": 0.9935,
+    "precision": 0.9973,
+    "recall": 0.9748,
+    "f1": 0.9859,
+    "roc_auc": 0.997,
+    "false_positive_rate": 0.0008,
+    "confusion_matrix": [
+      [
+        51819,
+        42
+      ],
+      [
+        395,
+        15271
+      ]
+    ]
+  },
+  "export_format": "ONNX",
+  "onnx_filename": "xgboost_url.onnx",
+  "onnx_sha256": "78b4c5d0662135c5f00b627e95273affcc8a13d40ec04c517d37f827259cd6c1"
+}

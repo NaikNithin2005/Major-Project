@@ -31,6 +31,7 @@ fun DashboardScreen(
     onDeleteThreat: (String) -> Unit = {},
     onNavigateToSettings: () -> Unit,
     onNavigateToSmsMonitoring: () -> Unit = {},
+    onNavigateToQrScanner: () -> Unit = {},
     onLogoutClicked: () -> Unit
 ) {
     var selectedTab by remember { mutableStateOf(0) }
@@ -61,7 +62,7 @@ fun DashboardScreen(
                         onClick = {
                             selectedTab = index
                             if (index == 2) {
-                                onNavigateToSmsMonitoring()
+                                onNavigateToQrScanner()
                             } else if (index == 4) {
                                 onNavigateToSettings()
                             }
@@ -200,7 +201,7 @@ fun DashboardScreen(
                                 selectedTab = 1
                             }
                             StatCard("SMS Scanned", "${uiState.smsScannedCount}", Icons.Default.Sms, Color(0xFF3B82F6), Modifier.weight(1f), onClick = onNavigateToSmsMonitoring)
-                            StatCard("QR Scanned", "${uiState.qrScannedCount}", Icons.Default.QrCode, Color(0xFF10B981), Modifier.weight(1f))
+                            StatCard("QR Scanned", "${uiState.qrScannedCount}", Icons.Default.QrCode, Color(0xFF10B981), Modifier.weight(1f), onClick = onNavigateToQrScanner)
                         }
                     }
 
@@ -218,20 +219,20 @@ fun DashboardScreen(
                                 shape = RoundedCornerShape(12.dp),
                                 colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF0EA5E9))
                             ) {
-                                Icon(Icons.Default.Sms, contentDescription = null, modifier = Modifier.size(18.dp))
-                                Spacer(modifier = Modifier.width(8.dp))
-                                Text("SMS Monitor")
+                                Icon(Icons.Default.Sms, contentDescription = null, modifier = Modifier.size(16.dp))
+                                Spacer(modifier = Modifier.width(6.dp))
+                                Text("SMS Monitor", fontSize = 13.sp)
                             }
 
-                            OutlinedButton(
-                                onClick = { selectedTab = 1 },
+                            Button(
+                                onClick = onNavigateToQrScanner,
                                 modifier = Modifier.weight(1f).height(48.dp),
                                 shape = RoundedCornerShape(12.dp),
-                                colors = ButtonDefaults.outlinedButtonColors(contentColor = Color(0xFF38BDF8))
+                                colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF10B981))
                             ) {
-                                Icon(Icons.Default.History, contentDescription = null, modifier = Modifier.size(18.dp))
-                                Spacer(modifier = Modifier.width(8.dp))
-                                Text("Threat Log")
+                                Icon(Icons.Default.QrCodeScanner, contentDescription = null, modifier = Modifier.size(16.dp))
+                                Spacer(modifier = Modifier.width(6.dp))
+                                Text("QR Scanner", fontSize = 13.sp)
                             }
                         }
                     }

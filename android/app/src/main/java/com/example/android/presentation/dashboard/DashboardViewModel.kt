@@ -36,6 +36,7 @@ class DashboardViewModel(
     private val logoutUseCase: LogoutUseCase,
     private val threatHistoryRepository: ThreatHistoryRepository,
     private val smsAnalysisRepository: SmsAnalysisRepository,
+    private val qrAnalysisRepository: com.example.android.domain.repository.QrAnalysisRepository? = null,
     private val addThreatRecordUseCase: AddThreatRecordUseCase? = null,
     private val deleteThreatRecordUseCase: DeleteThreatRecordUseCase? = null
 ) : ViewModel() {
@@ -55,17 +56,21 @@ class DashboardViewModel(
 
     private fun observeData() {
         viewModelScope.launch {
+            val qrFlow = qrAnalysisRepository?.observeAllAnalyses() ?: kotlinx.coroutines.flow.flowOf(emptyList())
+
             combine(
                 smsAnalysisRepository.observeAllAnalyses(),
+                qrFlow,
                 threatHistoryRepository.observeAllThreats()
-            ) { smsList, threatsList ->
+            ) { smsList, qrList, threatsList ->
                 val smishingThreatsCount = threatsList.size
                 val totalSmsCount = smsList.size
+                val totalQrCount = qrList.size
                 val calculatedScore = (100 - (smishingThreatsCount * 10)).coerceIn(10, 100)
 
                 DashboardUiState(
                     smsScannedCount = totalSmsCount,
-                    qrScannedCount = 0,
+                    qrScannedCount = totalQrCount,
                     threatCount = smishingThreatsCount,
                     securityScore = calculatedScore,
                     threatHistory = threatsList,
