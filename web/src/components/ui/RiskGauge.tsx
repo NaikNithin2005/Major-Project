@@ -4,11 +4,20 @@ import { RiskBadge } from './Badge';
 interface RiskGaugeProps {
   score: number;
   category?: string;
-  size?: 'sm' | 'md' | 'lg';
+  size?: 'sm' | 'md' | 'lg' | number;
 }
 
 export function RiskGauge({ score, category, size = 'md' }: RiskGaugeProps) {
   const normalizedScore = Math.max(0, Math.min(100, Math.round(score)));
+
+  let resolvedSize: 'sm' | 'md' | 'lg' = 'md';
+  if (typeof size === 'number') {
+    if (size < 80) resolvedSize = 'sm';
+    else if (size > 140) resolvedSize = 'lg';
+    else resolvedSize = 'md';
+  } else {
+    resolvedSize = size;
+  }
 
   const computedCategory =
     category ||
@@ -34,15 +43,15 @@ export function RiskGauge({ score, category, size = 'md' }: RiskGaugeProps) {
     return 'text-emerald-400';
   };
 
-  if (size === 'sm') {
+  if (resolvedSize === 'sm') {
     return (
       <div className="flex items-center space-x-2">
         <span className={`font-bold font-mono text-sm ${getTextColor(normalizedScore)}`}>
           {normalizedScore}
         </span>
-        <div className="w-16 bg-slate-800 h-1.5 rounded-full overflow-hidden">
+        <div className="w-16 h-1.5 bg-slate-800 rounded-full overflow-hidden">
           <div
-            className={`h-full bg-gradient-to-r ${getColor(normalizedScore)}`}
+            className={`h-full bg-gradient-to-r ${getColor(normalizedScore)} rounded-full`}
             style={{ width: `${normalizedScore}%` }}
           />
         </div>
@@ -50,35 +59,44 @@ export function RiskGauge({ score, category, size = 'md' }: RiskGaugeProps) {
     );
   }
 
-  return (
-    <div className="flex flex-col space-y-2">
-      <div className="flex items-center justify-between">
-        <span className="text-xs uppercase tracking-wider text-slate-400 font-semibold">
-          Calculated Risk Score
-        </span>
-        <RiskBadge category={computedCategory} size="sm" />
-      </div>
+  // Semi-circle gauge visualization for md and lg
+  const strokeDashoffset = 188 - (188 * normalizedScore) / 100;
 
-      <div className="flex items-baseline space-x-2">
-        <span className={`text-4xl font-extrabold font-mono tracking-tight ${getTextColor(normalizedScore)}`}>
+  return (
+    <div className="flex flex-col items-center justify-center relative">
+      <svg className="w-28 h-20 overflow-visible" viewBox="0 0 100 65">
+        <path
+          d="M 10,60 A 40,40 0 0,1 90,60"
+          fill="none"
+          stroke="#1e293b"
+          strokeWidth="10"
+          strokeLinecap="round"
+        />
+        <path
+          d="M 10,60 A 40,40 0 0,1 90,60"
+          fill="none"
+          stroke={`url(#gauge-gradient-${normalizedScore})`}
+          strokeWidth="10"
+          strokeDasharray="188"
+          strokeDashoffset={strokeDashoffset}
+          strokeLinecap="round"
+          className="transition-all duration-700 ease-out"
+        />
+        <defs>
+          <linearGradient id={`gauge-gradient-${normalizedScore}`} x1="0%" y1="0%" x2="100%" y2="0%">
+            <stop offset="0%" stopColor="#10b981" />
+            <stop offset="50%" stopColor="#f59e0b" />
+            <stop offset="100%" stopColor="#ef4444" />
+          </linearGradient>
+        </defs>
+      </svg>
+      <div className="absolute top-7 flex flex-col items-center pointer-events-none">
+        <span className={`text-2xl font-black font-mono tracking-tight ${getTextColor(normalizedScore)}`}>
           {normalizedScore}
         </span>
-        <span className="text-slate-500 text-sm font-semibold">/ 100</span>
-      </div>
-
-      <div className="w-full bg-slate-800/80 rounded-full h-2.5 overflow-hidden border border-slate-700/50">
-        <div
-          className={`h-full rounded-full bg-gradient-to-r ${getColor(normalizedScore)} transition-all duration-500`}
-          style={{ width: `${normalizedScore}%` }}
-        />
-      </div>
-
-      <div className="flex justify-between text-[10px] text-slate-500 font-medium px-0.5">
-        <span>0 Safe</span>
-        <span>26 Low</span>
-        <span>51 Medium</span>
-        <span>76 High</span>
-        <span>100</span>
+        <span className="text-[9px] uppercase tracking-wider text-slate-500 font-bold -mt-1">
+          / 100
+        </span>
       </div>
     </div>
   );
