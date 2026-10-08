@@ -4,30 +4,44 @@ import json
 import time
 import hashlib
 import joblib
+import platform
 import numpy as np
 import pandas as pd
 from sklearn.ensemble import IsolationForest
-from sklearn.metrics import accuracy_score, precision_score, recall_score, f1_score, roc_auc_score, confusion_matrix
+from sklearn.metrics import (
+    accuracy_score,
+    precision_score,
+    recall_score,
+    f1_score,
+    roc_auc_score,
+    confusion_matrix
+)
+import onnx
 import skl2onnx
 from skl2onnx.common.data_types import FloatTensorType
 
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..")))
 from ai.feature_engineering.url_feature_extractor import FEATURE_NAMES
-from ai.anomaly.model import MODEL_VERSION
 
 PROCESSED_DIR = os.path.join("models", "data")
-MODEL_OUTPUT_DIR = os.path.join("models", "isolation_forest", "v1")
 RANDOM_SEED = 42
 
-def train_isolation_forest():
+def train_isolation_forest(version: str = "v2"):
     np.random.seed(RANDOM_SEED)
-    print("Loading processed datasets for Isolation Forest...")
+    output_dir = os.path.join("models", "isolation_forest", version)
+    os.makedirs(output_dir, exist_ok=True)
+    model_version_str = f"isolation-forest-{version}"
 
+    print(f"\n{'='*70}")
+    print(f"TRAINING ISOLATION FOREST ZERO-DAY ANOMALY DETECTOR ({model_version_str.upper()})")
+    print(f"{'='*70}")
+
+    print("Loading processed datasets for Isolation Forest...")
     train_df = pd.read_csv(os.path.join(PROCESSED_DIR, "url_train.csv"))
     test_df = pd.read_csv(os.path.join(PROCESSED_DIR, "url_test.csv"))
     anomaly_test_df = pd.read_csv(os.path.join(PROCESSED_DIR, "anomaly_test.csv"))
 
-    # Train ONLY on legitimate (benign) URLs
+    # Train ONLY on legitimate (benign) URLs (unsupervised clean baseline profile)
     legit_train = train_df[train_df["label"] == 0]
     X_train_legit = legit_train[FEATURE_NAMES].values.astype(np.float32)
 
@@ -35,10 +49,11 @@ def train_isolation_forest():
     legit_test = test_df[test_df["label"] == 0]
     X_test_legit = legit_test[FEATURE_NAMES].values.astype(np.float32)
 
-    # Anomaly test set (zero-day phishing)
+    # Anomaly test set (zero-day phishing samples from independent feed)
     X_test_anomaly = anomaly_test_df[FEATURE_NAMES].values.astype(np.float32)
 
-    print(f"Training Isolation Forest on {len(X_train_legit)} legitimate URL feature profiles...")
+    print(f"Training Isolation Forest on {len(X_train_legit):,} legitimate URL feature profiles...")
+    print(f"Evaluation sets -> Legitimate Test: {len(X_test_legit):,}, Zero-Day Anomaly Test: {len(X_test_anomaly):,}")
 
     params = {
         "n_estimators": 100,
@@ -62,14 +77,14 @@ def train_isolation_forest():
     # False Positive Rate on Benign Test Set
     fp_count = int((benign_preds == -1).sum())
     tn_count = int((benign_preds == 1).sum())
-    fpr = float(fp_count / (fp_count + tn_count))
+    fpr = float(fp_count / (fp_count + tn_count)) if (fp_count + tn_count) > 0 else 0.0
 
     # Detection Rate / Recall on Zero-Day Anomaly Test Set
     tp_count = int((anomaly_preds == -1).sum())
     fn_count = int((anomaly_preds == 1).sum())
-    detection_rate = float(tp_count / (tp_count + fn_count))
+    detection_rate = float(tp_count / (tp_count + fn_count)) if (tp_count + fn_count) > 0 else 0.0
 
-    # Overall Combined Metrics
+    # Combined Evaluation Metrics
     y_true = np.concatenate([np.zeros(len(X_test_legit)), np.ones(len(X_test_anomaly))])
     scores_combined = np.concatenate([-benign_scores, -anomaly_scores])
     preds_combined = np.concatenate([(benign_preds == -1).astype(int), (anomaly_preds == -1).astype(int)])
@@ -91,35 +106,46 @@ def train_isolation_forest():
     print(f"FPR (Benign):    {fpr*100:.2f}%")
     print(f"Confusion Matrix:\n{cm}\n")
 
-    os.makedirs(MODEL_OUTPUT_DIR, exist_ok=True)
-
-    # Save Joblib Model
-    joblib_path = os.path.join(MODEL_OUTPUT_DIR, "model.joblib")
+    # Save Native Joblib Model
+    joblib_path = os.path.join(output_dir, "model.joblib")
     joblib.dump(model, joblib_path)
+    joblib_size = os.path.getsize(joblib_path)
 
     # Convert & Export to ONNX via skl2onnx
+    print("Converting Isolation Forest to ONNX format...")
     initial_type = [("float_input", FloatTensorType([None, len(FEATURE_NAMES)]))]
     onnx_model = skl2onnx.convert_sklearn(model, initial_types=initial_type, target_opset={"": 14, "ai.onnx.ml": 3})
 
-    onnx_path = os.path.join(MODEL_OUTPUT_DIR, "isolation_forest.onnx")
+    onnx_path = os.path.join(output_dir, "isolation_forest.onnx")
     with open(onnx_path, "wb") as f:
         f.write(onnx_model.SerializeToString())
+    onnx_size = os.path.getsize(onnx_path)
 
     # Compute Hashes
-    sha256_hash = hashlib.sha256()
-    with open(onnx_path, "rb") as f:
-        for b in iter(lambda: f.read(65536), b""):
-            sha256_hash.update(b)
-    onnx_hash = sha256_hash.hexdigest()
+    def file_hash(fp):
+        h = hashlib.sha256()
+        with open(fp, "rb") as f:
+            for b in iter(lambda: f.read(65536), b""):
+                h.update(b)
+        return h.hexdigest()
+
+    joblib_hash = file_hash(joblib_path)
+    onnx_hash = file_hash(onnx_path)
+    print(f"Saved ONNX model: {onnx_path} ({onnx_size:,} bytes, SHA-256: {onnx_hash})")
 
     metadata = {
         "model_name": "Isolation Forest Zero-Day Anomaly Detector",
-        "version": MODEL_VERSION,
+        "version": model_version_str,
         "training_date": time.strftime("%Y-%m-%d %H:%M:%S"),
         "random_seed": RANDOM_SEED,
         "hyperparameters": params,
+        "feature_count": len(FEATURE_NAMES),
         "feature_names": FEATURE_NAMES,
-        "label_mapping": {"1": "inlier_benign", "-1": "outlier_anomaly"},
+        "feature_order": FEATURE_NAMES,
+        "label_mapping": {
+            "1": "inlier_benign",
+            "-1": "outlier_anomaly"
+        },
         "anomaly_score_stats": {
             "benign_mean_score": round(float(np.mean(benign_scores)), 4),
             "anomaly_mean_score": round(float(np.mean(anomaly_scores)), 4)
@@ -133,16 +159,27 @@ def train_isolation_forest():
             "false_positive_rate": round(fpr, 4),
             "confusion_matrix": cm.tolist()
         },
-        "export_format": "ONNX",
-        "onnx_filename": "isolation_forest.onnx",
-        "onnx_sha256": onnx_hash
+        "artifacts": {
+            "native_model_filename": "model.joblib",
+            "native_model_sha256": joblib_hash,
+            "native_model_size_bytes": joblib_size,
+            "onnx_filename": "isolation_forest.onnx",
+            "onnx_sha256": onnx_hash,
+            "onnx_size_bytes": onnx_size
+        },
+        "environment": {
+            "python_version": platform.python_version(),
+            "onnx_version": onnx.__version__,
+            "skl2onnx_version": skl2onnx.__version__
+        }
     }
 
-    with open(os.path.join(MODEL_OUTPUT_DIR, "metadata.json"), "w") as f:
+    metadata_path = os.path.join(output_dir, "metadata.json")
+    with open(metadata_path, "w") as f:
         json.dump(metadata, f, indent=2)
 
-    print(f"Saved Isolation Forest artifacts to {MODEL_OUTPUT_DIR}")
+    print(f"Saved complete Isolation Forest artifacts to: {output_dir}")
     return metadata
 
 if __name__ == "__main__":
-    train_isolation_forest()
+    train_isolation_forest(version="v2")

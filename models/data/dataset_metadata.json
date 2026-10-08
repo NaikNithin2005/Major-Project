@@ -1,4 +1,5 @@
 {
+  "version": "v2",
   "random_seed": 42,
   "split_ratio": "70/15/15",
   "sms": {
@@ -14,8 +15,8 @@
     }
   },
   "url": {
-    "source_file": "URL dataset.csv",
-    "sha256": "accb2dfbfd3329a8b5cb1b85dcad90314a660c272be755cb45d0f6865014b466",
+    "source_file": "umar/dataset.csv",
+    "sha256": "cb12499c5b49f51a8ea070f22f7664785059004db3d6cdd048220f92cdaf28fe",
     "total_processed_rows": 450176,
     "train_rows": 315123,
     "val_rows": 67526,
@@ -23,7 +24,39 @@
     "class_counts": {
       "legitimate_0": 345738,
       "phishing_1": 104438
-    }
+    },
+    "train_class_counts": {
+      "legitimate_0": 242016,
+      "phishing_1": 73107
+    },
+    "val_class_counts": {
+      "legitimate_0": 51861,
+      "phishing_1": 15665
+    },
+    "test_class_counts": {
+      "legitimate_0": 51861,
+      "phishing_1": 15666
+    },
+    "leakage_verified": true,
+    "feature_count": 16,
+    "feature_names": [
+      "url_length",
+      "domain_length",
+      "subdomain_count",
+      "path_length",
+      "query_length",
+      "has_ip",
+      "has_at_symbol",
+      "has_double_slash_redirect",
+      "has_dash_in_domain",
+      "suspicious_tld",
+      "digit_count",
+      "special_char_count",
+      "entropy",
+      "https_enabled",
+      "port_specified",
+      "encoding_present"
+    ]
   },
   "anomaly": {
     "source_file": "Phishing URLs.csv",

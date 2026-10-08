@@ -6,6 +6,7 @@ from transformers import AutoModelForSequenceClassification, AutoTokenizer
 from ai.preprocessing.sms_preprocessor import SmsPreprocessor
 
 MODEL_VERSION = "tinybert-smishing-v1"
+MODEL_VERSION_V2 = "tinybert-smishing-v2"
 CHECKPOINT_NAME = "huawei-noah/TinyBERT_General_4L_312D"
 
 @dataclass
@@ -24,7 +25,7 @@ class PyTorchTinyBertModel(nn.Module):
         super().__init__()
         self.embedding = nn.Embedding(vocab_size, hidden_dim)
         encoder_layer = nn.TransformerEncoderLayer(d_model=hidden_dim, nhead=4, dim_feedforward=1200, batch_first=True)
-        self.encoder = nn.TransformerEncoder(encoder_layer, num_layers=4)
+        self.encoder = nn.TransformerEncoder(encoder_layer, num_layers=4, enable_nested_tensor=False)
         self.classifier = nn.Sequential(
             nn.Dropout(0.1),
             nn.Linear(hidden_dim, num_classes)
@@ -46,11 +47,17 @@ class TinyBertSmsClassifier:
         self.device = device or ("cuda" if torch.cuda.is_available() else "cpu")
         self.preprocessor = SmsPreprocessor(max_length=128)
         self.model = None
+        self.model_version = MODEL_VERSION
 
         if model_path:
             self.load_model(model_path)
 
     def load_model(self, model_path: str):
+        if "v2" in model_path:
+            self.model_version = MODEL_VERSION_V2
+        else:
+            self.model_version = MODEL_VERSION
+
         try:
             # Try loading Hugging Face sequence classification checkpoint or exported PyTorch weights
             self.model = AutoModelForSequenceClassification.from_pretrained(model_path)
@@ -86,7 +93,7 @@ class TinyBertSmsClassifier:
         confidence = float(max(p_safe, p_smishing))
 
         return TinyBertResult(
-            model_version=MODEL_VERSION,
+            model_version=self.model_version,
             label=predicted_class,
             probabilities={"safe": round(p_safe, 4), "smishing": round(p_smishing, 4)},
             confidence=round(confidence, 4),

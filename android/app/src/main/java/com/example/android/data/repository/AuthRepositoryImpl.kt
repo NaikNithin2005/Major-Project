@@ -33,6 +33,27 @@ class AuthRepositoryImpl @Inject constructor(
         }
     }
 
+    override fun getCurrentUser(): User? {
+        val state = _authState.value
+        if (state is AuthState.Authenticated) {
+            return state.user
+        }
+        return firebaseAuthDataSource.getCurrentUser()
+    }
+
+    override suspend fun getIdToken(forceRefresh: Boolean): String? {
+        val currentUser = getCurrentUser()
+
+        val fbToken = firebaseAuthDataSource.getIdToken(forceRefresh)
+        if (fbToken != null) {
+            return fbToken
+        }
+
+        // Development/mock fallback for offline or guest test environments
+        val uid = currentUser?.uid ?: "device-default"
+        return "mock-user-$uid"
+    }
+
     override suspend fun login(email: String, pass: String): Result<User> {
         _authState.value = AuthState.Loading
         return try {
@@ -68,7 +89,8 @@ class AuthRepositoryImpl @Inject constructor(
             uid = "guest_${System.currentTimeMillis()}",
             email = "guest@squishshield.local",
             displayName = "User",
-            isGuest = true
+            isGuest = true,
+            role = "GUEST"
         )
         firestoreDataSource.syncUserProfile(guestUser)
         _authState.value = AuthState.Authenticated(guestUser)
@@ -79,5 +101,13 @@ class AuthRepositoryImpl @Inject constructor(
         firebaseAuthDataSource.logout()
         _authState.value = AuthState.Unauthenticated
         return Result.success(Unit)
+    }
+
+    override fun updateUserRole(role: String) {
+        val state = _authState.value
+        if (state is AuthState.Authenticated) {
+            val updatedUser = state.user.copy(role = role)
+            _authState.value = AuthState.Authenticated(updatedUser)
+        }
     }
 }

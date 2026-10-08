@@ -63,6 +63,20 @@ class AppContainer(private val context: Context) {
         ModelRepositoryImpl(database.modelVersionDao())
     }
 
+    // Phase 8 Remote Backend API Service
+    val backendApiService: com.example.android.data.remote.api.BackendApiService by lazy {
+        com.example.android.data.remote.client.ApiClient.createBackendService(authRepository)
+    }
+
+    // Phase 8 Sync Repository
+    val syncRepository: com.example.android.domain.repository.SyncRepository by lazy {
+        com.example.android.data.repository.SyncRepositoryImpl(
+            syncQueueDao = database.syncQueueDao(),
+            backendApiService = backendApiService,
+            authRepository = authRepository
+        )
+    }
+
     // Auth Use Cases
     val loginUseCase: LoginUseCase by lazy {
         LoginUseCase(authRepository)
@@ -109,6 +123,27 @@ class AppContainer(private val context: Context) {
         SubmitFeedbackUseCase(feedbackRepository)
     }
 
+    // Phase 6 Risk Engine & Explainable AI Components
+    val ruleEngine: com.example.android.domain.rules.RuleEngine by lazy {
+        com.example.android.domain.rules.RuleEngine()
+    }
+
+    val contextCorrelationEngine: com.example.android.domain.context.ContextCorrelationEngine by lazy {
+        com.example.android.domain.context.ContextCorrelationEngine()
+    }
+
+    val explainableAiEngine: com.example.android.domain.xai.ExplainableAiEngine by lazy {
+        com.example.android.domain.xai.ExplainableAiEngine()
+    }
+
+    val riskEngine: com.example.android.domain.riskengine.RiskEngine by lazy {
+        com.example.android.domain.riskengine.RiskEngine(
+            ruleEngine = ruleEngine,
+            contextEngine = contextCorrelationEngine,
+            xaiEngine = explainableAiEngine
+        )
+    }
+
     // Phase 3 SMS Pipeline Components
     val smsParser: com.example.android.data.parser.SmsParser by lazy {
         com.example.android.data.parser.SmsParser()
@@ -119,7 +154,7 @@ class AppContainer(private val context: Context) {
     }
 
     val smishingClassifier: com.example.android.domain.classifier.SmishingClassifier by lazy {
-        com.example.android.domain.classifier.DefaultSmishingClassifier()
+        com.example.android.data.classifier.OnnxTinyBertSmishingClassifier(context)
     }
 
     val processIncomingSmsUseCase: ProcessIncomingSmsUseCase by lazy {
@@ -128,7 +163,10 @@ class AppContainer(private val context: Context) {
             smsPreprocessor = smsPreprocessor,
             classifier = smishingClassifier,
             smsAnalysisRepository = smsAnalysisRepository,
-            threatHistoryRepository = threatHistoryRepository
+            threatHistoryRepository = threatHistoryRepository,
+            riskEngine = riskEngine,
+            syncRepository = syncRepository,
+            context = context
         )
     }
 
@@ -136,16 +174,19 @@ class AppContainer(private val context: Context) {
         CheckSmsPermissionUseCase(context)
     }
 
-    // Phase 4 QR Scanner Pipeline Components
+    // Phase 4 & 5 QR Scanner & XGBoost URL Pipeline Components
     val urlClassifier: com.example.android.domain.classifier.UrlClassifier by lazy {
-        com.example.android.domain.classifier.DefaultUrlClassifier()
+        com.example.android.data.classifier.OnnxUrlClassifier(context)
     }
 
     val processQrCodeUseCase: ProcessQrCodeUseCase by lazy {
         ProcessQrCodeUseCase(
             urlClassifier = urlClassifier,
             qrAnalysisRepository = qrAnalysisRepository,
-            threatHistoryRepository = threatHistoryRepository
+            threatHistoryRepository = threatHistoryRepository,
+            riskEngine = riskEngine,
+            syncRepository = syncRepository,
+            context = context
         )
     }
 

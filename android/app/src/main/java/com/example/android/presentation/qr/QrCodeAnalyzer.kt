@@ -15,19 +15,27 @@ class QrCodeAnalyzer(
 ) : ImageAnalysis.Analyzer {
 
     private val isAnalyzing = AtomicBoolean(false)
+    val isPaused = AtomicBoolean(false)
     private var lastScannedText: String? = null
     private var lastScannedTimestamp: Long = 0L
 
     companion object {
-        private const val SCAN_COOLDOWN_MS = 2000L
+        private const val SCAN_COOLDOWN_MS = 2500L
+    }
+
+    fun setPaused(paused: Boolean) {
+        isPaused.set(paused)
+        if (!paused) {
+            lastScannedTimestamp = System.currentTimeMillis()
+        }
     }
 
     @ExperimentalGetImage
     override fun analyze(imageProxy: ImageProxy) {
         val currentTime = System.currentTimeMillis()
 
-        // Skip frame if already processing or in cooldown period for identical text
-        if (isAnalyzing.get()) {
+        // Skip frame if paused or already processing
+        if (isPaused.get() || isAnalyzing.get()) {
             imageProxy.close()
             return
         }

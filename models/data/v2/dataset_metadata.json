@@ -1,0 +1,66 @@
+{
+  "version": "v2",
+  "random_seed": 42,
+  "split_ratio": "70/15/15",
+  "sms": {
+    "source_file": "Combined-Labeled-Dataset.csv",
+    "sha256": "4dc1311965acb80b9b97536db5afdbe874a1e2175143d3b145e32caf9bb81a8d",
+    "total_processed_rows": 74086,
+    "train_rows": 51860,
+    "val_rows": 11113,
+    "test_rows": 11113,
+    "class_counts": {
+      "benign_0": 51472,
+      "smishing_1": 22614
+    }
+  },
+  "url": {
+    "source_file": "umar/dataset.csv",
+    "sha256": "cb12499c5b49f51a8ea070f22f7664785059004db3d6cdd048220f92cdaf28fe",
+    "total_processed_rows": 450176,
+    "train_rows": 315123,
+    "val_rows": 67526,
+    "test_rows": 67527,
+    "class_counts": {
+      "legitimate_0": 345738,
+      "phishing_1": 104438
+    },
+    "train_class_counts": {
+      "legitimate_0": 242016,
+      "phishing_1": 73107
+    },
+    "val_class_counts": {
+      "legitimate_0": 51861,
+      "phishing_1": 15665
+    },
+    "test_class_counts": {
+      "legitimate_0": 51861,
+      "phishing_1": 15666
+    },
+    "leakage_verified": true,
+    "feature_count": 16,
+    "feature_names": [
+      "url_length",
+      "domain_length",
+      "subdomain_count",
+      "path_length",
+      "query_length",
+      "has_ip",
+      "has_at_symbol",
+      "has_double_slash_redirect",
+      "has_dash_in_domain",
+      "suspicious_tld",
+      "digit_count",
+      "special_char_count",
+      "entropy",
+      "https_enabled",
+      "port_specified",
+      "encoding_present"
+    ]
+  },
+  "anomaly": {
+    "source_file": "Phishing URLs.csv",
+    "sha256": "00762308b0347c899769487dac35ee0ab0664fd6f2259588ff7151faab776041",
+    "anomaly_test_rows": 10000
+  }
+}

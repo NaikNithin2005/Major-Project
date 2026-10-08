@@ -3,17 +3,17 @@ version: '3.8'
 services:
   postgres:
     image: postgres:15-alpine
-    container_name: quishing_smishing_db
+    container_name: squish_shield_db
     environment:
-      POSTGRES_DB: quishing_smishing_db
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: postgres_dev_password
+      POSTGRES_DB: squish_shield_db
+      POSTGRES_USER: squish_admin
+      POSTGRES_PASSWORD: squish_dev_password
     ports:
       - "5432:5432"
     volumes:
       - pgdata:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      test: ["CMD-SHELL", "pg_isready -U squish_admin -d squish_shield_db"]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -22,31 +22,20 @@ services:
     build:
       context: ./backend
       dockerfile: Dockerfile
-    container_name: quishing_smishing_backend
+    container_name: squish_shield_backend
     environment:
       - ENVIRONMENT=development
-      - POSTGRES_HOST=postgres
-      - POSTGRES_PORT=5432
-      - POSTGRES_DB=quishing_smishing_db
-      - POSTGRES_USER=postgres
-      - POSTGRES_PASSWORD=postgres_dev_password
+      - DATABASE_URL=postgresql://squish_admin:squish_dev_password@postgres:5432/squish_shield_db
+      - API_PREFIX=/api
+      - CORS_ORIGINS=http://localhost:3000,http://127.0.0.1:3000
+      - RATE_LIMIT_PER_MINUTE=120
+      - DB_POOL_SIZE=10
+      - DB_MAX_OVERFLOW=20
     ports:
       - "8000:8000"
     depends_on:
       postgres:
         condition: service_healthy
-
-  web:
-    build:
-      context: ./web
-      dockerfile: Dockerfile
-    container_name: quishing_smishing_web
-    environment:
-      - NEXT_PUBLIC_API_BASE_URL=http://localhost:8000/api/v1
-    ports:
-      - "3000:3000"
-    depends_on:
-      - backend
 
 volumes:
   pgdata:

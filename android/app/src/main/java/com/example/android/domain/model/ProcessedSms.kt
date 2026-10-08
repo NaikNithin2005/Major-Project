@@ -8,4 +8,6 @@ data class ProcessedSms(
     val normalizedText: String,
     val tokens: List<String>,
     val evidence: SmsFeatureEvidence
-)
+) {
+    val cleanedBody: String get() = normalizedText
+}

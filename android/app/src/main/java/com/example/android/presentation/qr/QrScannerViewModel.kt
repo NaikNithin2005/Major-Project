@@ -4,12 +4,11 @@ import android.content.Context
 import android.net.Uri
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.example.android.data.parser.UrlExtractor
-import com.example.android.data.parser.UrlFeatureExtractor
 import com.example.android.data.scanner.GalleryQrScanner
 import com.example.android.domain.model.QrAnalysisResult
 import com.example.android.domain.model.UrlFeatures
 import com.example.android.domain.repository.QrAnalysisRepository
+import com.example.android.domain.riskengine.RiskAssessment
 import com.example.android.domain.usecase.CheckCameraPermissionUseCase
 import com.example.android.domain.usecase.ProcessQrCodeUseCase
 import kotlinx.coroutines.Dispatchers
@@ -46,6 +45,9 @@ class QrScannerViewModel(
 
     private val _extractedFeatures = MutableStateFlow<UrlFeatures?>(null)
     val extractedFeatures: StateFlow<UrlFeatures?> = _extractedFeatures.asStateFlow()
+
+    private val _riskAssessment = MutableStateFlow<RiskAssessment?>(null)
+    val riskAssessment: StateFlow<RiskAssessment?> = _riskAssessment.asStateFlow()
 
     private val _errorMessage = MutableStateFlow<String?>(null)
     val errorMessage: StateFlow<String?> = _errorMessage.asStateFlow()
@@ -93,11 +95,8 @@ class QrScannerViewModel(
             result.fold(
                 onSuccess = { analysisResult ->
                     _scanResult.value = analysisResult
-                    if (analysisResult.extractedUrl.isNotBlank()) {
-                        _extractedFeatures.value = UrlFeatureExtractor.extractFeatures(analysisResult.extractedUrl)
-                    } else {
-                        _extractedFeatures.value = null
-                    }
+                    _extractedFeatures.value = analysisResult.urlFeatures
+                    _riskAssessment.value = analysisResult.assessment
                 },
                 onFailure = { throwable ->
                     _errorMessage.value = throwable.message ?: "Failed to decode QR code"
@@ -128,6 +127,7 @@ class QrScannerViewModel(
     fun dismissResult() {
         _scanResult.value = null
         _extractedFeatures.value = null
+        _riskAssessment.value = null
     }
 
     fun clearError() {

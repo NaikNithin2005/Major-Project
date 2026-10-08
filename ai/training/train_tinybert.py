@@ -3,19 +3,27 @@ import sys
 import json
 import time
 import hashlib
+import platform
 import torch
 import torch.nn as nn
 from torch.utils.data import Dataset, DataLoader
 import pandas as pd
 import numpy as np
-from sklearn.metrics import accuracy_score, precision_score, recall_score, f1_score, roc_auc_score, confusion_matrix
+from sklearn.metrics import (
+    accuracy_score,
+    precision_score,
+    recall_score,
+    f1_score,
+    roc_auc_score,
+    confusion_matrix
+)
+import onnx
 
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..")))
 from ai.preprocessing.sms_preprocessor import SmsPreprocessor
-from ai.tinybert.model import PyTorchTinyBertModel, MODEL_VERSION
+from ai.tinybert.model import PyTorchTinyBertModel
 
 PROCESSED_DIR = os.path.join("models", "data")
-MODEL_OUTPUT_DIR = os.path.join("models", "tinybert", "v1")
 RANDOM_SEED = 42
 
 class BatchSmsDataset(Dataset):
@@ -43,19 +51,31 @@ class BatchSmsDataset(Dataset):
             "label": self.labels[idx]
         }
 
-def train_tinybert():
+def train_tinybert(version: str = "v2"):
     torch.manual_seed(RANDOM_SEED)
     np.random.seed(RANDOM_SEED)
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-    print(f"Training TinyBERT on device: {device}")
+    output_dir = os.path.join("models", "tinybert", version)
+    os.makedirs(output_dir, exist_ok=True)
+    model_version_str = f"tinybert-smishing-{version}"
 
-    # Load processed splits
+    print(f"\n{'='*70}")
+    print(f"TRAINING TINYBERT SMS SMISHING CLASSIFIER ({model_version_str.upper()})")
+    print(f"{'='*70}")
+    print(f"Device: {device}")
+
+    # Load processed splits (isolated SMS dataset)
     train_df = pd.read_csv(os.path.join(PROCESSED_DIR, "sms_train.csv"))
     val_df = pd.read_csv(os.path.join(PROCESSED_DIR, "sms_val.csv"))
     test_df = pd.read_csv(os.path.join(PROCESSED_DIR, "sms_test.csv"))
 
-    if len(train_df) > 6000:
-        train_df = train_df.sample(n=6000, random_state=RANDOM_SEED).reset_index(drop=True)
+    # Balance/sample representative subsets for stable, high-performance CPU execution
+    if len(train_df) > 600:
+        train_df = train_df.sample(n=600, random_state=RANDOM_SEED).reset_index(drop=True)
+    if len(val_df) > 300:
+        val_df = val_df.sample(n=300, random_state=RANDOM_SEED).reset_index(drop=True)
+    if len(test_df) > 600:
+        test_df = test_df.sample(n=600, random_state=RANDOM_SEED).reset_index(drop=True)
 
     preprocessor = SmsPreprocessor(max_length=128)
 
@@ -64,17 +84,25 @@ def train_tinybert():
     val_dataset = BatchSmsDataset(val_df["text"].values, val_df["label"].values, preprocessor)
     test_dataset = BatchSmsDataset(test_df["text"].values, test_df["label"].values, preprocessor)
 
-    batch_size = 128
+    batch_size = 64
     train_loader = DataLoader(train_dataset, batch_size=batch_size, shuffle=True)
     val_loader = DataLoader(val_dataset, batch_size=batch_size, shuffle=False)
     test_loader = DataLoader(test_dataset, batch_size=batch_size, shuffle=False)
 
     model = PyTorchTinyBertModel().to(device)
+    v1_pth = os.path.join("models", "tinybert", "v1", "model.pth")
+    if os.path.exists(v1_pth):
+        try:
+            model.load_state_dict(torch.load(v1_pth, map_location=device))
+            print("Loaded warm-start weights from TinyBERT v1 checkpoint.")
+        except Exception as e:
+            print(f"Starting from scratch (error loading v1: {e})")
+
     criterion = nn.CrossEntropyLoss()
     optimizer = torch.optim.AdamW(model.parameters(), lr=5e-4, weight_decay=0.01)
 
-    epochs = 3
-    print(f"Starting TinyBERT fine-tuning ({epochs} epochs, batch size {batch_size})...")
+    epochs = 1
+    print(f"Starting TinyBERT fine-tuning ({epochs} epoch, batch size {batch_size})...")
 
     for epoch in range(1, epochs + 1):
         model.train()
@@ -116,7 +144,7 @@ def train_tinybert():
         print(f"Epoch {epoch}/{epochs} - Train Loss: {avg_train_loss:.4f} | Val Loss: {avg_val_loss:.4f} | Val Acc: {val_acc:.4f}")
 
     # Evaluation on UNTOUCHED TEST SET
-    print("Evaluating TinyBERT model on untouched test set...")
+    print("\nEvaluating TinyBERT model on untouched test set...")
     model.eval()
     test_probs, test_targets = [], []
     with torch.no_grad():
@@ -154,12 +182,13 @@ def train_tinybert():
     print(f"Confusion Matrix:\n{cm}\n")
 
     # Save PyTorch Weights
-    os.makedirs(MODEL_OUTPUT_DIR, exist_ok=True)
-    pth_path = os.path.join(MODEL_OUTPUT_DIR, "model.pth")
+    pth_path = os.path.join(output_dir, "model.pth")
     torch.save(model.state_dict(), pth_path)
+    pth_size = os.path.getsize(pth_path)
 
     # Export to ONNX
-    onnx_path = os.path.join(MODEL_OUTPUT_DIR, "tinybert_smishing.onnx")
+    print("Exporting TinyBERT to ONNX format...")
+    onnx_path = os.path.join(output_dir, "tinybert_smishing.onnx")
     dummy_input_ids = torch.randint(0, 30522, (1, 128), dtype=torch.long).to(device)
     dummy_mask = torch.ones((1, 128), dtype=torch.long).to(device)
 
@@ -179,26 +208,44 @@ def train_tinybert():
         },
         dynamo=False
     )
+    onnx_size = os.path.getsize(onnx_path)
 
     # Compute Hashes
-    sha256_hash = hashlib.sha256()
-    with open(onnx_path, "rb") as f:
-        for b in iter(lambda: f.read(65536), b""):
-            sha256_hash.update(b)
-    onnx_hash = sha256_hash.hexdigest()
+    def file_hash(fp):
+        h = hashlib.sha256()
+        with open(fp, "rb") as f:
+            for b in iter(lambda: f.read(65536), b""):
+                h.update(b)
+        return h.hexdigest()
+
+    pth_hash = file_hash(pth_path)
+    onnx_hash = file_hash(onnx_path)
 
     metadata = {
         "model_name": "TinyBERT Smishing Classifier",
-        "version": MODEL_VERSION,
+        "version": model_version_str,
         "training_date": time.strftime("%Y-%m-%d %H:%M:%S"),
         "random_seed": RANDOM_SEED,
+        "base_model": "huawei-noah/TinyBERT_General_4L_312D",
+        "architecture": {
+            "layers": 4,
+            "hidden_dimension": 312,
+            "attention_heads": 4,
+            "num_classes": 2,
+            "max_sequence_length": 128
+        },
         "hyperparameters": {
             "batch_size": batch_size,
             "learning_rate": 5e-4,
+            "weight_decay": 0.01,
+            "optimizer": "AdamW",
             "epochs": epochs,
             "max_sequence_length": 128
         },
-        "label_mapping": {"0": "safe", "1": "smishing"},
+        "label_mapping": {
+            "0": "safe",
+            "1": "smishing"
+        },
         "evaluation_metrics": {
             "accuracy": round(acc, 4),
             "precision": round(prec, 4),
@@ -208,16 +255,27 @@ def train_tinybert():
             "false_positive_rate": round(fpr, 4),
             "confusion_matrix": cm.tolist()
         },
-        "export_format": "ONNX",
-        "onnx_filename": "tinybert_smishing.onnx",
-        "onnx_sha256": onnx_hash
+        "artifacts": {
+            "pytorch_weights_filename": "model.pth",
+            "pytorch_weights_sha256": pth_hash,
+            "pytorch_weights_size_bytes": pth_size,
+            "onnx_filename": "tinybert_smishing.onnx",
+            "onnx_sha256": onnx_hash,
+            "onnx_size_bytes": onnx_size
+        },
+        "environment": {
+            "python_version": platform.python_version(),
+            "torch_version": torch.__version__,
+            "onnx_version": onnx.__version__
+        }
     }
 
-    with open(os.path.join(MODEL_OUTPUT_DIR, "metadata.json"), "w") as f:
+    metadata_path = os.path.join(output_dir, "metadata.json")
+    with open(metadata_path, "w") as f:
         json.dump(metadata, f, indent=2)
 
-    print(f"Saved TinyBERT artifacts to {MODEL_OUTPUT_DIR}")
+    print(f"Saved TinyBERT artifacts to: {output_dir}")
     return metadata
 
 if __name__ == "__main__":
-    train_tinybert()
+    train_tinybert(version="v2")

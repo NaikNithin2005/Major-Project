@@ -95,28 +95,28 @@ def verify_isolation_forest_onnx(onnx_path: str, joblib_path: str, sample_url: s
     matches = bool(sk_pred == onnx_label)
     return matches, {"sk_pred": sk_pred, "onnx_label": onnx_label}
 
-def verify_all_onnx_exports():
+def verify_all_onnx_exports(version: str = "v1"):
     results = {}
 
     # 1. TinyBERT
-    tb_onnx = os.path.join("models", "tinybert", "v1", "tinybert_smishing.onnx")
-    tb_pth = os.path.join("models", "tinybert", "v1", "model.pth")
+    tb_onnx = os.path.join("models", "tinybert", version, "tinybert_smishing.onnx")
+    tb_pth = os.path.join("models", "tinybert", version, "model.pth")
     tb_match, tb_info = verify_tinybert_onnx(tb_onnx, tb_pth)
     results["tinybert"] = {"verified": tb_match, "info": tb_info}
 
     # 2. XGBoost
-    xgb_onnx = os.path.join("models", "xgboost", "v1", "xgboost_url.onnx")
-    xgb_json = os.path.join("models", "xgboost", "v1", "model.json")
+    xgb_onnx = os.path.join("models", "xgboost", version, "xgboost_url.onnx")
+    xgb_json = os.path.join("models", "xgboost", version, "model.json")
     xgb_match, xgb_info = verify_xgboost_onnx(xgb_onnx, xgb_json)
     results["xgboost"] = {"verified": xgb_match, "info": xgb_info}
 
     # 3. Isolation Forest
-    iso_onnx = os.path.join("models", "isolation_forest", "v1", "isolation_forest.onnx")
-    iso_joblib = os.path.join("models", "isolation_forest", "v1", "model.joblib")
+    iso_onnx = os.path.join("models", "isolation_forest", version, "isolation_forest.onnx")
+    iso_joblib = os.path.join("models", "isolation_forest", version, "model.joblib")
     iso_match, iso_info = verify_isolation_forest_onnx(iso_onnx, iso_joblib)
     results["isolation_forest"] = {"verified": iso_match, "info": iso_info}
 
-    print("\n--- ONNX Verification Summary ---")
+    print(f"\n--- ONNX Verification Summary ({version.upper()}) ---")
     for model_name, res in results.items():
         status = "PASSED" if res["verified"] else "FAILED"
         print(f"[{status}] {model_name}: {res['info']}")
@@ -124,4 +124,5 @@ def verify_all_onnx_exports():
     return results
 
 if __name__ == "__main__":
-    verify_all_onnx_exports()
+    v = sys.argv[1] if len(sys.argv) > 1 else "v2"
+    verify_all_onnx_exports(v)

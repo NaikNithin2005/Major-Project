@@ -4,5 +4,6 @@ data class User(
     val uid: String,
     val email: String,
     val displayName: String,
-    val isGuest: Boolean = false
+    val isGuest: Boolean = false,
+    val role: String = "USER"
 )

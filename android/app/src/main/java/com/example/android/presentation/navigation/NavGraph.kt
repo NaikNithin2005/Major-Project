@@ -167,7 +167,8 @@ fun AegisNavGraph(
                         container.smsAnalysisRepository,
                         container.qrAnalysisRepository,
                         container.addThreatRecordUseCase,
-                        container.deleteThreatRecordUseCase
+                        container.deleteThreatRecordUseCase,
+                        container.syncRepository
                     )
                 }
             )
@@ -179,6 +180,7 @@ fun AegisNavGraph(
                 currentUser = currentUser,
                 uiState = uiState,
                 onDeleteThreat = viewModel::deleteThreat,
+                onTriggerManualSync = { viewModel.triggerManualSync(context) },
                 onNavigateToSettings = {
                     navController.navigate("settings")
                 },
@@ -206,6 +208,7 @@ fun AegisNavGraph(
                         container.getSettingsUseCase,
                         container.updateSettingUseCase,
                         container.smsAnalysisRepository,
+                        container.threatHistoryRepository,
                         container.processIncomingSmsUseCase
                     )
                 }

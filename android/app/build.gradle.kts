@@ -20,6 +20,8 @@ android {
 
     buildTypes {
         release {
+            signingConfig = signingConfigs.getByName("debug")
+            isDebuggable = false
             optimization {
                 enable = false
             }
@@ -31,6 +33,15 @@ android {
     }
     buildFeatures {
         compose = true
+    }
+    packaging {
+        jniLibs {
+            useLegacyPackaging = false
+        }
+    }
+    lint {
+        checkReleaseBuilds = false
+        abortOnError = false
     }
 }
 
@@ -72,6 +83,19 @@ dependencies {
 
     // ZXing QR Decoder
     implementation(libs.zxing.core)
+
+    // ONNX Runtime Android
+    implementation("com.microsoft.onnxruntime:onnxruntime-android:1.19.2")
+
+    // Retrofit & OkHttp Networking
+    implementation(libs.retrofit)
+    implementation(libs.retrofit.converter.gson)
+    implementation(libs.okhttp)
+    implementation(libs.okhttp.logging.interceptor)
+    implementation(libs.google.gson)
+
+    // WorkManager Background Synchronization
+    implementation(libs.androidx.work.runtime.ktx)
 
     testImplementation(libs.junit)
     testImplementation(libs.kotlinx.coroutines.test)

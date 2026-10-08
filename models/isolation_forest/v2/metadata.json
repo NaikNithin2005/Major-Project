@@ -1,0 +1,89 @@
+{
+  "model_name": "Isolation Forest Zero-Day Anomaly Detector",
+  "version": "isolation-forest-v2",
+  "training_date": "2026-10-07 16:21:49",
+  "random_seed": 42,
+  "hyperparameters": {
+    "n_estimators": 100,
+    "max_samples": "auto",
+    "contamination": 0.05,
+    "random_state": 42,
+    "n_jobs": -1
+  },
+  "feature_count": 16,
+  "feature_names": [
+    "url_length",
+    "domain_length",
+    "subdomain_count",
+    "path_length",
+    "query_length",
+    "has_ip",
+    "has_at_symbol",
+    "has_double_slash_redirect",
+    "has_dash_in_domain",
+    "suspicious_tld",
+    "digit_count",
+    "special_char_count",
+    "entropy",
+    "https_enabled",
+    "port_specified",
+    "encoding_present"
+  ],
+  "feature_order": [
+    "url_length",
+    "domain_length",
+    "subdomain_count",
+    "path_length",
+    "query_length",
+    "has_ip",
+    "has_at_symbol",
+    "has_double_slash_redirect",
+    "has_dash_in_domain",
+    "suspicious_tld",
+    "digit_count",
+    "special_char_count",
+    "entropy",
+    "https_enabled",
+    "port_specified",
+    "encoding_present"
+  ],
+  "label_mapping": {
+    "1": "inlier_benign",
+    "-1": "outlier_anomaly"
+  },
+  "anomaly_score_stats": {
+    "benign_mean_score": -0.4127,
+    "anomaly_mean_score": -0.4861
+  },
+  "evaluation_metrics": {
+    "accuracy": 0.835,
+    "precision": 0.4789,
+    "detection_rate_recall": 0.235,
+    "f1": 0.3153,
+    "roc_auc": 0.7662,
+    "false_positive_rate": 0.0493,
+    "confusion_matrix": [
+      [
+        49304,
+        2557
+      ],
+      [
+        7650,
+        2350
+      ]
+    ]
+  },
+  "artifacts": {
+    "native_model_filename": "model.joblib",
+    "native_model_sha256": "9e6c2aab13cd6f66c41ab491d4cbc3ac3dc515baa700c06b6516e3f97a2a0f30",
+    "native_model_size_bytes": 916409,
+    "onnx_filename": "isolation_forest.onnx",
+    "onnx_sha256": "45603f323f67fa0b2397455dea42e92db85de6adf25e35bdcba80c48bc4c964e",
+    "onnx_size_bytes": 683867
+  },
+  "environment": {
+    "python_version": "3.13.5",
+    "onnx_version": "1.22.0",
+    "skl2onnx_version": "1.20.0"
+  }
+}

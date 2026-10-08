@@ -6,6 +6,7 @@ import xgboost as xgb
 from ai.feature_engineering.url_feature_extractor import extract_url_features, FEATURE_NAMES
 
 MODEL_VERSION = "xgboost-url-v1"
+MODEL_VERSION_V2 = "xgboost-url-v2"
 
 @dataclass
 class XgboostResult:
@@ -19,6 +20,7 @@ class XgboostUrlClassifier:
     def __init__(self, model_path: str = None):
         self.model = None
         self.feature_names = FEATURE_NAMES
+        self.model_version = MODEL_VERSION
         if model_path:
             self.load_model(model_path)
 
@@ -27,6 +29,10 @@ class XgboostUrlClassifier:
             raise FileNotFoundError(f"XGBoost model file not found: {model_path}")
         self.model = xgb.XGBClassifier()
         self.model.load_model(model_path)
+        if "v2" in model_path:
+            self.model_version = MODEL_VERSION_V2
+        else:
+            self.model_version = MODEL_VERSION
 
     def classify(self, url: str) -> XgboostResult:
         if self.model is None:
@@ -41,7 +47,7 @@ class XgboostUrlClassifier:
         confidence = float(prob_phishing if prob_phishing >= 0.5 else 1.0 - prob_phishing)
 
         return XgboostResult(
-            model_version=MODEL_VERSION,
+            model_version=self.model_version,
             label=label,
             probability=round(prob_phishing, 4),
             confidence=round(confidence, 4),

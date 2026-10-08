@@ -33,33 +33,73 @@ object ZxingQrDecoder {
             // Step 1: Rotate and compact Y plane byte buffer according to sensor rotation & rowStride
             val (rotatedData, rotatedWidth, rotatedHeight) = rotateAndCompactYuv(data, width, height, rowStride, rotation)
 
-            val source = PlanarYUVLuminanceSource(
-                rotatedData, rotatedWidth, rotatedHeight, 0, 0, rotatedWidth, rotatedHeight, false
-            )
-            val binarizer = HybridBinarizer(source)
-            val binaryBitmap = BinaryBitmap(binarizer)
-
             val hints = mapOf<DecodeHintType, Any>(
                 DecodeHintType.POSSIBLE_FORMATS to listOf(BarcodeFormat.QR_CODE),
                 DecodeHintType.TRY_HARDER to true,
                 DecodeHintType.CHARACTER_SET to "UTF-8"
             )
 
-            // Step 2: Decode using fresh reader instance per frame
-            val reader = MultiFormatReader().apply { setHints(hints) }
-            try {
-                val result = reader.decodeWithState(binaryBitmap)
-                result?.text
-            } catch (e: NotFoundException) {
-                // Inverted binarizer fallback for dark mode / inverted QR codes
-                val invertedSource = source.invert()
-                val invertedBinaryBitmap = BinaryBitmap(HybridBinarizer(invertedSource))
-                val invertedResult = MultiFormatReader().apply { setHints(hints) }.decodeWithState(invertedBinaryBitmap)
-                invertedResult?.text
+            // Step 2: Try Center Region-of-Interest (ROI) first (center 70% where viewfinder is aligned)
+            val cropWidth = (rotatedWidth * 0.70f).toInt()
+            val cropHeight = (rotatedHeight * 0.70f).toInt()
+            val cropLeft = (rotatedWidth - cropWidth) / 2
+            val cropTop = (rotatedHeight - cropHeight) / 2
+
+            val centerSource = PlanarYUVLuminanceSource(
+                rotatedData, rotatedWidth, rotatedHeight, cropLeft, cropTop, cropWidth, cropHeight, false
+            )
+            val centerResult = decodeLuminanceSource(centerSource, hints)
+            if (!centerResult.isNullOrBlank()) {
+                return centerResult
             }
+
+            // Step 3: Fall back to full frame if center ROI did not decode
+            val fullSource = PlanarYUVLuminanceSource(
+                rotatedData, rotatedWidth, rotatedHeight, 0, 0, rotatedWidth, rotatedHeight, false
+            )
+            decodeLuminanceSource(fullSource, hints)
         } catch (e: Exception) {
             null
         }
+    }
+
+    private fun decodeLuminanceSource(source: LuminanceSource, hints: Map<DecodeHintType, Any>): String? {
+        val reader = MultiFormatReader().apply { setHints(hints) }
+
+        // Strategy 1: Standard HybridBinarizer
+        try {
+            val result = reader.decodeWithState(BinaryBitmap(HybridBinarizer(source)))
+            if (result?.text?.isNotBlank() == true) return result.text
+        } catch (_: NotFoundException) {}
+        catch (_: Exception) {}
+
+        // Strategy 2: GlobalHistogramBinarizer (superior for low contrast and moderate blur)
+        try {
+            reader.reset()
+            val result = reader.decodeWithState(BinaryBitmap(com.google.zxing.common.GlobalHistogramBinarizer(source)))
+            if (result?.text?.isNotBlank() == true) return result.text
+        } catch (_: NotFoundException) {}
+        catch (_: Exception) {}
+
+        // Strategy 3: Inverted HybridBinarizer (for dark mode / inverted QR codes)
+        try {
+            reader.reset()
+            val invertedSource = source.invert()
+            val result = reader.decodeWithState(BinaryBitmap(HybridBinarizer(invertedSource)))
+            if (result?.text?.isNotBlank() == true) return result.text
+        } catch (_: NotFoundException) {}
+        catch (_: Exception) {}
+
+        // Strategy 4: Inverted GlobalHistogramBinarizer
+        try {
+            reader.reset()
+            val invertedSource = source.invert()
+            val result = reader.decodeWithState(BinaryBitmap(com.google.zxing.common.GlobalHistogramBinarizer(invertedSource)))
+            if (result?.text?.isNotBlank() == true) return result.text
+        } catch (_: NotFoundException) {}
+        catch (_: Exception) {}
+
+        return null
     }
 
     /**
@@ -74,26 +114,26 @@ object ZxingQrDecoder {
             bitmap.getPixels(intArray, 0, width, 0, 0, width, height)
 
             val source = RGBLuminanceSource(width, height, intArray)
-            val binarizer = HybridBinarizer(source)
-            val binaryBitmap = BinaryBitmap(binarizer)
+            val hints = mapOf<DecodeHintType, Any>(
+                DecodeHintType.POSSIBLE_FORMATS to listOf(BarcodeFormat.QR_CODE),
+                DecodeHintType.TRY_HARDER to true,
+                DecodeHintType.CHARACTER_SET to "UTF-8"
+            )
 
-            // Try standard QR reader first
+            val result = decodeLuminanceSource(source, hints)
+            if (!result.isNullOrBlank()) {
+                return result
+            }
+
             try {
-                val result = QRCodeReader().decode(binaryBitmap)
-                return result.text
-            } catch (e: NotFoundException) {
-                // Try multi-reader if single reader returns NotFoundException
                 val multiReader = QRCodeMultiReader()
-                val multiResults = multiReader.decodeMultiple(binaryBitmap)
+                val multiResults = multiReader.decodeMultiple(BinaryBitmap(HybridBinarizer(source)))
                 if (multiResults != null && multiResults.isNotEmpty()) {
                     return multiResults[0].text
                 }
-                // Try inverted binarizer fallback
-                val invertedSource = source.invert()
-                val invertedBinaryBitmap = BinaryBitmap(HybridBinarizer(invertedSource))
-                val invertedResult = QRCodeReader().decode(invertedBinaryBitmap)
-                invertedResult?.text
-            }
+            } catch (_: Exception) {}
+
+            null
         } catch (e: Exception) {
             null
         }

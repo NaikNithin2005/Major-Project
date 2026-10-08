@@ -15,9 +15,10 @@ import com.example.android.data.local.entity.*;
         QRAnalysisEntity.class,
         FeedbackEntity.class,
         SettingsEntity.class,
-        ModelVersionEntity.class
+        ModelVersionEntity.class,
+        SyncQueueEntity.class
     },
-    version = 1,
+    version = 2,
     exportSchema = false
 )
 public abstract class AegisDatabase extends RoomDatabase {
@@ -29,6 +30,7 @@ public abstract class AegisDatabase extends RoomDatabase {
     public abstract FeedbackDao feedbackDao();
     public abstract SettingsDao settingsDao();
     public abstract ModelVersionDao modelVersionDao();
+    public abstract SyncQueueDao syncQueueDao();
 
     private static volatile AegisDatabase INSTANCE;
 

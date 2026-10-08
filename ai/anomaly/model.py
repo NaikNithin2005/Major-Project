@@ -6,6 +6,7 @@ import numpy as np
 from ai.feature_engineering.url_feature_extractor import extract_url_features, FEATURE_NAMES
 
 MODEL_VERSION = "isolation-forest-v1"
+MODEL_VERSION_V2 = "isolation-forest-v2"
 
 @dataclass
 class IsolationForestResult:
@@ -19,6 +20,7 @@ class IsolationForestDetector:
     def __init__(self, model_path: str = None):
         self.model = None
         self.feature_names = FEATURE_NAMES
+        self.model_version = MODEL_VERSION
         if model_path:
             self.load_model(model_path)
 
@@ -26,6 +28,10 @@ class IsolationForestDetector:
         if not os.path.exists(model_path):
             raise FileNotFoundError(f"Isolation Forest model file not found: {model_path}")
         self.model = joblib.load(model_path)
+        if "v2" in model_path:
+            self.model_version = MODEL_VERSION_V2
+        else:
+            self.model_version = MODEL_VERSION
 
     def predict(self, url: str) -> IsolationForestResult:
         if self.model is None:
@@ -41,7 +47,7 @@ class IsolationForestDetector:
         is_anomalous = bool(self.model.predict(feat_vector)[0] == -1)
 
         return IsolationForestResult(
-            model_version=MODEL_VERSION,
+            model_version=self.model_version,
             anomaly_score=round(normalized_anomaly_score, 4),
             is_anomalous=is_anomalous,
             confidence=round(normalized_anomaly_score if is_anomalous else 1.0 - normalized_anomaly_score, 4),

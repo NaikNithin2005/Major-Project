@@ -100,4 +100,16 @@ class FirebaseAuthDataSource @Inject constructor() {
         } catch (ignored: Exception) {
         }
     }
+
+    suspend fun getIdToken(forceRefresh: Boolean = false): String? {
+        val fbUser = auth?.currentUser ?: return null
+        return try {
+            withTimeoutOrNull(8000L) {
+                val result = fbUser.getIdToken(forceRefresh).await()
+                result.token
+            }
+        } catch (e: Exception) {
+            null
+        }
+    }
 }
