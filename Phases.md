@@ -973,26 +973,32 @@ Implement charts for:
 
 ## Deliverables
 
-``` text
-✓ Admin login
-✓ Protected routes
-✓ Dashboard
-✓ Threat monitoring table
-✓ Threat detail page
-✓ Analytics
-✓ Filtering
-✓ Search
-✓ Admin actions
-✓ Audit log view
+✓ Admin login & session persistence
+✓ Dedicated Admin Portal (/admin/*) with strict RBAC
+✓ Multi-user registration & user login (/register, /login)
+✓ User dashboard (/) with protection score gauge
+✓ User threat history (/threats) with personal data isolation
+✓ User threat details (/threats/:id) with explainable AI breakdown
+✓ User defensive action tracking (BLOCK, REPORT, IGNORE, MARK_SAFE, DELETE)
+✓ User profile (/profile) with Firebase UID ownership key
+✓ Threat monitoring table & cross-tenant triage
+✓ Analytics & ingestion trends
+✓ AI model registry & user feedback
+✓ Immutable audit logs for user & admin actions
+✓ Firestore security rules (firestore.rules) enforcing UID ownership
+✓ Complete cybersecurity SaaS UI/UX redesign (no generic AI tropes)
 ```
 
 ## Acceptance Criteria
 
--   Only authorized admins can access the dashboard.
--   Dashboard uses backend APIs.
--   Dashboard does not directly access PostgreSQL.
--   Threat data is displayed correctly.
--   Admin actions generate audit records.
+-   Only authorized admins can access the admin dashboard.
+-   Every registered user has an isolated data workspace keyed to Firebase UID (`users/{uid}`).
+-   User A cannot view, modify, or delete User B's threats (returns 404).
+-   User actions (Block, Mark Safe, Delete) persist and synchronize across web and mobile.
+-   Dashboard uses backend APIs; no client-side direct database access.
+-   Threat data and explainable AI insights (TinyBERT, XGBoost, Isolation Forest) display correctly.
+-   Administrative and user actions generate immutable audit records.
+-   Complete, responsive cybersecurity SaaS UI/UX with loading, empty, and error states.
 
 ------------------------------------------------------------------------
 

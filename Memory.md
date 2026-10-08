@@ -1258,6 +1258,105 @@ Bug Fix / Synchronization Architecture / UI/UX Enhancement
 - `web/src/app/threats/[id]/page.tsx`
 - `Memory.md`
 
+---
+
+## 2026-10-08 — Multi-User Architecture, Data Isolation, User Action Tracking & SaaS UI Redesign
+
+### Type
+Architecture Upgrade / Multi-Tenant Security / Authentication / UI/UX Redesign
+
+### Context & Objective
+Upgraded the platform into a production-grade multi-user cybersecurity application with:
+1. Primary ownership keyed to Firebase UID (`users/{uid}` and `userId: firebaseUser.uid`).
+2. Strict user-specific data isolation enforced across Firestore rules, backend REST API, and database queries.
+3. User registration flow with input validation, duplicate prevention, and profile provisioning.
+4. User threat action tracking (`BLOCK`, `REPORT`, `IGNORE`, `MARK_SAFE`, `RESOLVED`, `FALSE_POSITIVE`, and self-service deletion).
+5. Dedicated, role-enforced Admin authentication (`/admin/login`) with strict RBAC protecting `/admin/*`.
+6. Complete web interface redesign using an intentional, human-designed cybersecurity SaaS aesthetic (dark slate palette, restrained indicators, clear information hierarchy, no generic AI tropes or neon glow).
+
+### Key Architectural Decisions
+
+1. **Firebase UID as Canonical Ownership Key**:
+   - Every authenticated user's data is isolated using their unique Firebase UID (`request.auth.uid`).
+   - Profile documents are stored under `/users/{uid}` with fields: `uid`, `name`, `email`, `phone`, `role`, `accountStatus`, `createdAt`, `updatedAt`, `lastLoginAt`.
+   - Threat records reference `user_id` / `userId`. Cross-user data leaks are prevented by returning HTTP 404 on mismatched tenant queries rather than 403, preventing resource enumeration.
+
+2. **Decoupled User vs Admin Authentication & Routing**:
+   - Resolved prior Phase 9 regression where non-admin users were immediately logged out upon sign-in.
+   - User Portal (`/login`, `/register`, `/`, `/threats`, `/threats/[id]`, `/profile`) uses `UserShell` and allows any active authenticated account.
+   - Admin Portal (`/admin/login`, `/admin`, `/admin/threats`, `/admin/users`, `/admin/models`, `/admin/audit-logs`, `/admin/feedback`, `/admin/analytics`) uses `AdminShell` and strictly enforces server-validated `ADMIN` role. Normal users attempting admin routes are safely redirected to the unauthorized error view or user dashboard.
+
+3. **User Action Tracking**:
+   - Added `user_action` (`BLOCK`, `REPORT`, `IGNORE`, `MARK_SAFE`, `RESOLVED`, `FALSE_POSITIVE`) and `updated_at` to threat models across backend and database.
+   - Actions taken by User A do not affect User B's threats.
+   - Provided endpoints:
+     - `GET /api/v1/detections/stats`: Personal protection score, total scans, threats detected, threats blocked.
+     - `POST /api/v1/detections/{id}/action`: Record user defensive decision with audit logging (`USER_THREAT_ACTION`).
+     - `DELETE /api/v1/detections/{id}`: Self-service deletion with audit logging (`USER_THREAT_DELETED`).
+
+4. **Database & Firestore Security Rules (`firestore.rules`)**:
+   - Production rules created enforcing `isOwner(userId)` (`request.auth.uid == userId`) on `/users/{userId}/**` and `/threats/{threatId}` (`resource.data.userId == request.auth.uid`).
+   - Admin role override (`isAdmin()`) allows authorized security staff to query global triage data while preventing standard tenants from reading peer records.
+
+5. **Safe Schema Evolution**:
+   - Implemented non-destructive schema checks in `backend/app/database/session.py` (`ALTER TABLE users ADD COLUMN phone_number`, `ALTER TABLE threat_events ADD COLUMN user_action`, `ALTER TABLE threat_events ADD COLUMN updated_at`).
+   - Database tables in existing SQLite dev environments and PostgreSQL instances upgrade seamlessly without data loss.
+
+6. **Cybersecurity SaaS UI Redesign**:
+   - Complete redesign of all web screens with unified dark slate typography, crisp border hierarchy, and clear severity indicators (Safe / Suspicious / Malicious).
+   - Removed all generic AI tropes (neon gradient text, excessive emojis, random glowing cards, meaningless cards).
+   - User Dashboard includes 0-100 protection score gauge, quick action buttons, recent threat feed, and instant block/mark-safe triage.
+   - Threat Details view includes interactive explainable AI breakdown (TinyBERT NLP probability, XGBoost URL structural score, Isolation Forest anomaly flag), target URL inspection, and full technical metadata.
+
+### Verification Performed
+- **Multi-Tenant Isolation Script**: Verified User A creates SMS threat -> User A sees threat in history (count 1) and stats -> User A blocks threat (status: BLOCKED) -> User B signs in -> User B history is 0 -> User B GET / User B ACTION / User B DELETE against User A's threat ID all return HTTP 404 -> User A attempting admin endpoint returns HTTP 403 Forbidden -> Admin user returns HTTP 200 with global telemetry.
+- **Backend Test Suite (`pytest backend/tests -v`)**: 60 passed, 6 skipped (100% pass rate in 3.23s).
+- **Next.js Production Build (`npm run build`)**: 21/21 static and dynamic pages generated with 0 TypeScript/lint errors.
+- **Firestore Security Rules**: Created `firestore.rules`, `firestore.indexes.json`, and `firebase.json` at project root.
+
+### Files Changed
+- `backend/app/models/threat_event.py`
+- `backend/app/models/user.py`
+- `backend/app/schemas/user.py`
+- `backend/app/schemas/detection.py`
+- `backend/app/repositories/detection_repo.py`
+- `backend/app/services/detection_service.py`
+- `backend/app/api/v1/detections.py`
+- `backend/app/database/session.py`
+- `backend/tests/test_detections.py`
+- `firestore.rules`
+- `firestore.indexes.json`
+- `firebase.json`
+- `web/src/types/index.ts`
+- `web/src/services/api.ts`
+- `web/src/services/auth.ts`
+- `web/src/context/AuthContext.tsx`
+- `web/src/components/layout/UserShell.tsx`
+- `web/src/components/layout/AdminShell.tsx`
+- `web/src/components/layout/DashboardShell.tsx`
+- `web/src/components/ui/Card.tsx`
+- `web/src/components/ui/Badge.tsx`
+- `web/src/components/ui/EmptyState.tsx`
+- `web/src/components/ui/LoadingState.tsx`
+- `web/src/components/charts/CategoryDoughnut.tsx`
+- `web/src/components/charts/RiskDistributionBar.tsx`
+- `web/src/app/page.tsx`
+- `web/src/app/threats/page.tsx`
+- `web/src/app/threats/[id]/page.tsx`
+- `web/src/app/profile/page.tsx`
+- `web/src/app/login/page.tsx`
+- `web/src/app/register/page.tsx`
+- `web/src/app/admin/login/page.tsx`
+- `web/src/app/admin/page.tsx`
+- `web/src/app/admin/threats/page.tsx`
+- `web/src/app/admin/users/page.tsx`
+- `web/src/app/admin/models/page.tsx`
+- `web/src/app/admin/audit-logs/page.tsx`
+- `web/src/app/admin/feedback/page.tsx`
+- `web/src/app/admin/analytics/page.tsx`
+- `Memory.md`
+
+
 
 
 

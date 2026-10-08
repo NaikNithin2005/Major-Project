@@ -891,41 +891,63 @@ Synchronization must never block local threat detection.
 
 ------------------------------------------------------------------------
 
-# 19. Admin Web Dashboard Flow
+# 19. Web Application Architecture (Multi-User & Admin)
+
+The web tier provides two decoupled environments sharing unified backend services and real-time Firebase Authentication:
 
 ``` text
-Admin Opens Web Dashboard
-          ↓
-Admin Login
-          ↓
-Firebase Authentication
-          ↓
-Verify ADMIN Role
-          ↓
-Dashboard
-          │
-   ┌──────┼────────┬────────────┐
-   ↓      ↓        ↓            ↓
-Overview Threats Analytics    Users
-          │
-          ↓
-   Threat Details
+                         Web Application Entry
+                                   │
+              ┌────────────────────┴────────────────────┐
+              ▼                                         ▼
+      Standard User Portal                    Admin Security Portal
+      (/login, /register)                         (/admin/login)
+              │                                         │
+              ▼                                         ▼
+   Firebase Authentication                   Firebase Authentication
+              │                                         │
+              ▼                                         ▼
+     Token Verification                        Authoritative RBAC
+   (/api/v1/auth/verify)                    (ADMIN Claim Verification)
+              │                                         │
+              ▼                                         ▼
+     User Dashboard (/)                       Admin Dashboard (/admin)
+  ┌───────────┼───────────┐                ┌────────────┼────────────┐
+  ▼           ▼           ▼                ▼            ▼            ▼
+Protection  Threats    Profile         Global       Audit Log   User & Model
+Overview    History    & Sync          Triage       & Drift     Management
 ```
 
-## Dashboard pages
+## User Portal Routes
 
 ``` text
-/admin/login
-/admin/dashboard
-/admin/threats
-/admin/threats/:id
-/admin/analytics
-/admin/users
-/admin/settings
+/login            - User login with email/password, dev bypass, forgot password
+/register         - User account registration with validation and profile creation
+/                 - User dashboard: protection score gauge, personal metrics, quick actions
+/threats          - Personal threat history table with filtering, search, and actions
+/threats/:id      - Deep threat inspection with explainable AI breakdown (TinyBERT/XGBoost)
+/profile          - User profile with Firebase UID ownership key and Android sync status
 ```
 
-The PRD defines a separate administrator dashboard for system-wide
-threat monitoring and analytics. fileciteturn2file5L666-L712
+## Admin Portal Routes
+
+``` text
+/admin/login      - Dedicated admin login enforcing requiredRole: ADMIN
+/admin            - Global overview dashboard with system metrics and ingestion trends
+/admin/threats    - Cross-tenant threat triage and status remediation
+/admin/users      - User directory, role promotion/demotion, and suspension
+/admin/models     - AI model registry and drift monitoring
+/admin/audit-logs - Immutable compliance audit trail
+/admin/feedback   - End-user threat classification feedback review
+/admin/analytics  - Advanced rolling telemetry analytics
+```
+
+## Multi-Tenant Data Isolation Model
+
+1. **UID Ownership**: The primary tenant identifier is the Firebase authenticated UID (`request.auth.uid`), never client-supplied email or arbitrary user IDs.
+2. **Database Isolation**: All user-generated threats are stored with `user_id = current_user.id`. Backend queries enforce `ThreatEvent.user_id == current_user.id`. Cross-user access returns HTTP 404 Not Found to prevent enumeration attacks.
+3. **Firestore Security Rules**: Top-level rules enforce `isOwner(userId)` on `/users/{userId}/**` and `/threats/{threatId}` where `resource.data.userId == request.auth.uid`. Admins obtain global visibility exclusively through server-validated custom claims.
+4. **User Action Isolation**: Defensive actions (`BLOCK`, `REPORT`, `IGNORE`, `MARK_SAFE`, `RESOLVED`, `FALSE_POSITIVE`, `DELETE`) operate strictly on the caller's owned threats and emit audit events (`USER_THREAT_ACTION`, `USER_THREAT_DELETED`).
 
 ------------------------------------------------------------------------
 

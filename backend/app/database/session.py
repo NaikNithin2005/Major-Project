@@ -47,6 +47,19 @@ def ensure_tables():
         from app.database.base import Base
         Base.metadata.create_all(bind=engine)
 
+        # Non-destructive schema updates for existing tables
+        with engine.connect() as conn:
+            for sql in [
+                "ALTER TABLE users ADD COLUMN phone_number VARCHAR(32)",
+                "ALTER TABLE threat_events ADD COLUMN user_action VARCHAR(32)",
+                "ALTER TABLE threat_events ADD COLUMN updated_at TIMESTAMP",
+            ]:
+                try:
+                    conn.execute(text(sql))
+                    conn.commit()
+                except Exception:
+                    pass
+
         if settings.environment == "development":
             from app.database.seed import seed_initial_data
             with SessionLocal() as db:
