@@ -245,8 +245,10 @@ class Phase8SyncTest {
             return items.find { it.clientEventId == clientEventId }
         }
 
-        override suspend fun getPendingItems(now: Long, limit: Int): List<SyncQueueEntity> {
-            return items.filter { it.status == "PENDING" && it.nextAttemptAt <= now }.take(limit)
+        override suspend fun getPendingItems(now: Long, limit: Int, userId: String?): List<SyncQueueEntity> {
+            return items.filter { 
+                it.status == "PENDING" && it.nextAttemptAt <= now && (userId == null || it.userId == null || it.userId == userId)
+            }.take(limit)
         }
 
         override suspend fun markSyncing(id: String, timestamp: Long) {
@@ -287,6 +289,17 @@ class Phase8SyncTest {
 
         override suspend fun getPendingCount(): Int {
             return items.count { it.status == "PENDING" }
+        }
+
+        override suspend fun resetFailedItems(): Int {
+            var count = 0
+            items.forEachIndexed { idx, entity ->
+                if (entity.status == "FAILED") {
+                    items[idx] = entity.copy(status = "PENDING", nextAttemptAt = 0L)
+                    count++
+                }
+            }
+            return count
         }
 
         override suspend fun purgeOldSynced(cutoffTimestamp: Long): Int {

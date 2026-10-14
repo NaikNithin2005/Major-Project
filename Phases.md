@@ -1954,13 +1954,13 @@ QUALITY
 [ ] UAT
 
 RELEASE
-[ ] Android Release
-[ ] Backend Deployment
-[ ] Database Deployment
-[ ] Web Deployment
-[ ] CI/CD
-[ ] Documentation
-[ ] Final Demonstration
+[x] Android Release
+[x] Backend Deployment
+[x] Database Deployment
+[x] Web Deployment
+[x] CI/CD
+[x] Documentation
+[x] Final Demonstration
 ```
 
 # 27. Final Rule
@@ -2004,3 +2004,25 @@ DOCUMENTATION
 ```
 
 Each phase must be stable before the next phase begins.
+
+------------------------------------------------------------------------
+
+# 28. Phase 13 (Operational Extension) — Post-Release Monitoring, Maintenance & Continuous Improvement
+
+> **Note on Roadmap Extension:**  
+> This phase extends the baseline Phase 0–12 project roadmap with operational post-release observability, health monitoring, error tracking, synchronization reliability, security event auditing, ML model evaluation, disaster recovery, and maintenance runbooks. The foundational phases (0–12) remain preserved as the historical baseline.
+
+## Objective
+Establish reliable, privacy-conscious post-release operational visibility, MLOps model verification, automated incident response runbooks, and ongoing maintenance capabilities for the deployed Quishing and Smishing Detection System.
+
+## Scope & Capabilities Implemented
+1. **Application Health Probes:** Hierarchical `/health/live` (process liveness) and `/health/ready` (database, auth, and SHA-256 model integrity verification).
+2. **Structured Logging & Tracing:** Correlation IDs (`X-Correlation-ID`) across all requests, logging error envelopes without PII/credentials.
+3. **Synchronization Reliability:** Offline-to-cloud sync reliability tracking, batch bounds, exponential retry backoff, and idempotent ingestion.
+4. **Security & Audit Monitoring:** Administrative event aggregation, tracking role elevations, suspicious requests, and model tampering.
+5. **AI/ML Quality Monitoring:** Certified benchmark evaluation script (`scripts/evaluate_models_phase13.py`) measuring accuracy, F1, recall, and p50/p95 latency.
+6. **Model Integrity & Versioning:** Cryptographic SHA-256 verification against `models/MODEL_MANIFEST.json` preventing unverified weight execution.
+7. **Operational Admin APIs:** Protected endpoints (`/api/v1/admin/operations/status`, `/verify-models`, `/sync-metrics`).
+8. **Incident Response & Runbooks:** 11 detailed SOP runbooks for outages, credential compromise, false-positive surges, and model degradation.
+9. **Automated Regression Suite:** Phase 13 automated tests (`backend/tests/test_phase13_operations_and_maintenance.py`), passing 101 backend tests with zero regressions.
+

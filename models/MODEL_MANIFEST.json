@@ -1,0 +1,100 @@
+{
+  "manifest_version": "1.0.0",
+  "release_version": "v2",
+  "generated_at": "2026-10-13T14:30:00Z",
+  "models": {
+    "tinybert_sms": {
+      "name": "TinyBERT Smishing Classifier",
+      "version": "v2",
+      "architecture": "TinyBERT (4 layers, 312 hidden size, 12 attention heads)",
+      "task": "SMS text classification (Binary: Safe vs Smishing)",
+      "files": {
+        "onnx": {
+          "path": "models/tinybert/v2/tinybert_smishing.onnx",
+          "sha256": "9e568f120e403d0a2a76e40ecacbdda482f48e4e834c16d994164a5fad0df8a6",
+          "size_bytes": 56504082,
+          "target_runtime": "Android ONNX Runtime / Mobile Inference"
+        },
+        "pytorch": {
+          "path": "models/tinybert/v2/model.pth",
+          "sha256": "4ffdc185d9d8e88f148bf99e32573edf43bd7a69d6ea4d4bd01b701bf8d5b86c",
+          "size_bytes": 56384920,
+          "target_runtime": "PyTorch Python Testing & Validation"
+        },
+        "vocab": {
+          "path": "models/tinybert/v2/vocab.txt",
+          "sha256": "07eced375cec144d27c900241f3e339478dec958f92fddbc551f295c992038a3",
+          "size_bytes": 231508
+        },
+        "metadata": {
+          "path": "models/tinybert/v2/metadata.json",
+          "sha256": "ba55e96cf31aeb7aa0643e27ca4e8572e85658bc96d93c3149585b83509579f2"
+        }
+      },
+      "metrics": {
+        "accuracy": 0.985,
+        "precision": 0.982,
+        "recall": 0.988,
+        "f1_score": 0.985
+      }
+    },
+    "xgboost_url": {
+      "name": "XGBoost URL Quishing Classifier",
+      "version": "v2",
+      "architecture": "Extreme Gradient Boosting Decision Trees",
+      "task": "URL Quishing Detection based on 16 lexical and structural features",
+      "files": {
+        "onnx": {
+          "path": "models/xgboost/v2/xgboost_url.onnx",
+          "sha256": "00759e1be61979991bb220909a72dd481d0d4c1884988a1d6a0edaa267063757",
+          "size_bytes": 757337,
+          "target_runtime": "Android ONNX Runtime / Mobile Inference"
+        },
+        "json": {
+          "path": "models/xgboost/v2/model.json",
+          "sha256": "5768cc3bc2eac1e1b184eb6746ae2ddf05be741a7eb5b8eeef18bd64e581bad0",
+          "size_bytes": 1425064,
+          "target_runtime": "XGBoost Native Python Runtime"
+        },
+        "metadata": {
+          "path": "models/xgboost/v2/metadata.json",
+          "sha256": "2c0d72314ffbf8dfecf72f45c30edb74f6dd345ae31c76d888dc5b4d1b256044"
+        }
+      },
+      "metrics": {
+        "accuracy": 0.976,
+        "precision": 0.973,
+        "recall": 0.979,
+        "f1_score": 0.976
+      }
+    },
+    "isolation_forest_anomaly": {
+      "name": "Isolation Forest Zero-Day Anomaly Detector",
+      "version": "v2",
+      "architecture": "Unsupervised Isolation Forest Ensemble",
+      "task": "Zero-day / anomalous structural pattern detection",
+      "files": {
+        "onnx": {
+          "path": "models/isolation_forest/v2/isolation_forest.onnx",
+          "sha256": "45603f323f67fa0b2397455dea42e92db85de6adf25e35bdcba80c48bc4c964e",
+          "size_bytes": 683867,
+          "target_runtime": "Android ONNX Runtime / Mobile Inference"
+        },
+        "joblib": {
+          "path": "models/isolation_forest/v2/model.joblib",
+          "sha256": "9e6c2aab13cd6f66c41ab491d4cbc3ac3dc515baa700c06b6516e3f97a2a0f30",
+          "size_bytes": 916409,
+          "target_runtime": "Scikit-Learn Python Runtime"
+        },
+        "metadata": {
+          "path": "models/isolation_forest/v2/metadata.json",
+          "sha256": "e64e68b0f9f36993a58c1d95046eb59f4e2da4507ffc11cb82288e30109c51fc"
+        }
+      },
+      "metrics": {
+        "anomaly_detection_rate": 0.942,
+        "false_positive_rate": 0.038
+      }
+    }
+  }
+}

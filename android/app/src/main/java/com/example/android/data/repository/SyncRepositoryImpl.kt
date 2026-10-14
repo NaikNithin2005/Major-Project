@@ -33,13 +33,15 @@ class SyncRepositoryImpl(
 
             // Serialize data-minimized payload (NO raw SMS)
             val payloadJson = gson.toJson(request)
+            val currentUserId = authRepository.getCurrentUser()?.uid
             val entity = SyncQueueEntity(
                 id = UUID.randomUUID().toString(),
                 clientEventId = request.clientEventId,
                 eventType = request.eventType,
                 payloadJson = payloadJson,
                 createdAt = System.currentTimeMillis(),
-                status = SyncQueueEntity.STATUS_PENDING
+                status = SyncQueueEntity.STATUS_PENDING,
+                userId = currentUserId
             )
 
             syncQueueDao.insert(entity)
@@ -61,7 +63,8 @@ class SyncRepositoryImpl(
         } catch (ignored: Exception) {}
 
         val now = System.currentTimeMillis()
-        val pendingItems = syncQueueDao.getPendingItems(now = now, limit = 25)
+        val currentUserId = authRepository.getCurrentUser()?.uid
+        val pendingItems = syncQueueDao.getPendingItems(now = now, limit = 25, userId = currentUserId)
         if (pendingItems.isEmpty()) {
             return@withContext SyncSummary(0, 0, 0, 0)
         }

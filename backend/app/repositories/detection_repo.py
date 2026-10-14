@@ -253,3 +253,33 @@ class DetectionRepository(BaseRepository[ThreatEvent]):
             "recent_sms_count": recent_sms,
         }
 
+    def get_operational_sync_metrics(self) -> Dict[str, Any]:
+        """Fetch system-wide synchronization and telemetry health metrics."""
+        total_events = self.db.scalar(select(func.count()).select_from(ThreatEvent)) or 0
+        sms_events = self.db.scalar(select(func.count()).select_from(ThreatEvent).where(ThreatEvent.event_type == "SMS")) or 0
+        qr_events = self.db.scalar(select(func.count()).select_from(ThreatEvent).where(ThreatEvent.event_type == "QR")) or 0
+        high_risk_events = self.db.scalar(select(func.count()).select_from(ThreatEvent).where(ThreatEvent.threat_category == "HIGH")) or 0
+        blocked_actions = self.db.scalar(select(func.count()).select_from(ThreatEvent).where(ThreatEvent.user_action == "BLOCKED")) or 0
+
+        now = datetime.now(timezone.utc)
+        since_24h = datetime.fromtimestamp(now.timestamp() - 86400, timezone.utc)
+        recent_24h = self.db.scalar(
+            select(func.count()).select_from(ThreatEvent).where(ThreatEvent.created_at >= since_24h)
+        ) or 0
+
+        latest_event = self.db.scalars(
+            select(ThreatEvent).order_by(ThreatEvent.created_at.desc()).limit(1)
+        ).first()
+
+        return {
+            "total_synced_events": total_events,
+            "sms_events": sms_events,
+            "qr_events": qr_events,
+            "high_risk_events": high_risk_events,
+            "blocked_actions": blocked_actions,
+            "events_last_24h": recent_24h,
+            "last_synced_at": latest_event.created_at.isoformat() if latest_event and latest_event.created_at else None,
+            "status": "HEALTHY",
+        }
+
+

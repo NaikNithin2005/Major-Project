@@ -59,3 +59,43 @@ class AuditRepository(BaseRepository[AuditLog]):
             .limit(limit)
         )
         return list(self.db.scalars(query_stmt).all()), total
+
+    def get_security_monitoring_summary(self) -> Dict[str, Any]:
+        """Aggregate security-relevant event counts for operational security monitoring."""
+        total_logs = self.db.scalar(select(func.count()).select_from(AuditLog)) or 0
+        role_updates = self.db.scalar(
+            select(func.count()).select_from(AuditLog).where(AuditLog.action == "USER_ROLE_UPDATED")
+        ) or 0
+        status_updates = self.db.scalar(
+            select(func.count()).select_from(AuditLog).where(AuditLog.action == "USER_STATUS_UPDATED")
+        ) or 0
+        threat_triage = self.db.scalar(
+            select(func.count()).select_from(AuditLog).where(AuditLog.action == "THREAT_STATUS_UPDATED")
+        ) or 0
+        high_risk_alerts = self.db.scalar(
+            select(func.count()).select_from(AuditLog).where(AuditLog.action == "HIGH_RISK_DETECTION_RECORDED")
+        ) or 0
+
+        recent_entries = list(
+            self.db.scalars(
+                select(AuditLog).order_by(AuditLog.timestamp.desc()).limit(10)
+            ).all()
+        )
+
+        return {
+            "total_audit_events": total_logs,
+            "role_modifications": role_updates,
+            "account_status_changes": status_updates,
+            "threat_triage_actions": threat_triage,
+            "high_risk_alerts": high_risk_alerts,
+            "recent_events": [
+                {
+                    "action": e.action,
+                    "resource_type": e.resource_type,
+                    "actor_user_id": e.actor_user_id,
+                    "timestamp": e.timestamp.isoformat() if e.timestamp else None,
+                }
+                for e in recent_entries
+            ],
+        }
+

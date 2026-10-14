@@ -1,4 +1,6 @@
 from app.middleware.rate_limiter import InMemoryRateLimiterMiddleware
+from app.middleware.security import SecurityHeadersMiddleware, RequestSizeLimitMiddleware
+from app.middleware.structured_logger import CorrelationIdMiddleware
 from app.middleware.error_handler import (
     http_exception_handler,
     validation_exception_handler,
@@ -7,7 +9,10 @@ from app.middleware.error_handler import (
 )
 
 __all__ = [
+    "CorrelationIdMiddleware",
     "InMemoryRateLimiterMiddleware",
+    "SecurityHeadersMiddleware",
+    "RequestSizeLimitMiddleware",
     "http_exception_handler",
     "validation_exception_handler",
     "sqlalchemy_exception_handler",

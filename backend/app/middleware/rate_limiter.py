@@ -34,8 +34,10 @@ class InMemoryRateLimiterMiddleware(BaseHTTPMiddleware):
         self.client_records[client_ip] = [t for t in timestamps if t > window_start]
 
         limit = self.requests_per_minute
-        if self.requests_per_minute == 60 and (getattr(settings, "environment", None) == "testing" or os.environ.get("ENVIRONMENT") == "testing"):
-            limit = 10000
+        # If using the default application rate limit in the test environment, relax it to prevent suite throttling.
+        # Explicit unit test limits (e.g. requests_per_minute=3) remain strictly enforced.
+        if self.requests_per_minute >= settings.rate_limit and (getattr(settings, "environment", None) == "testing" or os.environ.get("ENVIRONMENT") == "testing"):
+            limit = 100000
         if len(self.client_records[client_ip]) >= limit:
             return JSONResponse(
                 status_code=429,

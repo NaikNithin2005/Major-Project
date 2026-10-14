@@ -149,6 +149,16 @@ class DashboardViewModel(
         }
     }
 
+    fun updateThreatAction(id: String, action: String) {
+        viewModelScope.launch {
+            val existing = threatHistoryRepository.getThreatById(id).getOrNull()
+            if (existing != null) {
+                val updated = existing.copy(actionTaken = action)
+                threatHistoryRepository.updateThreat(updated)
+            }
+        }
+    }
+
     fun logout() {
         viewModelScope.launch {
             logoutUseCase()

@@ -180,6 +180,7 @@ fun AegisNavGraph(
                 currentUser = currentUser,
                 uiState = uiState,
                 onDeleteThreat = viewModel::deleteThreat,
+                onUpdateThreatAction = viewModel::updateThreatAction,
                 onTriggerManualSync = { viewModel.triggerManualSync(context) },
                 onNavigateToSettings = {
                     navController.navigate("settings")

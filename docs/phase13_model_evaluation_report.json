@@ -1,0 +1,67 @@
+{
+  "benchmark_timestamp": "2026-10-14T07:35:38Z",
+  "phase": "Phase 13 - Operational Model Quality Benchmark",
+  "environment": "ONNX Runtime Mobile Contract Verification",
+  "models": {
+    "tinybert": {
+      "sample_count": 100,
+      "tp": 22,
+      "fp": 3,
+      "fn": 3,
+      "tn": 72,
+      "accuracy": 0.94,
+      "precision": 0.88,
+      "recall": 0.88,
+      "f1_score": 0.88,
+      "false_positive_rate": 0.04,
+      "false_negative_rate": 0.12,
+      "latency_ms": {
+        "p50": 4.77,
+        "p95": 6.33,
+        "mean": 76.43,
+        "min": 4.38,
+        "max": 7142.39
+      },
+      "model_id": "tinybert_smishing:v2",
+      "status": "PASSED"
+    },
+    "xgboost": {
+      "sample_count": 200,
+      "tp": 40,
+      "fp": 0,
+      "fn": 1,
+      "tn": 159,
+      "accuracy": 0.995,
+      "precision": 1.0,
+      "recall": 0.9756,
+      "f1_score": 0.9877,
+      "false_positive_rate": 0.0,
+      "false_negative_rate": 0.0244,
+      "latency_ms": {
+        "p50": 0.02,
+        "p95": 0.02,
+        "mean": 0.03,
+        "min": 0.02,
+        "max": 1.19
+      },
+      "model_id": "xgboost_quishing:v2",
+      "status": "PASSED"
+    },
+    "isolation_forest": {
+      "model_id": "isolation_forest:v2",
+      "sample_count": 200,
+      "inliers_detected": 169,
+      "outliers_detected": 31,
+      "anomaly_rate": 0.155,
+      "latency_ms": {
+        "p50": 1.8,
+        "p95": 2.72,
+        "mean": 1.95,
+        "min": 1.59,
+        "max": 6.66
+      },
+      "status": "PASSED"
+    }
+  },
+  "all_passed": true
+}

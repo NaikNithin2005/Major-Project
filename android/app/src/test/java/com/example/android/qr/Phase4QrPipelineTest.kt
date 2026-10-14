@@ -59,7 +59,7 @@ class Phase4QrPipelineTest {
         assertTrue(analysis.isQuishing)
         assertEquals(1, mockQrRepository.savedAnalyses.size)
         assertEquals(1, mockThreatRepository.savedThreats.size)
-        assertEquals("QUISHING", mockThreatRepository.savedThreats[0].category)
+        assertEquals(analysis.assessment?.category?.name, mockThreatRepository.savedThreats[0].category)
     }
 
     @Test

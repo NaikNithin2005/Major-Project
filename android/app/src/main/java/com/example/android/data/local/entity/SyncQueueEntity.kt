@@ -37,7 +37,9 @@ data class SyncQueueEntity(
 
     val serverEventId: String? = null,
 
-    val syncedAt: Long? = null
+    val syncedAt: Long? = null,
+
+    val userId: String? = null
 ) {
     companion object {
         const val STATUS_PENDING = "PENDING"

@@ -8,10 +8,15 @@ from sqlalchemy.exc import SQLAlchemyError
 logger = logging.getLogger("squish_shield.error_handler")
 
 
+def _get_correlation_id(request: Request) -> str | None:
+    return getattr(request.state, "correlation_id", None)
+
+
 async def http_exception_handler(request: Request, exc: StarletteHTTPException) -> JSONResponse:
     """Handle standard Starlette / FastAPI HTTPExceptions with standard envelope."""
     status_code = exc.status_code
-    
+    correlation_id = _get_correlation_id(request)
+
     # Default code name based on HTTP status
     if status_code == status.HTTP_401_UNAUTHORIZED:
         code = "UNAUTHORIZED"
@@ -38,21 +43,28 @@ async def http_exception_handler(request: Request, exc: StarletteHTTPException) 
         message = str(exc.detail)
         details = None
 
+    headers = dict(getattr(exc, "headers", None) or {})
+    if correlation_id:
+        headers["X-Correlation-ID"] = correlation_id
+
+    error_body = {
+        "code": code,
+        "message": message,
+        "details": details,
+    }
+    if correlation_id:
+        error_body["correlation_id"] = correlation_id
+
     return JSONResponse(
         status_code=status_code,
-        content={
-            "error": {
-                "code": code,
-                "message": message,
-                "details": details,
-            }
-        },
-        headers=getattr(exc, "headers", None),
+        content={"error": error_body},
+        headers=headers,
     )
 
 
 async def validation_exception_handler(request: Request, exc: RequestValidationError) -> JSONResponse:
     """Handle Pydantic schema validation errors without leaking internal details."""
+    correlation_id = _get_correlation_id(request)
     errors = exc.errors()
     simplified_errors = []
     for err in errors:
@@ -60,43 +72,80 @@ async def validation_exception_handler(request: Request, exc: RequestValidationE
         msg = err.get("msg", "Validation error")
         simplified_errors.append({"field": loc, "message": msg})
 
+    headers = {}
+    if correlation_id:
+        headers["X-Correlation-ID"] = correlation_id
+
+    error_body = {
+        "code": "VALIDATION_ERROR",
+        "message": "Invalid request payload or query parameters.",
+        "details": simplified_errors,
+    }
+    if correlation_id:
+        error_body["correlation_id"] = correlation_id
+
     return JSONResponse(
         status_code=422,
-        content={
-            "error": {
-                "code": "VALIDATION_ERROR",
-                "message": "Invalid request payload or query parameters.",
-                "details": simplified_errors,
-            }
-        },
+        content={"error": error_body},
+        headers=headers,
     )
 
 
 async def sqlalchemy_exception_handler(request: Request, exc: SQLAlchemyError) -> JSONResponse:
     """Handle database errors securely without leaking SQL, schema details, or stack traces."""
-    logger.error("Database error occurred during request %s: %s", request.url.path, str(exc), exc_info=True)
+    correlation_id = _get_correlation_id(request)
+    logger.error(
+        "Database error during request %s [correlation_id=%s]: %s",
+        request.url.path,
+        correlation_id,
+        str(exc),
+        exc_info=True,
+    )
+
+    headers = {}
+    if correlation_id:
+        headers["X-Correlation-ID"] = correlation_id
+
+    error_body = {
+        "code": "DATABASE_ERROR",
+        "message": "A database operation failed. The request could not be completed.",
+        "details": None,
+    }
+    if correlation_id:
+        error_body["correlation_id"] = correlation_id
+
     return JSONResponse(
         status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-        content={
-            "error": {
-                "code": "DATABASE_ERROR",
-                "message": "A database operation failed. The request could not be completed.",
-                "details": None,
-            }
-        },
+        content={"error": error_body},
+        headers=headers,
     )
 
 
 async def generic_exception_handler(request: Request, exc: Exception) -> JSONResponse:
     """Catch-all for unhandled unexpected exceptions."""
-    logger.error("Unhandled exception processing %s: %s", request.url.path, str(exc), exc_info=True)
+    correlation_id = _get_correlation_id(request)
+    logger.error(
+        "Unhandled exception processing %s [correlation_id=%s]: %s",
+        request.url.path,
+        correlation_id,
+        str(exc),
+        exc_info=True,
+    )
+
+    headers = {}
+    if correlation_id:
+        headers["X-Correlation-ID"] = correlation_id
+
+    error_body = {
+        "code": "INTERNAL_SERVER_ERROR",
+        "message": "An unexpected server error occurred. Please try again later.",
+        "details": None,
+    }
+    if correlation_id:
+        error_body["correlation_id"] = correlation_id
+
     return JSONResponse(
         status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-        content={
-            "error": {
-                "code": "INTERNAL_SERVER_ERROR",
-                "message": "An unexpected server error occurred. Please try again later.",
-                "details": None,
-            }
-        },
+        content={"error": error_body},
+        headers=headers,
     )

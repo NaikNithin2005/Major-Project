@@ -157,4 +157,9 @@ class DetectionService:
         """Fetch personal aggregated security statistics for the user."""
         return self.detection_repo.get_user_stats(user_id)
 
+    def get_sync_reliability_metrics(self) -> dict:
+        """Fetch system-wide operational synchronization metrics."""
+        return self.detection_repo.get_operational_sync_metrics()
+
+
 

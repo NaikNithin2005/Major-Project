@@ -42,9 +42,20 @@ def get_current_user(
     firebase_uid = token_data["uid"]
     email = token_data.get("email") or f"{firebase_uid}@squishshield.local"
     display_name = token_data.get("name")
-    role = token_data.get("role", "USER")
-    if email and email.lower() in settings.admin_emails_list:
-        role = "ADMIN"
+
+    # Authoritative Role Resolution:
+    # 1. Configured system administrators in settings.admin_emails_list are assigned ADMIN.
+    # 2. In development mode with mock auth active, explicit mock-admin tokens retain ADMIN.
+    # 3. All other users strictly default to USER. Client-crafted tokens or unverified claims cannot self-elevate.
+    is_configured_admin = bool(email and email.lower() in settings.admin_emails_list)
+    is_trusted_mock_admin = bool(
+        settings.allow_mock_auth
+        and settings.environment != "production"
+        and token_data.get("role") == "ADMIN"
+        and firebase_uid == "admin-mock-uid-0001"
+    )
+
+    initial_role = "ADMIN" if (is_configured_admin or is_trusted_mock_admin) else "USER"
 
     # Look up user or auto-provision on first valid login
     user = db.query(User).filter(User.firebase_uid == firebase_uid).first()
@@ -53,7 +64,7 @@ def get_current_user(
             firebase_uid=firebase_uid,
             email=email,
             display_name=display_name,
-            role=role,
+            role=initial_role,
             is_active=True,
             last_seen_at=datetime.now(timezone.utc)
         )
@@ -61,8 +72,8 @@ def get_current_user(
         db.flush()
     else:
         user.last_seen_at = datetime.now(timezone.utc)
-        # Update role if token explicitly carries ADMIN claim or email is configured admin
-        if (role == "ADMIN" or (email and email.lower() in settings.admin_emails_list)) and user.role != "ADMIN":
+        # Only authoritative configured admins or trusted mock admins can be auto-promoted
+        if (is_configured_admin or is_trusted_mock_admin) and user.role != "ADMIN":
             user.role = "ADMIN"
         db.flush()
 

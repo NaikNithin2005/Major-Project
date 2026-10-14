@@ -1,4 +1,4 @@
-from typing import List, Tuple, Optional
+from typing import List, Tuple, Optional, Dict, Any
 from sqlalchemy.orm import Session
 from app.models.audit_log import AuditLog
 from app.repositories.audit_repo import AuditRepository
@@ -24,3 +24,7 @@ class AuditService:
             resource_type=resource_type,
             actor_user_id=actor_user_id
         )
+
+    def get_security_summary(self) -> Dict[str, Any]:
+        """Fetch operational security monitoring summary."""
+        return self.audit_repo.get_security_monitoring_summary()

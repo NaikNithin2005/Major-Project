@@ -19,10 +19,11 @@ interface SyncQueueDao {
     @Query("""
         SELECT * FROM sync_queue 
         WHERE status = 'PENDING' AND nextAttemptAt <= :now 
+        AND (:userId IS NULL OR userId IS NULL OR userId = :userId)
         ORDER BY createdAt ASC 
         LIMIT :limit
     """)
-    suspend fun getPendingItems(now: Long, limit: Int = 25): List<SyncQueueEntity>
+    suspend fun getPendingItems(now: Long, limit: Int = 25, userId: String? = null): List<SyncQueueEntity>
 
     @Query("UPDATE sync_queue SET status = 'SYNCING', lastAttemptAt = :timestamp WHERE id = :id")
     suspend fun markSyncing(id: String, timestamp: Long)

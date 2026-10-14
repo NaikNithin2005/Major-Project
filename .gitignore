@@ -81,7 +81,16 @@ yarn-debug.log*
 yarn-error.log*
 .pnpm-debug.log*
 
+# Credentials & Service Accounts
+*service-account*.json
+firebase-service-account.json
+
 # Docker & Local Database
 *.sqlite
 *.sqlite3
+*.db
+*.db-shm
+*.db-wal
 pgdata/
+.pgdata/
+

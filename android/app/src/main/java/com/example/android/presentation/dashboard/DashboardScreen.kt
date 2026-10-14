@@ -40,6 +40,7 @@ fun DashboardScreen(
     currentUser: User?,
     uiState: DashboardUiState = DashboardUiState(),
     onDeleteThreat: (String) -> Unit = {},
+    onUpdateThreatAction: (String, String) -> Unit = { _, _ -> },
     onTriggerManualSync: () -> Unit = {},
     onNavigateToSettings: () -> Unit,
     onNavigateToSmsMonitoring: () -> Unit = {},
@@ -62,6 +63,10 @@ fun DashboardScreen(
             onDismiss = { selectedThreat = null },
             onDelete = {
                 onDeleteThreat(selectedThreat!!.id)
+                selectedThreat = null
+            },
+            onUpdateAction = { action ->
+                onUpdateThreatAction(selectedThreat!!.id, action)
                 selectedThreat = null
             }
         )
@@ -625,7 +630,8 @@ fun ThreatRecordItemCard(
 fun ThreatDetailDialog(
     threat: ThreatRecord,
     onDismiss: () -> Unit,
-    onDelete: () -> Unit
+    onDelete: () -> Unit,
+    onUpdateAction: (String) -> Unit = {}
 ) {
     val context = LocalContext.current
     val dateFormat = remember { SimpleDateFormat("dd MMMM yyyy, HH:mm:ss", Locale.getDefault()) }
@@ -936,7 +942,43 @@ fun ThreatDetailDialog(
 
                 Spacer(modifier = Modifier.height(20.dp))
 
-                // Bottom Action Buttons
+                // Defensive User Action Buttons
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(10.dp)
+                ) {
+                    OutlinedButton(
+                        onClick = {
+                            onUpdateAction("BLOCKED")
+                            Toast.makeText(context, "Marked as Blocked", Toast.LENGTH_SHORT).show()
+                        },
+                        modifier = Modifier.weight(1f),
+                        shape = RoundedCornerShape(10.dp),
+                        colors = ButtonDefaults.outlinedButtonColors(contentColor = Color(0xFFEF4444))
+                    ) {
+                        Icon(Icons.Default.Block, contentDescription = null, modifier = Modifier.size(15.dp))
+                        Spacer(modifier = Modifier.width(4.dp))
+                        Text("Block", fontSize = 12.sp)
+                    }
+
+                    OutlinedButton(
+                        onClick = {
+                            onUpdateAction("MARK_SAFE")
+                            Toast.makeText(context, "Marked as Safe", Toast.LENGTH_SHORT).show()
+                        },
+                        modifier = Modifier.weight(1f),
+                        shape = RoundedCornerShape(10.dp),
+                        colors = ButtonDefaults.outlinedButtonColors(contentColor = Color(0xFF10B981))
+                    ) {
+                        Icon(Icons.Default.CheckCircle, contentDescription = null, modifier = Modifier.size(15.dp))
+                        Spacer(modifier = Modifier.width(4.dp))
+                        Text("Mark Safe", fontSize = 12.sp)
+                    }
+                }
+
+                Spacer(modifier = Modifier.height(10.dp))
+
+                // Bottom Secondary Buttons (Delete & Close)
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.spacedBy(10.dp)
@@ -945,9 +987,9 @@ fun ThreatDetailDialog(
                         onClick = onDelete,
                         modifier = Modifier.weight(1f),
                         shape = RoundedCornerShape(10.dp),
-                        colors = ButtonDefaults.outlinedButtonColors(contentColor = Color(0xFFEF4444))
+                        colors = ButtonDefaults.outlinedButtonColors(contentColor = Color(0xFF94A3B8))
                     ) {
-                        Icon(Icons.Default.Delete, contentDescription = null, modifier = Modifier.size(16.dp))
+                        Icon(Icons.Default.Delete, contentDescription = null, modifier = Modifier.size(15.dp))
                         Spacer(modifier = Modifier.width(4.dp))
                         Text("Delete", fontSize = 12.sp)
                     }
