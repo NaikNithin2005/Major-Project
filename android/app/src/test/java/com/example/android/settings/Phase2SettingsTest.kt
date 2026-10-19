@@ -35,6 +35,11 @@ class Phase2SettingsTest {
             state.value = state.value.copy(biometricLock = enabled)
             return Result.success(Unit)
         }
+
+        override suspend fun setThreatSharingEnabled(enabled: Boolean): Result<Unit> {
+            state.value = state.value.copy(threatIntelligenceSharingEnabled = enabled)
+            return Result.success(Unit)
+        }
     }
 
     @Test
@@ -46,6 +51,7 @@ class Phase2SettingsTest {
         assertTrue(defaultSettings.realtimeQrScanner)
         assertTrue(defaultSettings.notificationsEnabled)
         assertFalse(defaultSettings.biometricLock)
+        assertFalse(defaultSettings.threatIntelligenceSharingEnabled)
     }
 
     @Test
@@ -54,10 +60,12 @@ class Phase2SettingsTest {
 
         repo.setSmsProtection(false)
         repo.setBiometricLock(true)
+        repo.setThreatSharingEnabled(true)
 
         val updatedSettings = repo.observeSettings().first()
 
         assertFalse(updatedSettings.realtimeSmsProtection)
         assertTrue(updatedSettings.biometricLock)
+        assertTrue(updatedSettings.threatIntelligenceSharingEnabled)
     }
 }

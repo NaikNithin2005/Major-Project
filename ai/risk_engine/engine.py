@@ -249,6 +249,15 @@ class RiskEngine:
         anom_contrib = round((self.WEIGHT_ANOMALY * scale_factor) * anom_eff, 2) if anomaly_score is not None else 0.0
 
         final_raw = sms_contrib + url_contrib + qr_contrib + ctx_contrib + anom_contrib
+
+        # Fail-closed policy: When models are unavailable, rely on deterministic rules and context
+        if unavailable_models:
+            rule_elevate = sum(r.score_contribution for r in rule_results if r.severity in ("CRITICAL", "HIGH"))
+            if rule_elevate > 0:
+                final_raw = max(final_raw, min(100.0, final_raw + rule_elevate))
+            if context_findings and any(f.severity in ("CRITICAL", "HIGH") for f in context_findings):
+                final_raw = max(final_raw, 55.0)
+
         final_clamped = round(max(0.0, min(100.0, final_raw)), 1)
 
         category = self.categorize_score(final_clamped)

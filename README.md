@@ -209,30 +209,41 @@ npm run dev
 Run the automated validation suites across each subsystem:
 
 ```bash
-# 1. Android Unit Tests
-cd android && ./gradlew testDebugUnitTest
+# 1. Secret Scanning
+python scripts/scan_secrets.py
 
-# 2. Backend Pytest Suite (101 passed, 6 skipped)
-cd backend && pytest tests/ -v
+# 2. Model Manifest & ONNX Loading Verification
+python scripts/verify_model_artifacts.py
 
-# 3. Database Migration Alignment Check
-cd backend && alembic heads
+# 3. Database Migration Clean-Slate & Rollback Gate
+python scripts/verify_db_migrations.py
 
-# 4. Web Production Type-Check & Build (21/21 routes)
-cd web && npm run build
+# 4. Android Unit Tests & Release Build
+cd android && ./gradlew testDebugUnitTest && ./gradlew assembleRelease && cd ..
 
-# 5. AI Inference & Model Checksum Verification
-python scripts/evaluate_models_phase13.py
+# 5. Backend Pytest Suite (125 passed, 6 skipped)
+cd backend && pytest tests/ -v && cd ..
+
+# 6. Web Production Type-Check & Build (22/22 routes)
+cd web && npx tsc --noEmit && npm run build && cd ..
+
+# 7. Post-Deployment Smoke Test Suite
+python scripts/smoke_test.py --base-url http://localhost:8000
 ```
 
 ---
 
 ## 8. Complete Documentation Library
 
-Comprehensive technical documentation is available under [`docs/`](./docs/README.md):
+Comprehensive technical documentation is available under [`docs/`](./docs/README.md) and repository root:
 
 | Document | Description |
 | :--- | :--- |
+| [**Final Acceptance Report**](./FINAL_ACCEPTANCE_REPORT.md) | Authoritative 10-section audit report, requirements traceability matrix, and production readiness decision. |
+| [**DevSecOps Master Plan**](./DEVSECOPS_PLAN.md) | Multi-stage CI/CD topology, quality gates, environment matrix, and deployment strategy. |
+| [**CI/CD Setup Guide**](./CI_CD_SETUP.md) | Step-by-step GitHub Actions setup, environment secrets (`staging`/`production`), and branch protections. |
+| [**Security Scanning Guide**](./SECURITY_SCANNING.md) | Secret detection, Bandit SAST, dependency auditing (`pip-audit`, `npm audit`), and vulnerability remediation SLAs. |
+| [**Release Runbook**](./RELEASE_RUNBOOK.md) | Release engineering SOP, semantic versioning, gated staging/production promotion, and disaster rollback runbook. |
 | [**Release Notes v1.0.0**](./docs/RELEASE_NOTES_v1.0.0.md) | Official release notes, file checksums, changelog, and upgrade path. |
 | [**Architecture Guide**](./docs/ARCHITECTURE.md) | Technical architecture, edge-to-cloud protocols, and trust boundaries. |
 | [**API Reference**](./docs/API_REFERENCE.md) | Complete OpenAPI/REST endpoint specifications, schemas, and RBAC roles. |
@@ -249,6 +260,17 @@ Comprehensive technical documentation is available under [`docs/`](./docs/README
 | [**Backup & Disaster Recovery**](./docs/backup-recovery.md) | PostgreSQL / SQLite backup schedules, integrity checks & restore protocols. |
 | [**Maintenance Runbook**](./docs/maintenance-runbook.md) | Maintenance schedules, index tuning, connection pooling & security audits. |
 | [**Operational Limitations**](./docs/operational-limitations.md) | Hardware, edge memory, battery, concurrency bounds & data minimization. |
+| [**Threat Intelligence Guide**](./docs/threat-intelligence.md) | External feeds, indicator normalization, TTL expiration & provenance. |
+| [**Safe URL Reputation**](./docs/url-reputation.md) | Canonicalization, Punycode, SSRF prevention & query privacy scrubbing. |
+| [**Controlled Model Improvement**](./docs/model-improvement.md) | Multi-gate promotion workflow, governance & instant rollback protocols. |
+| [**Detection Evaluation Report**](./docs/detection-evaluation.md) | Emerging threat benchmark (+50% recall lift, zero false positives). |
+| [**Intelligence & Privacy**](./docs/intelligence-privacy.md) | Privacy-preserving architecture, zero raw SMS upload & secret isolation. |
+| [**Incident Management & Lifecycle**](./docs/incident-management.md) | Decoupled incident entity, state machine, transition rules, and RBAC. |
+| [**Threat Correlation Engine**](./docs/incident-correlation.md) | Conservative correlation signals, URL/domain matching, and confidence levels. |
+| [**SOC Incident Response SOP**](./docs/incident-response-runbook.md) | Step-by-step SOC analyst procedures, triage matrix, and containment. |
+| [**SOC Web Dashboard**](./docs/soc-dashboard.md) | Console architecture, incident queue, dossier workstation, and dark-mode UI. |
+| [**SOC Incident Metrics**](./docs/incident-metrics.md) | MTTT/MTTR mathematical definitions, workload metrics, and data integrity. |
+
 
 ---
 

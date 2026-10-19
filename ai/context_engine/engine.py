@@ -25,6 +25,11 @@ TRUSTED_BRAND_DOMAINS: Dict[str, List[str]] = {
     "microsoft": ["microsoft.com", "live.com", "office.com", "outlook.com"],
     "paytm": ["paytm.com"],
     "phonepe": ["phonepe.com"],
+    "github": ["github.com", "github.io", "githubusercontent.com"],
+    "python": ["python.org", "pypi.org"],
+    "android": ["android.com", "developer.android.com"],
+    "uidai": ["uidai.gov.in"],
+    "incometax": ["incometax.gov.in"],
 }
 
 FINANCIAL_TERMS = {

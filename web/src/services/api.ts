@@ -10,6 +10,16 @@ import {
   FeedbackItem,
   AuditLogItem,
   ApiError,
+  Incident,
+  IncidentDetail,
+  IncidentMetrics,
+  CorrelationSuggestion,
+  IncidentFilterParams,
+  IncidentEvent,
+  ThreatIndicator,
+  CommunityThreatReport,
+  FeedStatusItem,
+  ThreatIntelHealth,
 } from '@/types';
 
 const API_BASE_URL =
@@ -259,4 +269,198 @@ export const api = {
       return request<PaginatedResponse<AuditLogItem>>(`/admin/audit-logs?${q.toString()}`);
     },
   },
+
+  // Security Incidents (Phase 15)
+  incidents: {
+    list: (params: IncidentFilterParams = {}) => {
+      const q = new URLSearchParams();
+      if (params.page) q.set('page', params.page.toString());
+      if (params.page_size) q.set('page_size', params.page_size.toString());
+      if (params.status) q.set('status', params.status);
+      if (params.severity) q.set('severity', params.severity);
+      if (params.category) q.set('category', params.category);
+      if (params.assigned_admin_id) q.set('assigned_admin_id', params.assigned_admin_id);
+      if (params.search) q.set('search', params.search);
+      if (params.start_date) q.set('start_date', params.start_date);
+      if (params.end_date) q.set('end_date', params.end_date);
+      return request<PaginatedResponse<Incident>>(`/admin/incidents?${q.toString()}`);
+    },
+
+    get: (incidentId: string) =>
+      request<IncidentDetail>(`/admin/incidents/${incidentId}`),
+
+    create: (payload: {
+      title: string;
+      description?: string;
+      severity?: string;
+      category?: string;
+      assigned_admin_id?: string;
+      seed_threat_event_id?: string;
+      metadata_json?: Record<string, any>;
+    }) =>
+      request<IncidentDetail>('/admin/incidents', {
+        method: 'POST',
+        body: JSON.stringify(payload),
+      }),
+
+    getMetrics: () =>
+      request<IncidentMetrics>('/admin/incidents/metrics'),
+
+    updateStatus: (
+      incidentId: string,
+      payload: { status: string; resolution_summary?: string; reason?: string }
+    ) =>
+      request<IncidentDetail>(`/admin/incidents/${incidentId}/status`, {
+        method: 'PATCH',
+        body: JSON.stringify(payload),
+      }),
+
+    assign: (
+      incidentId: string,
+      payload: { assigned_admin_id: string | null; note?: string }
+    ) =>
+      request<IncidentDetail>(`/admin/incidents/${incidentId}/assign`, {
+        method: 'PATCH',
+        body: JSON.stringify(payload),
+      }),
+
+    updateSeverity: (
+      incidentId: string,
+      payload: { severity: string; reason?: string }
+    ) =>
+      request<IncidentDetail>(`/admin/incidents/${incidentId}/severity`, {
+        method: 'PATCH',
+        body: JSON.stringify(payload),
+      }),
+
+    addNote: (
+      incidentId: string,
+      payload: { content: string; note_type?: string }
+    ) =>
+      request<IncidentDetail>(`/admin/incidents/${incidentId}/notes`, {
+        method: 'POST',
+        body: JSON.stringify(payload),
+      }),
+
+    linkThreat: (
+      incidentId: string,
+      payload: { threat_event_id: string; relationship_type?: string; correlation_signal?: string }
+    ) =>
+      request<IncidentDetail>(`/admin/incidents/${incidentId}/threats`, {
+        method: 'POST',
+        body: JSON.stringify(payload),
+      }),
+
+    unlinkThreat: (incidentId: string, threatEventId: string) =>
+      request<IncidentDetail>(`/admin/incidents/${incidentId}/threats/${threatEventId}`, {
+        method: 'DELETE',
+      }),
+
+    getCorrelationSuggestions: (incidentId: string) =>
+      request<{ incident_id: string; suggestions: CorrelationSuggestion[]; total_suggested: number }>(
+        `/admin/incidents/${incidentId}/correlation-suggestions`
+      ),
+
+    getTimeline: (incidentId: string) =>
+      request<IncidentEvent[]>(`/admin/incidents/${incidentId}/timeline`),
+  },
+
+  threatIntel: {
+    getHealth: () => request<ThreatIntelHealth>('/admin/threat-intel/health'),
+
+    getFeeds: () => request<FeedStatusItem[]>('/admin/threat-intel/feeds'),
+
+    getIndicators: (params: {
+      page?: number;
+      page_size?: number;
+      indicator_type?: string;
+      threat_type?: string;
+      source?: string;
+      status?: string;
+      search?: string;
+    } = {}) => {
+      const q = new URLSearchParams();
+      if (params.page !== undefined) q.append('skip', String((params.page - 1) * (params.page_size || 50)));
+      if (params.page_size !== undefined) q.append('limit', String(params.page_size));
+      if (params.indicator_type) q.append('indicator_type', params.indicator_type);
+      if (params.threat_type) q.append('threat_type', params.threat_type);
+      if (params.source) q.append('source', params.source);
+      if (params.status) q.append('status', params.status);
+      if (params.search) q.append('search', params.search);
+      return request<{ items: ThreatIndicator[]; total: number; skip: number; limit: number }>(
+        `/admin/threat-intel/indicators?${q.toString()}`
+      );
+    },
+
+    addIndicator: (payload: {
+      indicator_type: string;
+      indicator_value: string;
+      threat_type: string;
+      confidence?: number;
+      source?: string;
+      status?: string;
+      expires_at?: string;
+      metadata_json?: Record<string, any>;
+    }) =>
+      request<ThreatIndicator>('/admin/threat-intel/indicators', {
+        method: 'POST',
+        body: JSON.stringify(payload),
+      }),
+
+    updateIndicatorStatus: (
+      indicatorId: string,
+      payload: { status: string; reason: string }
+    ) =>
+      request<ThreatIndicator>(`/admin/threat-intel/indicators/${indicatorId}/status`, {
+        method: 'PATCH',
+        body: JSON.stringify(payload),
+      }),
+
+    revokeIndicator: (indicatorId: string) =>
+      request<{ status: string; indicator_id: string }>(
+        `/admin/threat-intel/indicators/${indicatorId}`,
+        { method: 'DELETE' }
+      ),
+
+    getCommunityReports: (params: {
+      page?: number;
+      page_size?: number;
+      status?: string;
+      indicator_type?: string;
+      threat_category?: string;
+      search?: string;
+    } = {}) => {
+      const q = new URLSearchParams();
+      if (params.page !== undefined) q.append('skip', String((params.page - 1) * (params.page_size || 50)));
+      if (params.page_size !== undefined) q.append('limit', String(params.page_size));
+      if (params.status) q.append('status', params.status);
+      if (params.indicator_type) q.append('indicator_type', params.indicator_type);
+      if (params.threat_category) q.append('threat_category', params.threat_category);
+      if (params.search) q.append('search', params.search);
+      return request<{ items: CommunityThreatReport[]; total: number; skip: number; limit: number }>(
+        `/admin/threat-intel/community-reports?${q.toString()}`
+      );
+    },
+
+    triageCommunityReport: (
+      reportId: string,
+      payload: {
+        action: string;
+        notes?: string;
+        assigned_confidence?: number;
+        assigned_threat_type?: string;
+        expires_in_days?: number;
+      }
+    ) =>
+      request<CommunityThreatReport>(
+        `/admin/threat-intel/community-reports/${reportId}/triage`,
+        {
+          method: 'PATCH',
+          body: JSON.stringify(payload),
+        }
+      ),
+  },
 };
+
+export const adminApi = api;
+

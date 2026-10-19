@@ -2026,3 +2026,203 @@ Establish reliable, privacy-conscious post-release operational visibility, MLOps
 8. **Incident Response & Runbooks:** 11 detailed SOP runbooks for outages, credential compromise, false-positive surges, and model degradation.
 9. **Automated Regression Suite:** Phase 13 automated tests (`backend/tests/test_phase13_operations_and_maintenance.py`), passing 101 backend tests with zero regressions.
 
+------------------------------------------------------------------------
+
+# 29. Phase 14 (Operational Extension) — Advanced Threat Intelligence, Adaptive Detection & Continuous Model Improvement
+
+> **Note on Roadmap Extension:**  
+> Phase 14 extends the project with enterprise-grade threat-intelligence ingestion, indicator normalization, safe URL reputation enrichment, explainable multi-modal evidence aggregation, emerging-threat benchmarking, and controlled multi-gate model governance. The original Phases 0–12 and Phase 13 extension remain preserved as the historical baseline.
+
+## Objective
+Enhance quishing and smishing detection through external threat intelligence, safe URL reputation canonicalization, explainable evidence aggregation, controlled evaluation against emerging zero-day phishing patterns, and privacy-preserving telemetry without compromising on-device detection or leaking user data.
+
+## Scope & Capabilities Implemented
+1. **Threat Intelligence Provider Interface:** Multi-provider abstraction (`BaseThreatIntelProvider`) integrating URLhaus (verified & operational), PhishTank, Google Safe Browsing, and the Internal SOC database feed (`threat_intel` table). Resilient error isolation prevents external provider timeouts or outages from impacting core detection.
+2. **Safe URL Canonicalization & Normalization:** `SafeUrlNormalizer` implements RFC 3492 Punycode IDN decoding, default port stripping, slash collapsing, dangerous scheme interception (`javascript:`, `data:`, `blob:`), and RFC 1918 / loopback / link-local SSRF defenses.
+3. **Sensitive Query Parameter Privacy Scrubbing:** Redacts sensitive tokens (`token`, `password`, `key`, `session`, `auth`) before database persistence or external provider queries, preventing credential leaks.
+4. **Threat Feed Normalization & Expiration:** Alembic migration `004_add_threat_intel_expires_at` adds TTL expiration tracking (`expires_at`), provenance tracking, and deduplication (`bulk_upsert`) preventing duplicate indicator ingestion.
+5. **In-Memory & Persistent Reputation Caching:** Fast SHA-256 hash in-memory cache with 1-hour TTL, coupled with automatic 7-day persistence in the local database for discovered malicious URLs.
+6. **Explainable Evidence Aggregation:** Multi-source risk fusion (`EvidenceAggregationService`) combining AI/ML probabilities, lexical URL features, threat feed matches, and context without double-counting. Clamps risk score to `HIGH` (>= 90) on verified threat intelligence matches, but never lowers risk on unlisted/unavailable intelligence.
+7. **Emerging Threats Dataset & Benchmark:** Curated held-out benchmark dataset (`models/data/emerging_threats_test.csv`) covering homoglyphs, brand subdomain masking, direct IP logins, and cloud buckets. Evaluated via `scripts/evaluate_phase14_emerging_threats.py`:
+   - Baseline Model Alone: 60.00% Accuracy, 25.00% Recall, 40.00% F1.
+   - Enriched (Model + Threat Intel): 86.67% Accuracy, 75.00% Recall, 85.71% F1.
+   - **+50.0% Recall Lift** with **0.00% False-Positive Rate** and **<1ms latency overhead**.
+8. **Controlled Model Improvement Workflow:** Multi-stage governance framework enforcing strict quality gates (Accuracy >= 95%, Precision >= 90%, Recall >= 90%, Latency <= 50ms, zero regressions) before candidate models can be promoted. Prohibits automated production hot-swapping.
+9. **Admin Threat-Intelligence APIs:** Protected endpoints (`/api/v1/admin/threat-intel/feeds`, `/ingest`, `/indicators`, `/indicators/{id}`) enforcing `Role.ADMIN` authorization and recording audit trail logs.
+10. **Automated Test Suite & Regression Verification:** Phase 14 tests (`backend/tests/test_phase14_threat_intel_and_adaptive_detection.py`) passing 12/12 tests; entire backend test suite passing 113 tests (6 skipped for PostgreSQL offline fallback) with zero regressions.
+
+------------------------------------------------------------------------
+
+# 30. Phase 15 (Operational Extension) — Advanced SOC Dashboard, Incident Response & Threat Investigation
+
+> **Note on Roadmap Extension:**  
+> Phase 15 extends the project with a centralized, authorized security investigation workflow enabling SOC administrators to triage, correlate, investigate, contain, and remediate smishing and quishing security incidents without altering the offline-first on-device detection engine. The baseline Phases 0–12 and Phases 13–14 extensions remain preserved as the historical roadmap.
+
+## Objective
+Establish an evidence-driven security operations workflow that separates individual detections (evidence) from security incidents (investigation records), supports conservative deterministic threat correlation, validates legal lifecycle transitions, provides a Next.js SOC workstation dossier, tracks mean response times (MTTT/MTTR), and guarantees complete auditability under server-side RBAC.
+
+## Scope & Capabilities Implemented
+1. **Decoupled Incident Entity Architecture:** Schema migration `005_add_incident_management` adding `incidents`, `incident_threat_links`, `incident_notes`, and `incident_events`. Preserves detection provenance without altering underlying threat events or requiring network availability for local detection.
+2. **Deterministic Lifecycle State Machine:** Enforces legal transitions (`NEW` → `TRIAGED` / `INVESTIGATING` → `CONTAINED` → `RESOLVED` → `CLOSED`), requiring non-empty resolution summaries for resolution and explicit justifications for reopening.
+3. **Multi-Factor Incident Severity:** Evaluates operational impact (`LOW`, `MEDIUM`, `HIGH`, `CRITICAL`) independently from raw ML model scores, avoiding false alarms on isolated anomalies.
+4. **Conservative Threat Correlation Engine:** Proactively identifies candidate unlinked threats sharing verified indicators (`MATCHING_URL`, `MATCHING_DOMAIN`, `MATCHING_CAMPAIGN`) within a 60-day bounded window with 1-click administrative linkage or decoupling.
+5. **Incident Dossier & SOC Workstation:** Full Next.js 14 interactive console (`/admin/incidents` and `/admin/incidents/[id]`), providing metadata, live status transition controls, operator assignment dropdown, linked threat evidence, correlation candidate suggestions, append-only investigation notes, and immutable chronological audit timeline.
+6. **SOC Overview Dashboard Metrics:** Real-time KPI cards displaying Total Incidents, Open Cases, Critical/High count, Awaiting Triage count, Mean Time to Triage (MTTT), and Mean Time to Resolution (MTTR).
+7. **Append-Oriented Audit Logging:** Tamper-evident ledger in `incident_events` recording actor ID, event type, previous state, new state, summary, and timestamp for all actions.
+8. **Automated Test Verification:** 12 automated unit and integration tests (`backend/tests/test_phase15_incident_response_and_soc.py`) passing 12/12 (100%); entire backend test suite passing 125 tests (6 skipped for PostgreSQL offline fallback) with zero regressions.
+9. **Production Web Verification:** Next.js production build (`npm run build`) passing 22/22 routes compiled with 0 TypeScript/ESLint errors.
+
+------------------------------------------------------------------------
+
+# 31. Phase 16 (Audit & Stabilization Extension) — Production Readiness Verification, Technical Debt Resolution & Final Acceptance
+
+> **Note on Roadmap Extension:**  
+> Phase 16 is an audit and stabilization extension. It establishes an evidence-based verification of all previously implemented phases (0–15), resolves confirmed technical debt, verifies cross-component integration, validates security and privacy boundaries, benchmarks ML models, and certifies production readiness.
+
+## Objective
+Execute a comprehensive, evidence-based audit across the entire Android, Backend, Web, Database, and AI/ML system to verify requirement compliance, resolve confirmed technical debt, fix integration defects, evaluate model quality on certified splits, and produce the authoritative Final Acceptance Report.
+
+## Scope & Capabilities Implemented
+1. **Requirements Traceability Matrix:** Verified every functional and non-functional requirement across Phases 0–15 with concrete evidence, implementation files, and test results.
+2. **Technical Debt Resolution:** Fixed TypeScript type mismatches, category constants, and metric property accesses in Next.js web dashboard; implemented missing incident investigation workstation (`/admin/incidents/[id]`); resolved unescaped JSX entities; zero remaining TODOs/FIXMEs.
+3. **Cross-Component Functional Verification:** End-to-end validation of mobile registration, offline-first TinyBERT/XGBoost on-device detection, idempotent telemetry synchronization, server-side RBAC enforcement, and administrative investigation in the SOC portal.
+4. **Security & Privacy Audit:** Validated cross-user data isolation, anti-enumeration, IDOR protection, parameterized SQL queries, rate limiting, security headers, zero raw SMS upload, and query parameter privacy scrubbing.
+5. **Model Evaluation & Quality Certifications:** Executed repeatable benchmarks (`evaluate_models_phase13.py`, `evaluate_phase14_emerging_threats.py`), confirming 94.0% TinyBERT accuracy, 99.5% XGBoost accuracy, 15.5% anomaly detection, and +50% recall lift on zero-day attacks with zero false positives.
+6. **Automated Test Suite Pass Rate (100%):** 125/125 backend tests passed (6 skipped for PostgreSQL offline fallback); 83/83 Android unit tests passed; 57/57 AI inference tests passed; 22/22 web routes compiled cleanly.
+7. **Production Handover Package:** Generated master `FINAL_ACCEPTANCE_REPORT.md` documenting test commands, security findings, latency benchmarks, and final readiness determination.
+
+## Final Decision
+`READY` — The complete system satisfies all PRD, Architecture, and Security requirements, with zero blocking defects.
+
+------------------------------------------------------------------------
+
+# 32. Phase 17 (DevSecOps Extension) — Continuous Integration, Automated Quality Gates & Secure Delivery
+
+> **Note on Roadmap Extension:**  
+> Phase 17 extends the major project with an enterprise-grade DevSecOps continuous integration and continuous delivery (CI/CD) framework. It automates testing, model artifact integrity verification, database migration consistency, secret detection, static application security testing (SAST), release packaging, and gated multi-environment deployment. The baseline Phases 0–12 and operational extensions 13–16 remain preserved as the historical roadmap.
+
+## Objective
+Implement a reliable, secure, and maintainable CI/CD pipeline automating validation of the Android application, FastAPI backend, web administration dashboard, database migrations, and ML model artifacts, preventing broken, insecure, or untested changes from reaching release environments.
+
+## Scope & Capabilities Implemented
+1. **Automated Secret & Credential Scanning:** Dedicated repository scanner (`scripts/scan_secrets.py`) detecting private keys, service account keys, tokens, and database passwords before code execution.
+2. **Cryptographic Model Artifact Verification:** Automated integrity checker (`scripts/verify_model_artifacts.py`) verifying file existence, SHA-256 checksums against `models/MODEL_MANIFEST.json`, ONNX runtime loading, input/output tensor shapes, and safe failure behavior on missing or corrupted models.
+3. **Clean Database Migration Quality Gate:** Automated script (`scripts/verify_db_migrations.py`) creating an isolated clean database, applying Alembic migrations up to HEAD, verifying 12 required tables and constraints, and validating bidirectional downgrade/re-upgrade without data loss.
+4. **Multi-Stage DevSecOps CI Pipeline (`.github/workflows/ci.yml`):**
+   - Independent component jobs for Secret Scanning, Model Validation, Backend API (with live PostgreSQL 15 service container), Web Dashboard (TypeScript type check, ESLint, Next.js production build), Android Mobile (Lint, unit tests, release APK build), and SAST (Bandit).
+   - Consolidated Quality Gate Summary job blocking pull requests or merges if any check fails.
+5. **Gated Continuous Delivery Pipeline (`.github/workflows/deploy.yml`):**
+   - Multi-environment rollout supporting `staging` and `production`.
+   - Release packaging generating Docker images, release APKs, commit SHA attribution, and cryptographic `SHA256SUMS.txt` manifests.
+   - Production approval gate requiring manual review and sign-off by designated security/engineering leads.
+6. **Automated Post-Deployment Smoke Test Suite (`scripts/smoke_test.py`):**
+   - Validates `/health/live`, `/health/ready`, OWASP defense-in-depth headers (`X-Content-Type-Options: nosniff`, `X-Frame-Options: DENY`), protected route authentication barriers, and administrative RBAC guards.
+7. **Comprehensive DevSecOps Documentation Package:**
+   - `DEVSECOPS_PLAN.md` — CI/CD architecture, environment matrix, quality gates, and deployment strategy.
+   - `CI_CD_SETUP.md` — Step-by-step setup guide for GitHub Actions secrets, environments, branch protections, and local validation.
+   - `SECURITY_SCANNING.md` — Security tools, secret detection, SAST, dependency audits, container scans, and remediation SLAs.
+   - `RELEASE_RUNBOOK.md` — Release engineering guide, semantic versioning, artifact generation, staging & production rollouts, health probes, and disaster rollback runbook.
+
+## Status
+`COMPLETE` — Fully automated, tested, documented, and operational.
+
+------------------------------------------------------------------------
+
+# 33. Phase 18 (Collaborative Detection Extension) — Privacy-Preserving Threat Intelligence Sharing & Collaborative Detection
+
+> **Note on Roadmap Extension:**  
+> Phase 18 extends the Squish Quishing and Smishing Detection System with a decentralized, privacy-preserving threat intelligence sharing framework. It enables participating edge devices to voluntarily share scrubbed threat indicators, dynamically corroborate emerging phishing campaigns, and empower SOC administrators with a dedicated triage and lifecycle management console, all without exposing raw SMS text, personal credentials, or requiring online connectivity for local edge detection.
+
+## Objective
+Establish a federated, opt-in threat intelligence sharing framework that identifies recurring malicious URLs, QR-linked threats, and smishing/quishing campaigns across participating devices. Validates threat indicators and broadens detection coverage while rigorously upholding zero-PII constraints, strict user consent, multi-user anti-poisoning consensus, and full server-side RBAC.
+
+## Scope & Capabilities Implemented
+1. **Normalized & Versioned Threat Indicator Data Model (v1.0):**
+   - Implemented `ThreatIntel` enhancements (`verification_status`, `revocation_reason`, `promoted_from_report_id`) and Alembic migration `006_add_community_threat_intel_sharing`.
+   - Distinct lifecycle state machine: `UNVERIFIED` (under observation), `VERIFIED` (authoritative confirmed malicious), `EXPIRED` (TTL elapsed), and `REVOKED` (disputed/false positive with mandatory audit reasoning).
+2. **Strict Opt-In Privacy & Consent Management:**
+   - Database model `user_sharing_preferences` enforcing strict default-off (`is_sharing_enabled=False`).
+   - Granular user control: version-tracked consent (`v1.0`), campaign correlation toggle, withdrawal tracking (`withdrawn_at`), and user report withdrawal rights (`DELETE /threat-intel/community/my-reports/{id}`).
+3. **Zero-PII Smishing Analysis & Automated Sanitization:**
+   - Raw SMS message bodies and sender identities are strictly prohibited and never transmitted to the backend.
+   - `SafeUrlNormalizer` canonicalization: RFC 3986 parsing, Punycode IDN decoding (eliminating homoglyphs), SSRF loopback/private IP rejection, and automated query parameter redaction of sensitive credentials (`token`, `auth`, `password`, `session`).
+4. **Dynamic Consensus & Anti-Poisoning Engine:**
+   - An unverified report is **never** treated as confirmed malicious intelligence.
+   - 72-hour sliding corroboration window dynamically increases consensus scores as independent users report matching SHA-256 canonical fingerprints.
+   - Distinct reputation verdicts: `KNOWN_MALICIOUS` (authoritative), `SUSPICIOUS` (unverified community consensus), `NO_KNOWN_THREAT`, and `REPUTATION_UNAVAILABLE`.
+5. **FastAPI Backend Services & Authenticated APIs:**
+   - Public/User APIs: `/threat-intel/lookup`, `/threat-intel/consent`, `/threat-intel/community/submit`, `/threat-intel/community/my-reports`.
+   - SOC Admin APIs: `/admin/threat-intel/feeds`, `/ingest`, `/indicators`, `/indicators/{id}/status`, `/community-reports`, `/community-reports/{id}/triage`, and `/health`.
+   - Server-side RBAC (`Role.ADMIN`), cross-user isolation, and immutable audit logging in `audit_logs`.
+6. **Android Client Integration:**
+   - Preserved offline-first edge ML architecture: TinyBERT, XGBoost, and Isolation Forest execute locally on Android without network dependencies.
+   - DataStore preference `KEY_THREAT_INTEL_SHARING` and `SettingsRepository` integration with opt-in defaults.
+7. **SOC Administration & Triage Console:**
+   - Interactive Next.js 14 console (`/admin/threat-intel`) featuring Live Feed Health strip, Verified Indicators explorer, Community Reports Triage Queue, Add Indicator modal, Lifecycle Status modal, and Zero-PII Privacy Governance overview.
+8. **Automated Test Verification:**
+   - 9/9 automated tests in `test_phase18_threat_intel_sharing.py` passing 100%.
+   - Full backend regression suite passing 134/134 tests with zero regressions.
+   - Android test suite building and passing with 100% test success.
+   - Web application production build passing 23/23 routes compiled.
+
+## Status
+`COMPLETE` — Fully automated, tested, documented, and operational.
+
+------------------------------------------------------------------------
+
+# 34. Phase 19 (Adversarial Testing & AI Red-Team Extension) — Advanced Adversarial Testing, AI Red-Team Evaluation & Detection Resilience
+
+> **Note on Roadmap Extension:**  
+> Phase 19 is an optional extension beyond the original roadmap. It establishes a repeatable, authorized adversarial evaluation framework and red-team resilience benchmark for the Android application, TinyBERT smishing classifier, XGBoost URL classifier, Isolation Forest anomaly detector, ONNX inference pipeline, backend APIs, and threat-intelligence integrations.
+
+## Objective
+Strengthen the Squish AI/ML-Based Quishing and Smishing Detection and Prevention System against adversarial evasion, homoglyph obfuscation, zero-width steganography, RFC 791 alternative IP SSRF attacks, model corruption, false positives on genuine banking OTPs, backend threat-intelligence poisoning, and fail-open pipeline vulnerabilities.
+
+## Scope & Capabilities Implemented
+1. **Authorized Adversarial Benchmark Dataset (`models/data/adversarial_evaluation_dataset.json`):**
+   - 60 curated, privacy-safe synthetic test cases covering 26 distinct adversarial attack vectors (42 held-out test split, 18 validation split).
+   - Cryptographically versioned with SHA-256 (`9af21f1329285d432c8540177232d57ffe676669b9623a23805dbcf7ba2dd0a2`).
+2. **Dual-Stack SMS Preprocessing Hardening (Python & Android Kotlin):**
+   - Strips zero-width characters, soft hyphens, and bidirectional control characters (`\u200B-\u200F\uFEFF\u00AD\u2060\u202A-\u202E`).
+   - Normalizes 30+ Cyrillic and Greek homoglyph code points to canonical Latin ASCII before tokenization.
+   - Enforces a 5,000-character ceiling to prevent ReDoS and memory exhaustion attacks.
+   - Pinned offline tokenizer vocabulary (`models/tinybert/v2/vocab.txt`), preventing external network dependencies.
+3. **URL Normalizer & Comprehensive SSRF Defense:**
+   - Detects and neutralizes dangerous non-HTTP URI schemes (`javascript:`, `data:`, `smsto:`, `intent:`, `tel:`, `file:`, `blob:`, `vbscript:`, `about:`).
+   - Full RFC 791 octal dotted IP (`0177.0.0.1`) and dotted-hex (`0x7f.0.0.1`) normalization to prevent loopback filter bypasses.
+   - Decodes IPv4-mapped IPv6 addresses (`::ffff:127.0.0.1`, `::ffff:169.254.169.254`), thwarting cloud metadata exfiltration.
+   - Decodes Punycode IDNs into canonical form for deterministic analysis.
+4. **Contextual Risk Fusion & Fail-Closed Guarantee:**
+   - Detects brand subdomain masking (`paypal.com.account-verify.xyz`) and penalizes high-abuse TLDs (`.xyz`, `.top`, `.work`, `.click`, `.online`).
+   - Strict fail-closed policy: missing or corrupted ML models elevate the risk verdict using contextual security heuristics and rules instead of defaulting to a false-safe state.
+   - Transparent, non-fabricated explainability evidence chains for all elevated verdicts (0–25 Safe, 26–50 Low, 51–75 Medium, 76–100 High).
+5. **Backend API & Data-Poisoning Resilience:**
+   - Enforces strict isolation of unverified community submissions, preventing malicious actors from poisoning threat feeds.
+   - Prevents privilege escalation and cross-user record modification.
+   - Enforces a 1 MB body payload ceiling returning `413 Payload Too Large`.
+   - Automatically sanitizes sensitive query parameters (`[REDACTED]`) before persistence or logging.
+6. **Automated Adversarial Regression Runner (`scripts/run_adversarial_evaluation.py`):**
+   - Evaluates the 60-sample benchmark across all detection paths in under 10 seconds.
+   - Emits structured machine-readable reports (`docs/adversarial_evaluation_report.json`) and human-readable summaries.
+   - Enforces CI quality gates: Precision $\ge 90\%$, Recall $\ge 85\%$, False Positive Rate $\le 5\%$, Latency p95 $\le 50\text{ ms}$.
+7. **Empirical Quality Gate Results (100% Pass):**
+   - Overall Accuracy: **100.00%**
+   - Precision: **100.00%**
+   - Recall: **100.00%**
+   - False Positive Rate: **0.00%**
+   - False Negative Rate: **0.00%**
+   - Latency: **3.01 ms** (p50), **9.14 ms** (p95)
+   - Quality Gate Status: **PASSED**
+8. **Automated Test Suites & Zero-Regression Verification:**
+   - AI Adversarial Tests (`ai/tests/test_adversarial_robustness.py`): 14/14 passed.
+   - Backend Adversarial Tests (`backend/tests/test_phase19_adversarial_resilience.py`): 9/9 passed.
+   - Full AI Test Suite: 71/71 passed.
+   - Full Backend Test Suite: 143/143 passed (6 skipped for unconfigured live PostgreSQL).
+   - Android Unit Tests: All unit tests compiled and passed (`BUILD SUCCESSFUL`).
+9. **Documentation Package:**
+   - `ADVERSARIAL_TESTING.md`
+   - `MODEL_ROBUSTNESS_REPORT.md`
+   - `DETECTION_REGRESSION_REPORT.md`
+
+## Status
+`COMPLETE` — Fully verified, zero regressions, all quality gates passed.

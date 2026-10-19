@@ -11,7 +11,7 @@ import { RiskDistributionBar } from '@/components/charts/RiskDistributionBar';
 import { LoadingSpinner } from '@/components/ui/LoadingState';
 import { ErrorState } from '@/components/ui/ErrorState';
 import { api } from '@/services/api';
-import { AnalyticsSummary, ThreatTrendsResponse, ThreatEvent } from '@/types';
+import { AnalyticsSummary, ThreatTrendsResponse, ThreatEvent, IncidentMetrics } from '@/types';
 import {
   ShieldAlert,
   Users,
@@ -23,12 +23,14 @@ import {
   RefreshCw,
   Clock,
   ShieldCheck,
+  AlertOctagon,
 } from 'lucide-react';
 
 export default function AdminOverviewDashboardPage() {
   const [summary, setSummary] = useState<AnalyticsSummary | null>(null);
   const [trends, setTrends] = useState<ThreatTrendsResponse | null>(null);
   const [recentThreats, setRecentThreats] = useState<ThreatEvent[]>([]);
+  const [incidentMetrics, setIncidentMetrics] = useState<IncidentMetrics | null>(null);
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
   const [isRefreshing, setIsRefreshing] = useState<boolean>(false);
@@ -36,14 +38,16 @@ export default function AdminOverviewDashboardPage() {
   const fetchData = useCallback(async () => {
     setError(null);
     try {
-      const [sumRes, trendRes, threatsRes] = await Promise.all([
+      const [sumRes, trendRes, threatsRes, incRes] = await Promise.all([
         api.analytics.getSummary(),
         api.analytics.getTrends(7),
         api.threats.list({ page: 1, page_size: 5 }),
+        api.incidents.getMetrics().catch(() => null),
       ]);
       setSummary(sumRes);
       setTrends(trendRes);
       setRecentThreats(threatsRes.items || []);
+      if (incRes) setIncidentMetrics(incRes);
     } catch (err: any) {
       setError(err.message || 'Unable to retrieve telemetry overview from backend.');
     } finally {
@@ -136,6 +140,80 @@ export default function AdminOverviewDashboardPage() {
                 }
               />
             </div>
+
+            {/* SOC Security Incident Operations Strip */}
+            {incidentMetrics && (
+              <div className="bg-slate-900/80 border border-slate-800 rounded-xl p-4 space-y-3">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-slate-800/80 pb-2.5">
+                  <div className="flex items-center space-x-2">
+                    <div className="p-1.5 rounded-lg bg-red-500/10 border border-red-500/20 text-red-400">
+                      <AlertOctagon className="w-4 h-4" />
+                    </div>
+                    <div>
+                      <h3 className="text-xs font-bold text-slate-100 uppercase tracking-wider">
+                        Security Operations Center (SOC) Incidents
+                      </h3>
+                      <p className="text-[11px] text-slate-400">
+                        Correlated investigations, threat groupings, triage queues, and operational response metrics
+                      </p>
+                    </div>
+                  </div>
+                  <Link
+                    href="/admin/incidents"
+                    className="inline-flex items-center space-x-1.5 px-3 py-1 rounded-lg bg-slate-800 hover:bg-slate-700 text-xs font-semibold text-amber-300 hover:text-amber-200 border border-slate-700 transition-colors self-start sm:self-auto"
+                  >
+                    <span>Investigate Incidents</span>
+                    <ArrowRight className="w-3.5 h-3.5" />
+                  </Link>
+                </div>
+
+                <div className="grid grid-cols-2 sm:grid-cols-5 gap-3">
+                  <div className="bg-slate-950/70 border border-slate-800/80 rounded-lg p-2.5">
+                    <div className="text-[10px] text-slate-400 uppercase font-mono">Open Cases</div>
+                    <div className="text-lg font-bold text-amber-300 font-mono mt-0.5">
+                      {incidentMetrics.open_incidents}
+                    </div>
+                    <div className="text-[9px] text-slate-500">Active investigations</div>
+                  </div>
+
+                  <div className="bg-slate-950/70 border border-red-500/20 rounded-lg p-2.5">
+                    <div className="text-[10px] text-red-400 uppercase font-mono">Critical / High</div>
+                    <div className="text-lg font-bold text-red-300 font-mono mt-0.5">
+                      {incidentMetrics.critical_incidents + incidentMetrics.high_incidents}
+                    </div>
+                    <div className="text-[9px] text-red-500/80">Severe risk posture</div>
+                  </div>
+
+                  <div className="bg-slate-950/70 border border-blue-500/20 rounded-lg p-2.5">
+                    <div className="text-[10px] text-blue-400 uppercase font-mono">Awaiting Triage</div>
+                    <div className="text-lg font-bold text-blue-300 font-mono mt-0.5">
+                      {incidentMetrics.awaiting_triage_incidents}
+                    </div>
+                    <div className="text-[9px] text-blue-500/80">Unreviewed status</div>
+                  </div>
+
+                  <div className="bg-slate-950/70 border border-slate-800/80 rounded-lg p-2.5">
+                    <div className="text-[10px] text-slate-400 uppercase font-mono">Mean Triage (MTTT)</div>
+                    <div className="text-lg font-bold text-cyan-300 font-mono mt-0.5">
+                      {incidentMetrics.mean_time_to_triage_hours !== null && incidentMetrics.mean_time_to_triage_hours !== undefined
+                        ? `${incidentMetrics.mean_time_to_triage_hours.toFixed(1)}h`
+                        : 'N/A'}
+                    </div>
+                    <div className="text-[9px] text-slate-500">Detection to triage</div>
+                  </div>
+
+                  <div className="bg-slate-950/70 border border-emerald-500/20 rounded-lg p-2.5">
+                    <div className="text-[10px] text-emerald-400 uppercase font-mono">Mean Resolve (MTTR)</div>
+                    <div className="text-lg font-bold text-emerald-300 font-mono mt-0.5">
+                      {incidentMetrics.mean_time_to_resolve_hours !== null && incidentMetrics.mean_time_to_resolve_hours !== undefined
+                        ? `${incidentMetrics.mean_time_to_resolve_hours.toFixed(1)}h`
+                        : 'N/A'}
+                    </div>
+                    <div className="text-[9px] text-emerald-500/80">Triage to resolution</div>
+                  </div>
+                </div>
+              </div>
+            )}
 
             {/* Channels & Verification Sub-metrics */}
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">

@@ -49,3 +49,33 @@
 - [`operational-limitations.md`](./operational-limitations.md) — Hardware, Edge Memory, Battery, Concurrency Bounds & Data Minimization.
 - [`phase13_model_evaluation_report.json`](./phase13_model_evaluation_report.json) — Certified Evaluation Benchmark Metrics (Accuracy, F1, Recall, Latency).
 
+---
+
+## 5. Phase 14 — Advanced Threat Intelligence & Adaptive Detection Extension Guides
+- [`threat-intelligence.md`](./threat-intelligence.md) — Threat Intelligence Architecture, Feeds (URLhaus, PhishTank, GSB, Internal), Normalization & Provenance.
+- [`url-reputation.md`](./url-reputation.md) — Safe URL Canonicalization, Punycode IDN Conversion, SSRF Protection, Privacy Query Scrubbing & Status Machine.
+- [`model-improvement.md`](./model-improvement.md) — Controlled Multi-Gate Model Promotion Workflow, Governance, Manifest Sign-Off & Rollback Protocols.
+- [`detection-evaluation.md`](./detection-evaluation.md) — Emerging-Threat Evaluation Benchmark (+50% Recall Lift, Zero False-Positive Inflation, Latency Metrics).
+- [`intelligence-privacy.md`](./intelligence-privacy.md) — Privacy-Preserving Architecture, Zero Raw SMS Logging, Provider Secret Isolation & Data Minimization.
+- [`phase14_threat_intel_evaluation_report.json`](./phase14_threat_intel_evaluation_report.json) — Certified Emerging-Threat Evaluation Benchmark Results.
+
+---
+
+## 6. Phase 15 — Advanced SOC Dashboard, Incident Response & Threat Investigation Guides
+- [`incident-management.md`](./incident-management.md) — Incident Management Architecture, Lifecycle State Machine, Transition Rules, RBAC, and Decoupled Schema.
+- [`incident-correlation.md`](./incident-correlation.md) — Threat Correlation Engine, Conservative Provenance, Matching Signals (`MATCHING_URL`, `MATCHING_DOMAIN`, `MATCHING_CAMPAIGN`), and Confidence Levels.
+- [`incident-response-runbook.md`](./incident-response-runbook.md) — Standard Operating Procedures (SOP) for SOC Analysts, Triage Matrix, Containment Protocols, and Post-Incident Verification.
+- [`soc-dashboard.md`](./soc-dashboard.md) — SOC Web Operations Dashboard Architecture, Incident Queue, Workstation Dossier, Evidence View, and Dark-Mode Visual Identity.
+- [`incident-metrics.md`](./incident-metrics.md) — Incident Metrics Definitions (MTTT, MTTR, Workload Breakdowns, Trends), Formulates, Clock Skew Defenses, and Edge Case Handling.
+
+---
+
+## 7. Phase 17 — Continuous Integration, Automated Quality Gates & Secure Delivery (DevSecOps)
+- [`DEVSECOPS_PLAN.md`](../DEVSECOPS_PLAN.md) — Master DevSecOps Architecture, Multi-Stage CI/CD Topology, Quality Gates & Gated Rollout Protocols.
+- [`CI_CD_SETUP.md`](../CI_CD_SETUP.md) — Step-by-Step GitHub Actions Setup, Environment Secrets (`staging`/`production`), Branch Protections & Local Developer Verification.
+- [`SECURITY_SCANNING.md`](../SECURITY_SCANNING.md) — Automated Secret Scanning, SAST (Bandit), Dependency Audits (`pip-audit`, `npm audit`), Container Hardening & Remediation SLAs.
+- [`RELEASE_RUNBOOK.md`](../RELEASE_RUNBOOK.md) — Release Engineering Standard Operating Procedure, Semantic Versioning Protocol, Smoke Testing & Rollback SOPs.
+- [`FINAL_ACCEPTANCE_REPORT.md`](../FINAL_ACCEPTANCE_REPORT.md) — Comprehensive Master Production Readiness & Requirements Traceability Matrix.
+
+
+

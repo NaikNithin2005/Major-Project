@@ -20,6 +20,8 @@ import {
   X,
   ArrowLeft,
   Lock,
+  AlertOctagon,
+  Radio,
 } from 'lucide-react';
 
 interface AdminShellProps {
@@ -85,7 +87,9 @@ export function AdminShell({ children }: AdminShellProps) {
 
   const adminNavItems = [
     { name: 'System Overview', href: '/admin', icon: LayoutDashboard },
+    { name: 'Security Incidents', href: '/admin/incidents', icon: AlertOctagon },
     { name: 'Global Threat Triage', href: '/admin/threats', icon: ShieldAlert },
+    { name: 'Threat Intelligence', href: '/admin/threat-intel', icon: Radio },
     { name: 'User Management', href: '/admin/users', icon: Users },
     { name: 'AI Models Registry', href: '/admin/models', icon: Cpu },
     { name: 'System Audit Logs', href: '/admin/audit-logs', icon: FileText },

@@ -1,0 +1,60 @@
+{
+  "phase": 14,
+  "title": "Phase 14 Threat Intelligence & Adaptive Detection Evaluation Report",
+  "timestamp": "2026-10-17T08:24:37.721826+00:00",
+  "dataset": {
+    "name": "emerging_threats_test.csv",
+    "total_samples": 30,
+    "malicious_samples": 16,
+    "benign_controls": 14,
+    "categories_evaluated": [
+      "HOMOGLYPH_PUNYCODE",
+      "CYRILLIC_HOMOGLYPH",
+      "SUBDOMAIN_MASKING",
+      "DIRECT_IP",
+      "DIRECT_IP_HIGH_PORT",
+      "HEX_IP_SSRF",
+      "QR_REDIRECT",
+      "REWARD_FRAUD",
+      "GOV_IMPERSONATION",
+      "CRYPTO_DRAINER",
+      "PACKAGE_SMISHING",
+      "BENIGN_CONTROL"
+    ]
+  },
+  "comparison": {
+    "baseline_model_alone": {
+      "accuracy": 0.6,
+      "precision": 1.0,
+      "recall": 0.25,
+      "f1_score": 0.4,
+      "false_positive_rate": 0.0,
+      "false_negative_rate": 0.75,
+      "tp": 4,
+      "tn": 14,
+      "fp": 0,
+      "fn": 12,
+      "latency_p50_ms": 3.861,
+      "latency_p95_ms": 7.587
+    },
+    "phase14_enriched_model_and_intel": {
+      "accuracy": 0.8667,
+      "precision": 1.0,
+      "recall": 0.75,
+      "f1_score": 0.8571,
+      "false_positive_rate": 0.0,
+      "false_negative_rate": 0.25,
+      "tp": 12,
+      "tn": 14,
+      "fp": 0,
+      "fn": 4,
+      "latency_p50_ms": 4.084,
+      "latency_p95_ms": 7.89
+    },
+    "performance_gain": {
+      "recall_lift_pct": 50.0,
+      "f1_lift_pct": 45.71,
+      "missed_threats_reduction": 8
+    }
+  }
+}

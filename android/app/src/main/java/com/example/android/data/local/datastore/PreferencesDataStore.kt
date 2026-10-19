@@ -20,6 +20,7 @@ class PreferencesDataStore(private val context: Context) {
         val KEY_BIOMETRIC_LOCK = booleanPreferencesKey("biometric_lock")
         val KEY_DARK_THEME = booleanPreferencesKey("dark_theme")
         val KEY_SYNC_FREQUENCY_HOURS = intPreferencesKey("sync_frequency_hours")
+        val KEY_THREAT_INTEL_SHARING = booleanPreferencesKey("threat_intel_sharing_enabled")
     }
 
     val isSmsProtectionEnabled: Flow<Boolean> = context.dataStore.data
@@ -46,6 +47,12 @@ class PreferencesDataStore(private val context: Context) {
         }
         .map { preferences -> preferences[KEY_BIOMETRIC_LOCK] ?: false }
 
+    val isThreatSharingEnabled: Flow<Boolean> = context.dataStore.data
+        .catch { exception ->
+            if (exception is IOException) emit(emptyPreferences()) else throw exception
+        }
+        .map { preferences -> preferences[KEY_THREAT_INTEL_SHARING] ?: false }
+
     suspend fun setSmsProtection(enabled: Boolean) {
         context.dataStore.edit { preferences ->
             preferences[KEY_REALTIME_SMS_PROTECTION] = enabled
@@ -67,6 +74,12 @@ class PreferencesDataStore(private val context: Context) {
     suspend fun setBiometricLock(enabled: Boolean) {
         context.dataStore.edit { preferences ->
             preferences[KEY_BIOMETRIC_LOCK] = enabled
+        }
+    }
+
+    suspend fun setThreatSharing(enabled: Boolean) {
+        context.dataStore.edit { preferences ->
+            preferences[KEY_THREAT_INTEL_SHARING] = enabled
         }
     }
 }

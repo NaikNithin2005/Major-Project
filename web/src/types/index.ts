@@ -148,3 +148,192 @@ export interface ApiError {
   message: string;
   details?: any;
 }
+
+// --- PHASE 15: SECURITY INCIDENT MANAGEMENT TYPES ---
+
+export type IncidentSeverity = 'LOW' | 'MEDIUM' | 'HIGH' | 'CRITICAL';
+export type IncidentStatus = 'NEW' | 'TRIAGED' | 'INVESTIGATING' | 'CONTAINED' | 'RESOLVED' | 'CLOSED';
+export type IncidentCategory =
+  | 'QUISHING_CAMPAIGN'
+  | 'SMISHING_SURGE'
+  | 'BRAND_IMPERSONATION'
+  | 'MALICIOUS_INFRASTRUCTURE'
+  | 'ACCOUNT_TAKEOVER_ATTEMPT'
+  | 'UNKNOWN';
+
+export interface Incident {
+  id: string;
+  title: string;
+  description: string | null;
+  severity: IncidentSeverity;
+  status: IncidentStatus;
+  category: IncidentCategory;
+  assigned_admin_id: string | null;
+  assigned_admin_email: string | null;
+  assigned_admin_name: string | null;
+  created_by_admin_id: string | null;
+  created_at: string;
+  updated_at: string;
+  triaged_at: string | null;
+  contained_at: string | null;
+  resolved_at: string | null;
+  closed_at: string | null;
+  resolution_summary: string | null;
+  linked_threats_count: number;
+  notes_count: number;
+  metadata_json: Record<string, any> | null;
+}
+
+export interface LinkedThreatSummary {
+  id: string;
+  event_type: string;
+  risk_score: number;
+  threat_category: string;
+  recommended_action: string;
+  timestamp: string;
+  url: string | null;
+  domain: string | null;
+  reasons: string[] | null;
+  user_id: string | null;
+  relationship_type: string;
+  correlation_signal: string | null;
+  linked_at: string;
+}
+
+export interface IncidentNote {
+  id: string;
+  incident_id: string;
+  author_user_id: string;
+  author_name: string | null;
+  note_type: string;
+  content: string;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface IncidentEvent {
+  id: string;
+  incident_id: string;
+  actor_user_id: string | null;
+  actor_name: string | null;
+  event_type: string;
+  previous_state: string | null;
+  new_state: string | null;
+  summary: string;
+  details_json: Record<string, any> | null;
+  timestamp: string;
+}
+
+export interface IncidentDetail extends Incident {
+  threat_links: LinkedThreatSummary[];
+  notes: IncidentNote[];
+  events: IncidentEvent[];
+}
+
+export interface CorrelationSuggestion {
+  threat_event_id: string;
+  event_type: string;
+  risk_score: number;
+  threat_category: string;
+  timestamp: string;
+  matched_indicator: string;
+  signal: string;
+  confidence: string;
+  url: string | null;
+  domain: string | null;
+}
+
+export interface IncidentMetrics {
+  total_incidents: number;
+  open_incidents: number;
+  critical_incidents: number;
+  high_incidents: number;
+  awaiting_triage_incidents: number;
+  investigating_incidents: number;
+  contained_incidents: number;
+  resolved_incidents: number;
+  closed_incidents: number;
+  reopened_incidents: number;
+  mean_time_to_triage_hours: number | null;
+  mean_time_to_resolve_hours: number | null;
+  severity_breakdown: Record<string, number>;
+  status_breakdown: Record<string, number>;
+  category_breakdown: Record<string, number>;
+  daily_trend: Array<{ date: string; count: number }>;
+}
+
+export interface IncidentFilterParams {
+  page?: number;
+  page_size?: number;
+  status?: string;
+  severity?: string;
+  category?: string;
+  assigned_admin_id?: string;
+  search?: string;
+  start_date?: string;
+  end_date?: string;
+}
+
+// =========================================================================
+// PHASE 18: THREAT INTELLIGENCE & COLLABORATIVE SHARING
+// =========================================================================
+
+export interface ThreatIndicator {
+  id: string;
+  indicator_type: string;
+  indicator_value: string;
+  threat_type: string;
+  confidence: number;
+  source: string;
+  first_seen: string;
+  last_seen: string;
+  status: string;
+  verification_status?: string;
+  expires_at?: string | null;
+  revocation_reason?: string | null;
+  metadata_json?: Record<string, any> | null;
+}
+
+export interface CommunityThreatReport {
+  id: string;
+  anonymous_submission_id: string;
+  indicator_type: string;
+  indicator_value: string;
+  threat_category: string;
+  user_risk_score: number;
+  model_verdicts?: Record<string, any> | null;
+  context_metadata?: Record<string, any> | null;
+  status: string;
+  consensus_score: number;
+  corroboration_count: number;
+  admin_notes?: string | null;
+  reviewed_at?: string | null;
+  promoted_indicator_id?: string | null;
+  submitted_at: string;
+  updated_at: string;
+}
+
+export interface FeedStatusItem {
+  feed_name: string;
+  provider_type: string;
+  is_active: boolean;
+  is_configured: boolean;
+  indicator_count: number;
+  last_sync?: string | null;
+  terms: string;
+}
+
+export interface ThreatIntelHealth {
+  status: string;
+  total_verified_indicators: number;
+  active_indicators: number;
+  revoked_indicators: number;
+  expired_indicators: number;
+  total_community_reports: number;
+  pending_community_reports: number;
+  approved_community_reports: number;
+  rejected_community_reports: number;
+  feeds: FeedStatusItem[];
+}
+
+

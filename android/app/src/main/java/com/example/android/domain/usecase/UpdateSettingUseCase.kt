@@ -20,4 +20,8 @@ class UpdateSettingUseCase(
     suspend fun setBiometricLock(enabled: Boolean): Result<Unit> {
         return repository.setBiometricLock(enabled)
     }
+
+    suspend fun setThreatSharingEnabled(enabled: Boolean): Result<Unit> {
+        return repository.setThreatSharingEnabled(enabled)
+    }
 }

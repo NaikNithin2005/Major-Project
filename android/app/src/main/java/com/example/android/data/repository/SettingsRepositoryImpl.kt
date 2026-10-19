@@ -15,13 +15,15 @@ class SettingsRepositoryImpl(
             preferencesDataStore.isSmsProtectionEnabled,
             preferencesDataStore.isQrScannerEnabled,
             preferencesDataStore.areNotificationsEnabled,
-            preferencesDataStore.isBiometricLockEnabled
-        ) { sms, qr, notif, bio ->
+            preferencesDataStore.isBiometricLockEnabled,
+            preferencesDataStore.isThreatSharingEnabled
+        ) { sms, qr, notif, bio, threatSharing ->
             SystemSettings(
                 realtimeSmsProtection = sms,
                 realtimeQrScanner = qr,
                 notificationsEnabled = notif,
-                biometricLock = bio
+                biometricLock = bio,
+                threatIntelligenceSharingEnabled = threatSharing
             )
         }
     }
@@ -56,6 +58,15 @@ class SettingsRepositoryImpl(
     override suspend fun setBiometricLock(enabled: Boolean): Result<Unit> {
         return try {
             preferencesDataStore.setBiometricLock(enabled)
+            Result.success(Unit)
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
+
+    override suspend fun setThreatSharingEnabled(enabled: Boolean): Result<Unit> {
+        return try {
+            preferencesDataStore.setThreatSharing(enabled)
             Result.success(Unit)
         } catch (e: Exception) {
             Result.failure(e)

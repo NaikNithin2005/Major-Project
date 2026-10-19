@@ -53,11 +53,26 @@ class SmsPreprocessor {
     }
 
     /**
-     * Normalizes text by converting to lowercase, flattening whitespace, and removing non-printable control characters.
+     * Normalizes text by removing invisible zero-width formatting characters,
+     * resolving visual homoglyphs to Latin equivalents, converting to lowercase,
+     * flattening whitespace, and trimming.
      */
     fun normalize(text: String): String {
         if (text.isBlank()) return ""
-        return text.lowercase()
+        // Strip zero-width format chars: \u200B-\u200F, \uFEFF, \u00AD, \u2060, \u202A-\u202E
+        val stripped = text.replace(Regex("[\\u200B-\\u200F\\uFEFF\\u00AD\\u2060\\u202A-\\u202E]"), "")
+        // Map common visual homoglyphs (Cyrillic / Greek lookalikes)
+        val homoglyphs = mapOf(
+            'а' to 'a', 'е' to 'e', 'о' to 'o', 'р' to 'p', 'с' to 'c', 'у' to 'y', 'х' to 'x', 'і' to 'i',
+            'А' to 'A', 'В' to 'B', 'Е' to 'E', 'К' to 'K', 'М' to 'M', 'Н' to 'H', 'О' to 'O', 'Р' to 'P', 'С' to 'C', 'Т' to 'T', 'Х' to 'X',
+            'α' to 'a', 'ο' to 'o', 'ν' to 'v', 'ρ' to 'p', 'τ' to 't', 'κ' to 'k'
+        )
+        val dehomoglyphed = buildString {
+            for (ch in stripped) {
+                append(homoglyphs[ch] ?: ch)
+            }
+        }
+        return dehomoglyphed.lowercase()
             .replace(Regex("[\\r\\n\\t]+"), " ")
             .replace(Regex("\\s+"), " ")
             .trim()

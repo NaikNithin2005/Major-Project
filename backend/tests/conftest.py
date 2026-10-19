@@ -12,6 +12,7 @@ os.environ["DATABASE_URL"] = "sqlite:///:memory:"
 
 from app.database.base import Base
 from app.database.session import get_db
+import app.models  # Register all models with Base.metadata
 from app.models.user import User
 from app.main import app
 

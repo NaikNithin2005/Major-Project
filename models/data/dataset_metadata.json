@@ -62,5 +62,14 @@
     "source_file": "Phishing URLs.csv",
     "sha256": "00762308b0347c899769487dac35ee0ab0664fd6f2259588ff7151faab776041",
     "anomaly_test_rows": 10000
+  },
+  "adversarial_benchmark": {
+    "source_file": "adversarial_evaluation_dataset.json",
+    "sha256": "9af21f1329285d432c8540177232d57ffe676669b9623a23805dbcf7ba2dd0a2",
+    "version": "1.0.0",
+    "total_samples": 60,
+    "test_split_samples": 42,
+    "validation_split_samples": 18,
+    "categories_count": 26
   }
 }

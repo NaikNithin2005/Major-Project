@@ -9,4 +9,5 @@ interface SettingsRepository {
     suspend fun setQrScanner(enabled: Boolean): Result<Unit>
     suspend fun setNotificationsEnabled(enabled: Boolean): Result<Unit>
     suspend fun setBiometricLock(enabled: Boolean): Result<Unit>
+    suspend fun setThreatSharingEnabled(enabled: Boolean): Result<Unit>
 }

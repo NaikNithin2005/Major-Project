@@ -5,5 +5,7 @@ data class SystemSettings(
     val realtimeQrScanner: Boolean = true,
     val notificationsEnabled: Boolean = true,
     val biometricLock: Boolean = false,
-    val darkTheme: Boolean = true
+    val darkTheme: Boolean = true,
+    val threatIntelligenceSharingEnabled: Boolean = false
 )
+

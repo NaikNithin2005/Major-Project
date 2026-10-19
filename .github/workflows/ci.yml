@@ -1,81 +1,263 @@
-name: CI Pipeline
+name: Squish DevSecOps CI Pipeline
 
 on:
   push:
     branches: [ main, develop ]
+    tags: [ 'v*' ]
   pull_request:
     branches: [ main, develop ]
+  workflow_dispatch:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
 
 jobs:
-  backend-test:
+  # =========================================================================
+  # 1. SECRET SCANNING & CREDENTIAL INTEGRITY
+  # =========================================================================
+  secret-scan:
+    name: Secret & Credential Scanning
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout Codebase
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
       - name: Set up Python
-        uses: actions/setup-python@v4
+        uses: actions/setup-python@v5
         with:
           python-version: '3.11'
-      - name: Install Dependencies
-        run: |
-          cd backend
-          python -m pip install --upgrade pip
-          pip install -r requirements.txt
-      - name: Run Backend Tests
-        run: |
-          cd backend
-          pytest
 
-  ai-test:
+      - name: Execute Repository Secret Scanner
+        run: |
+          python scripts/scan_secrets.py
+
+  # =========================================================================
+  # 2. MODEL ARTIFACTS & AI RUNTIME VALIDATION
+  # =========================================================================
+  model-validation:
+    name: AI Models & Artifact Integrity
     runs-on: ubuntu-latest
+    needs: [secret-scan]
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout Codebase
+        uses: actions/checkout@v4
+
       - name: Set up Python
-        uses: actions/setup-python@v4
+        uses: actions/setup-python@v5
         with:
           python-version: '3.11'
-      - name: Install Dependencies
-        run: |
-          cd ai
-          python -m pip install --upgrade pip
-          pip install -r requirements.txt
-      - name: Run AI Tests
-        run: |
-          cd ai
-          pytest
+          cache: 'pip'
+          cache-dependency-path: 'ai/requirements.txt'
 
-  web-build:
+      - name: Install AI Dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r ai/requirements.txt
+
+      - name: Verify Model Manifest, Checksums & ONNX Runtimes
+        run: |
+          python scripts/verify_model_artifacts.py
+
+      - name: Run AI Unit & Invariant Tests
+        run: |
+          cd ai
+          pytest tests/ -v --junitxml=ai-test-results.xml
+
+      - name: Upload AI Test Results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: ai-test-results
+          path: ai/ai-test-results.xml
+
+  # =========================================================================
+  # 3. BACKEND FASTAPI & DATABASE QUALITY GATES
+  # =========================================================================
+  backend-ci:
+    name: Backend API & Database Verification
     runs-on: ubuntu-latest
+    needs: [secret-scan]
+    services:
+      postgres:
+        image: postgres:15-alpine
+        env:
+          POSTGRES_DB: postgres
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout Codebase
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+          cache: 'pip'
+          cache-dependency-path: 'backend/requirements.txt'
+
+      - name: Install Backend Dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r backend/requirements.txt pytest-cov flake8
+
+      - name: Lint & Static Code Inspection
+        run: |
+          # Stop build if there are Python syntax errors or undefined names
+          python -m flake8 backend/app --count --select=E9,F63,F7,F82 --show-source --statistics
+
+      - name: Verify Clean Database Migrations (Bidirectional)
+        run: |
+          python scripts/verify_db_migrations.py
+
+      - name: Run Full Backend Test Suite (Real PostgreSQL + SQLite)
+        env:
+          ENVIRONMENT: testing
+          DATABASE_URL: postgresql://postgres:postgres@localhost:5432/postgres
+          ALLOW_MOCK_AUTH: "true"
+        run: |
+          pytest backend/tests/ -v --cov=backend/app --cov-report=xml --cov-report=term --junitxml=backend-test-results.xml
+
+      - name: Upload Backend Test & Coverage Artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: backend-test-artifacts
+          path: |
+            backend-test-results.xml
+            coverage.xml
+
+  # =========================================================================
+  # 4. WEB DASHBOARD NEXT.JS & TYPESCRIPT QUALITY GATES
+  # =========================================================================
+  web-ci:
+    name: Web Dashboard Build & Static Checks
+    runs-on: ubuntu-latest
+    needs: [secret-scan]
+    defaults:
+      run:
+        working-directory: web
+    steps:
+      - name: Checkout Codebase
+        uses: actions/checkout@v4
+
       - name: Set up Node.js
         uses: actions/setup-node@v4
         with:
           node-version: '18'
-      - name: Install Dependencies
-        run: |
-          cd web
-          npm ci
-      - name: Next Build Verification
-        run: |
-          cd web
-          npm run build
+          cache: 'npm'
+          cache-dependency-path: 'web/package-lock.json'
 
-  android-validation:
+      - name: Install Dependencies
+        run: npm ci
+
+      - name: TypeScript Static Type Check
+        run: npx tsc --noEmit
+
+      - name: ESLint Quality Check
+        run: npm run lint
+
+      - name: Next.js Production Build
+        run: npm run build
+
+      - name: Upload Web Build Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: web-production-build
+          path: web/.next
+
+  # =========================================================================
+  # 5. ANDROID MOBILE APPLICATION QUALITY GATES
+  # =========================================================================
+  android-ci:
+    name: Android Mobile Build & Unit Tests
     runs-on: ubuntu-latest
+    needs: [secret-scan]
+    defaults:
+      run:
+        working-directory: android
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout Codebase
+        uses: actions/checkout@v4
+
       - name: Set up JDK 17
         uses: actions/setup-java@v4
         with:
           distribution: 'temurin'
           java-version: '17'
-      - name: Grant execute permission for gradlew
-        run: chmod +x android/gradlew
+          cache: 'gradle'
+
+      - name: Grant Execute Permission to Gradlew
+        run: chmod +x gradlew
+
+      - name: Run Android Lint Check
+        run: ./gradlew lintDebug --no-daemon
+
       - name: Run Android Unit & Security Tests
+        run: ./gradlew testDebugUnitTest --no-daemon
+
+      - name: Assemble Debug APK
+        run: ./gradlew assembleDebug --no-daemon
+
+      - name: Assemble Release APK Validation
+        run: ./gradlew assembleRelease --no-daemon
+
+      - name: Upload Signed/Release APK Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: android-release-apk-${{ github.sha }}
+          path: android/app/build/outputs/apk/release/*.apk
+
+  # =========================================================================
+  # 6. STATIC APPLICATION SECURITY TESTING (SAST)
+  # =========================================================================
+  security-sast:
+    name: Static Application Security Testing (Bandit)
+    runs-on: ubuntu-latest
+    needs: [secret-scan]
+    steps:
+      - name: Checkout Codebase
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install Bandit SAST Scanner
+        run: python -m pip install bandit
+
+      - name: Run SAST Scan on Backend Codebase
         run: |
-          cd android
-          ./gradlew testDebugUnitTest --no-daemon
-      - name: Verify Android Release Build
+          python -m bandit -r backend/app -ll -ii -f screen
+
+  # =========================================================================
+  # 7. CONSOLIDATED DEVSECOPS QUALITY GATE
+  # =========================================================================
+  quality-gate-summary:
+    name: DevSecOps Quality Gate Summary
+    runs-on: ubuntu-latest
+    needs: [secret-scan, model-validation, backend-ci, web-ci, android-ci, security-sast]
+    if: always()
+    steps:
+      - name: Evaluate Pipeline Results
         run: |
-          cd android
-          ./gradlew assembleRelease --no-daemon
+          if [[ "${{ needs.secret-scan.result }}" != "success" || \
+                "${{ needs.model-validation.result }}" != "success" || \
+                "${{ needs.backend-ci.result }}" != "success" || \
+                "${{ needs.web-ci.result }}" != "success" || \
+                "${{ needs.android-ci.result }}" != "success" || \
+                "${{ needs.security-sast.result }}" != "success" ]]; then
+            echo "[-] DEVSECOPS QUALITY GATE FAILED! One or more required checks failed."
+            exit 1
+          fi
+          echo "[+] ALL DEVSECOPS QUALITY GATES PASSED SUCCESSFULLY!"
