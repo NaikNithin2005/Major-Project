@@ -53,18 +53,26 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
         if (savedToken) {
           setAuthToken(savedToken);
-          // Verify with backend
-          const backendUser = await api.auth.getMe();
-          if (backendUser && backendUser.is_active) {
-            setUser(backendUser);
-            setToken(savedToken);
-          } else {
-            await handleLogout();
+          try {
+            const backendUser = await api.auth.getMe();
+            if (backendUser && backendUser.is_active) {
+              setUser(backendUser);
+              setToken(savedToken);
+            } else {
+              await handleLogout();
+            }
+          } catch {
+            const cachedUser = localStorage.getItem('squish_auth_user');
+            if (cachedUser) {
+              try {
+                setUser(JSON.parse(cachedUser));
+                setToken(savedToken);
+              } catch {
+                await handleLogout();
+              }
+            }
           }
         }
-      } catch (err) {
-        // Backend unavailable or token expired
-        await handleLogout();
       } finally {
         setIsLoading(false);
       }

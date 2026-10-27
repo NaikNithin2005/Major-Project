@@ -26,16 +26,23 @@ import {
   ExternalLink,
   Ban,
   Eye,
+  Radio,
 } from 'lucide-react';
+import { useAuth } from '@/context/AuthContext';
+import {
+  subscribeToUserThreats,
+  takeUserThreatAction,
+  deleteUserThreat,
+} from '@/services/threatFirestore';
 
 export default function UserThreatHistoryPage() {
-  const [threats, setThreats] = useState<ThreatEvent[]>([]);
-  const [totalCount, setTotalCount] = useState<number>(0);
+  const { user } = useAuth();
+  const [allThreats, setAllThreats] = useState<ThreatEvent[]>([]);
   const [page, setPage] = useState<number>(1);
   const [pageSize] = useState<number>(15);
-  const [totalPages, setTotalPages] = useState<number>(1);
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
+  const [isLiveConnected, setIsLiveConnected] = useState<boolean>(false);
 
   // Filters
   const [eventTypeFilter, setEventTypeFilter] = useState<string>('ALL');
@@ -43,40 +50,72 @@ export default function UserThreatHistoryPage() {
   const [searchTerm, setSearchTerm] = useState<string>('');
   const [actionInProgress, setActionInProgress] = useState<string | null>(null);
 
-  const fetchUserThreats = useCallback(async () => {
+  // Subscribe to real-time Firestore collection: users/{uid}/threats
+  useEffect(() => {
+    if (!user?.firebase_uid) {
+      setAllThreats([]);
+      setIsLoading(false);
+      return;
+    }
+
     setIsLoading(true);
     setError(null);
-    try {
-      const params: ThreatFilterParams = {
-        page,
-        page_size: pageSize,
-      };
-      if (eventTypeFilter !== 'ALL') params.event_type = eventTypeFilter;
-      if (categoryFilter !== 'ALL') params.threat_category = categoryFilter;
 
-      const res = await api.userThreats.list(params);
-      setThreats(res.items || []);
-      setTotalCount(res.total || 0);
-      setTotalPages(res.pages || 1);
-    } catch (err: any) {
-      setError(err.message || 'Failed to retrieve your threat history.');
-    } finally {
-      setIsLoading(false);
+    // Initial fallback from REST API to preload if Firestore connection is deferred
+    api.userThreats.list({ page: 1, page_size: 100 }).then((res) => {
+      if (res.items && res.items.length > 0) {
+        setAllThreats(res.items);
+      }
+    }).catch(() => {});
+
+    // Establish live listener
+    const unsubscribe = subscribeToUserThreats(
+      user.firebase_uid,
+      (liveEvents) => {
+        setAllThreats(liveEvents);
+        setIsLiveConnected(true);
+        setIsLoading(false);
+      },
+      (err) => {
+        console.warn('Real-time threats stream fallback notice:', err.message);
+        setIsLiveConnected(false);
+        setIsLoading(false);
+      }
+    );
+
+    return () => {
+      unsubscribe();
+      setIsLiveConnected(false);
+    };
+  }, [user?.firebase_uid]);
+
+  const handleReload = () => {
+    if (user?.firebase_uid) {
+      setIsLoading(true);
+      setError(null);
+      api.userThreats.list({ page: 1, page_size: 100 })
+        .then((res) => {
+          if (res.items) setAllThreats(res.items);
+        })
+        .catch((err: any) => setError(err.message || 'Failed to refresh threats'))
+        .finally(() => setIsLoading(false));
     }
-  }, [page, pageSize, eventTypeFilter, categoryFilter]);
-
-  useEffect(() => {
-    fetchUserThreats();
-  }, [fetchUserThreats]);
+  };
 
   const handleTakeAction = async (threatId: string, action: 'BLOCK' | 'MARK_SAFE' | 'IGNORE') => {
     setActionInProgress(threatId);
     try {
-      const updated = await api.userThreats.takeAction(threatId, action);
-      setThreats((prev) =>
+      if (user?.firebase_uid) {
+        await takeUserThreatAction(user.firebase_uid, threatId, action);
+      }
+      try {
+        await api.userThreats.takeAction(threatId, action);
+      } catch {}
+
+      setAllThreats((prev) =>
         prev.map((t) =>
           t.id === threatId
-            ? { ...t, status: updated.status, user_action: updated.user_action, updated_at: updated.updated_at }
+            ? { ...t, status: action === 'BLOCK' ? 'BLOCKED' : 'RESOLVED', user_action: action }
             : t
         )
       );
@@ -91,9 +130,14 @@ export default function UserThreatHistoryPage() {
     if (!confirm('Are you sure you want to delete this threat record from your history?')) return;
     setActionInProgress(threatId);
     try {
-      await api.userThreats.delete(threatId);
-      setThreats((prev) => prev.filter((t) => t.id !== threatId));
-      setTotalCount((c) => Math.max(0, c - 1));
+      if (user?.firebase_uid) {
+        await deleteUserThreat(user.firebase_uid, threatId);
+      }
+      try {
+        await api.userThreats.delete(threatId);
+      } catch {}
+
+      setAllThreats((prev) => prev.filter((t) => t.id !== threatId));
     } catch (err: any) {
       alert(`Delete failed: ${err.message}`);
     } finally {
@@ -101,8 +145,10 @@ export default function UserThreatHistoryPage() {
     }
   };
 
-  // Client search filtering
-  const filteredThreats = threats.filter((t) => {
+  // Client filtering & pagination over real-time threats
+  const filteredThreats = allThreats.filter((t) => {
+    if (eventTypeFilter !== 'ALL' && t.event_type !== eventTypeFilter) return false;
+    if (categoryFilter !== 'ALL' && t.threat_category !== categoryFilter) return false;
     if (!searchTerm.trim()) return true;
     const term = searchTerm.toLowerCase();
     const domain = t.url_metadata?.domain?.toLowerCase() || '';
@@ -111,23 +157,38 @@ export default function UserThreatHistoryPage() {
     return domain.includes(term) || reasons.includes(term) || id.includes(term);
   });
 
+  const totalCount = filteredThreats.length;
+  const totalPages = Math.max(1, Math.ceil(totalCount / pageSize));
+  const paginatedThreats = filteredThreats.slice((page - 1) * pageSize, page * pageSize);
+
   return (
     <UserShell>
       <div className="space-y-6">
         {/* Header */}
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <div>
-            <h1 className="text-xl sm:text-2xl font-bold tracking-tight text-slate-100 flex items-center space-x-2">
+            <div className="flex items-center space-x-2">
               <ShieldAlert className="w-6 h-6 text-cyan-400" />
-              <span>Your Threat History & Decisions</span>
-            </h1>
+              <h1 className="text-xl sm:text-2xl font-bold tracking-tight text-slate-100">
+                Your Threat History & Decisions
+              </h1>
+              {isLiveConnected && (
+                <span className="inline-flex items-center space-x-1.5 px-2 py-0.5 rounded text-[10px] font-semibold bg-cyan-500/10 text-cyan-400 border border-cyan-500/30">
+                  <span className="relative flex h-2 w-2">
+                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-cyan-400 opacity-75"></span>
+                    <span className="relative inline-flex rounded-full h-2 w-2 bg-cyan-500"></span>
+                  </span>
+                  <span>Live Stream</span>
+                </span>
+              )}
+            </div>
             <p className="text-xs text-slate-400 mt-1">
               Inspect detected quishing and smishing signals, take immediate protection actions, and manage your isolated history.
             </p>
           </div>
 
           <button
-            onClick={() => fetchUserThreats()}
+            onClick={handleReload}
             disabled={isLoading}
             className="inline-flex items-center space-x-2 px-3 py-2 bg-slate-900 hover:bg-slate-800 text-slate-300 text-xs font-semibold rounded-lg border border-slate-700/60 shadow-sm transition-all"
           >
@@ -196,7 +257,7 @@ export default function UserThreatHistoryPage() {
               <ErrorState
                 title="Error Loading Threats"
                 message={error}
-                onRetry={fetchUserThreats}
+                onRetry={handleReload}
               />
             </div>
           )}
@@ -230,7 +291,7 @@ export default function UserThreatHistoryPage() {
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-800/60 text-xs">
-                  {filteredThreats.map((threat) => {
+                  {paginatedThreats.map((threat) => {
                     const isActing = actionInProgress === threat.id;
                     const domain = threat.url_metadata?.domain || threat.qr_metadata?.scheme;
                     const topReason = threat.reasons && threat.reasons.length > 0 ? threat.reasons[0] : null;
@@ -355,7 +416,7 @@ export default function UserThreatHistoryPage() {
           )}
 
           {/* Pagination Footer */}
-          {!isLoading && threats.length > 0 && (
+          {!isLoading && filteredThreats.length > 0 && (
             <div className="px-6 py-4 border-t border-slate-800 flex items-center justify-between text-xs text-slate-400">
               <div>
                 Showing <span className="font-semibold text-slate-200">{(page - 1) * pageSize + 1}</span> to{' '}

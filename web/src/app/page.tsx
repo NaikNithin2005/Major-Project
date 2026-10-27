@@ -27,7 +27,14 @@ import {
   Ban,
   Activity,
   Sparkles,
+  Radio,
+  Wifi,
 } from 'lucide-react';
+import {
+  subscribeToUserThreats,
+  takeUserThreatAction,
+  calculateUserStatsFromThreats,
+} from '@/services/threatFirestore';
 
 export default function UserDashboardPage() {
   const { user } = useAuth();
@@ -37,9 +44,55 @@ export default function UserDashboardPage() {
   const [error, setError] = useState<string | null>(null);
   const [isRefreshing, setIsRefreshing] = useState<boolean>(false);
   const [actionInProgress, setActionInProgress] = useState<string | null>(null);
+  const [isLiveConnected, setIsLiveConnected] = useState<boolean>(false);
 
-  const fetchUserData = useCallback(async () => {
+  // Real-time Firestore subscription scoped to authenticated user UID
+  useEffect(() => {
+    if (!user?.firebase_uid) {
+      setStats(null);
+      setRecentThreats([]);
+      setIsLoading(false);
+      return;
+    }
+
+    setIsLoading(true);
     setError(null);
+
+    // Initial fallback from REST API to ensure immediate data if Firestore index is provisioning
+    api.userThreats.getStats().then(setStats).catch(() => {});
+    api.userThreats.list({ page: 1, page_size: 5 }).then((res) => {
+      if (res.items && res.items.length > 0) {
+        setRecentThreats(res.items);
+      }
+    }).catch(() => {});
+
+    // Establish real-time Firestore listener on users/{uid}/threats
+    const unsubscribe = subscribeToUserThreats(
+      user.firebase_uid,
+      (liveThreats) => {
+        setRecentThreats(liveThreats.slice(0, 5));
+        const liveStats = calculateUserStatsFromThreats(liveThreats);
+        setStats(liveStats);
+        setIsLiveConnected(true);
+        setIsLoading(false);
+        setIsRefreshing(false);
+      },
+      (err) => {
+        console.warn('Real-time Firestore stream fallback notice:', err.message);
+        setIsLiveConnected(false);
+        setIsLoading(false);
+        setIsRefreshing(false);
+      }
+    );
+
+    return () => {
+      unsubscribe();
+      setIsLiveConnected(false);
+    };
+  }, [user?.firebase_uid]);
+
+  const handleRefresh = async () => {
+    setIsRefreshing(true);
     try {
       const [statsRes, threatsRes] = await Promise.all([
         api.userThreats.getStats(),
@@ -48,33 +101,27 @@ export default function UserDashboardPage() {
       setStats(statsRes);
       setRecentThreats(threatsRes.items || []);
     } catch (err: any) {
-      console.error('Failed to load user dashboard:', err);
-      setError(err.message || 'Unable to retrieve your personal security telemetry.');
+      console.warn('Manual refresh notice:', err);
     } finally {
-      setIsLoading(false);
       setIsRefreshing(false);
     }
-  }, []);
-
-  useEffect(() => {
-    fetchUserData();
-  }, [fetchUserData]);
-
-  const handleRefresh = () => {
-    setIsRefreshing(true);
-    fetchUserData();
   };
 
   const handleUserAction = async (threatId: string, action: 'BLOCK' | 'MARK_SAFE') => {
     setActionInProgress(threatId);
     try {
-      const updated = await api.userThreats.takeAction(threatId, action);
+      // 1. Update Firestore in real time if user UID is available
+      if (user?.firebase_uid) {
+        await takeUserThreatAction(user.firebase_uid, threatId, action);
+      }
+      // 2. Also notify backend API
+      try {
+        await api.userThreats.takeAction(threatId, action);
+      } catch {}
+
       setRecentThreats((prev) =>
-        prev.map((t) => (t.id === threatId ? { ...t, status: updated.status, user_action: updated.user_action } : t))
+        prev.map((t) => (t.id === threatId ? { ...t, status: action === 'BLOCK' ? 'BLOCKED' : 'RESOLVED', user_action: action } : t))
       );
-      // Refresh stats counters
-      const updatedStats = await api.userThreats.getStats();
-      setStats(updatedStats);
     } catch (err: any) {
       alert(`Action failed: ${err.message}`);
     } finally {
@@ -118,6 +165,19 @@ export default function UserDashboardPage() {
                 <span className="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-semibold bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
                   Active Shield
                 </span>
+                {isLiveConnected ? (
+                  <span className="inline-flex items-center space-x-1.5 px-2 py-0.5 rounded text-[10px] font-semibold bg-cyan-500/10 text-cyan-400 border border-cyan-500/30">
+                    <span className="relative flex h-2 w-2">
+                      <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-cyan-400 opacity-75"></span>
+                      <span className="relative inline-flex rounded-full h-2 w-2 bg-cyan-500"></span>
+                    </span>
+                    <span>Live Telemetry</span>
+                  </span>
+                ) : (
+                  <span className="inline-flex items-center space-x-1 px-2 py-0.5 rounded text-[10px] font-semibold bg-slate-800 text-slate-400 border border-slate-700">
+                    <span>Synchronized</span>
+                  </span>
+                )}
               </div>
               <p className="text-xs text-slate-400 mt-1 max-w-xl">
                 Your mobile device and web account are protected by Squish Shield offline-first AI detection. All scans and threat verdicts synchronize automatically.
@@ -148,7 +208,7 @@ export default function UserDashboardPage() {
           <ErrorState
             title="Failed to Load Protection Overview"
             message={error}
-            onRetry={fetchUserData}
+            onRetry={handleRefresh}
           />
         )}
 

@@ -73,7 +73,8 @@ class AppContainer(private val context: Context) {
         com.example.android.data.repository.SyncRepositoryImpl(
             syncQueueDao = database.syncQueueDao(),
             backendApiService = backendApiService,
-            authRepository = authRepository
+            authRepository = authRepository,
+            firestoreDataSource = firestoreDataSource
         )
     }
 
@@ -87,7 +88,7 @@ class AppContainer(private val context: Context) {
     }
 
     val logoutUseCase: LogoutUseCase by lazy {
-        LogoutUseCase(authRepository)
+        LogoutUseCase(authRepository, threatHistoryRepository)
     }
 
     val getAuthStateUseCase: GetAuthStateUseCase by lazy {

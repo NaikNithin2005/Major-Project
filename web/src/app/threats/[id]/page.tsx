@@ -28,8 +28,15 @@ import {
   Trash2,
   Share2,
 } from 'lucide-react';
+import { useAuth } from '@/context/AuthContext';
+import {
+  getUserThreatById,
+  takeUserThreatAction,
+  deleteUserThreat,
+} from '@/services/threatFirestore';
 
 export default function ThreatDetailPage() {
+  const { user } = useAuth();
   const params = useParams();
   const router = useRouter();
   const threatId = params.id as string;
@@ -45,6 +52,17 @@ export default function ThreatDetailPage() {
     setIsLoading(true);
     setError(null);
     try {
+      // 1. First attempt to load direct from user's isolated Firestore collection
+      if (user?.firebase_uid) {
+        const firestoreRecord = await getUserThreatById(user.firebase_uid, threatId);
+        if (firestoreRecord) {
+          setThreat(firestoreRecord);
+          setIsLoading(false);
+          return;
+        }
+      }
+
+      // 2. Fallback to API if not yet synced in client or legacy record
       const data = await api.userThreats.get(threatId);
       setThreat(data);
     } catch (err: any) {
@@ -52,7 +70,7 @@ export default function ThreatDetailPage() {
     } finally {
       setIsLoading(false);
     }
-  }, [threatId]);
+  }, [threatId, user?.firebase_uid]);
 
   useEffect(() => {
     fetchThreat();
@@ -62,8 +80,17 @@ export default function ThreatDetailPage() {
     setIsUpdatingAction(true);
     setActionMessage(null);
     try {
-      const updated = await api.userThreats.takeAction(threatId, action);
-      setThreat(updated);
+      if (user?.firebase_uid && (action === 'BLOCK' || action === 'MARK_SAFE' || action === 'IGNORE')) {
+        await takeUserThreatAction(user.firebase_uid, threatId, action);
+      }
+      try {
+        const updated = await api.userThreats.takeAction(threatId, action);
+        setThreat(updated);
+      } catch {
+        setThreat((prev) =>
+          prev ? { ...prev, status: action === 'BLOCK' ? 'BLOCKED' : 'RESOLVED', user_action: action } : null
+        );
+      }
       setActionMessage(`Action "${action}" recorded successfully.`);
     } catch (err: any) {
       alert(`Action failed: ${err.message}`);
@@ -75,7 +102,13 @@ export default function ThreatDetailPage() {
   const handleDelete = async () => {
     if (!confirm('Are you sure you want to permanently delete this threat event from your history?')) return;
     try {
-      await api.userThreats.delete(threatId);
+      if (user?.firebase_uid) {
+        await deleteUserThreat(user.firebase_uid, threatId);
+      }
+      try {
+        await api.userThreats.delete(threatId);
+      } catch {}
+
       router.push('/threats');
     } catch (err: any) {
       alert(`Delete failed: ${err.message}`);
