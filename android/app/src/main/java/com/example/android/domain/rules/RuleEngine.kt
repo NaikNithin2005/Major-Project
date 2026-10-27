@@ -183,9 +183,15 @@ class RuleEngine {
 
     private fun evaluateSmsRules(processedSms: ProcessedSms, results: MutableList<RuleResult>) {
         val evidence = processedSms.evidence
+        val cleanText = processedSms.cleanedBody.lowercase()
+
+        // Check for safe operational urgency (e.g. OTP validity or parcel delivery without threats or links)
+        val isSafeOperationalUrgency = (cleanText.contains("valid for") || cleanText.contains("expires in") || cleanText.contains("out for delivery") || cleanText.contains("arriving today")) &&
+                !cleanText.contains("suspended") && !cleanText.contains("blocked") && !cleanText.contains("immediate action") && !cleanText.contains("final notice") &&
+                evidence.extractedUrls.isEmpty()
 
         // Urgency Language
-        if (evidence.urgencyIndicators.isNotEmpty()) {
+        if (evidence.urgencyIndicators.isNotEmpty() && !isSafeOperationalUrgency) {
             results.add(
                 RuleResult(
                     id = "RULE_URGENCY_LANGUAGE",
@@ -199,26 +205,73 @@ class RuleEngine {
             )
         }
 
-        // Financial / Banking Keywords
-        val financialKeywords = evidence.detectedKeywords.filter { kw ->
-            kw in listOf("kyc", "bank", "account", "otp", "debit", "credit", "card", "refund", "upi")
-        }
-        if (financialKeywords.isNotEmpty()) {
+        // Credential Harvesting Demand
+        val hasCredDemand = cleanText.contains("share otp") || cleanText.contains("reply with otp") || cleanText.contains("send otp") ||
+                cleanText.contains("enter pin") || cleanText.contains("cvv") || cleanText.contains("share password")
+        if (hasCredDemand) {
             results.add(
                 RuleResult(
-                    id = "RULE_BANKING_CONTEXT",
+                    id = "RULE_CREDENTIAL_HARVESTING",
                     category = "FINANCIAL_RISK",
-                    severity = "HIGH",
-                    description = "Message references financial operations or credential verification.",
-                    scoreContribution = 20f,
-                    evidence = "Financial keywords: ${financialKeywords.joinToString()}",
+                    severity = "CRITICAL",
+                    description = "Message explicitly solicits sensitive authorization credentials (OTP/PIN/CVV/Password).",
+                    scoreContribution = 35f,
+                    evidence = "Credential solicitation pattern detected in SMS body.",
                     source = "SMS_FEATURE"
                 )
             )
         }
 
-        // Unknown / Alphanumeric Sender Pattern
-        if (evidence.senderPattern == "ALPHANUMERIC" || evidence.senderPattern == "UNKNOWN") {
+        // Financial / Banking Keywords
+        val financialKeywords = evidence.detectedKeywords.filter { kw ->
+            kw in listOf("kyc", "bank", "account", "otp", "debit", "credit", "card", "refund", "upi")
+        }
+        if (financialKeywords.isNotEmpty()) {
+            val isTransactionalReceipt = (cleanText.contains("debited") || cleanText.contains("credited") || cleanText.contains("avl bal") || cleanText.contains("statement for") || cleanText.contains("withdrawn from atm")) &&
+                    !cleanText.contains("suspended") && !cleanText.contains("blocked") && !cleanText.contains("kyc") && evidence.extractedUrls.isEmpty()
+            if (isTransactionalReceipt) {
+                results.add(
+                    RuleResult(
+                        id = "RULE_BANKING_CONTEXT",
+                        category = "FINANCIAL_RISK",
+                        severity = "INFO",
+                        description = "Message is an informational banking transactional receipt or balance alert.",
+                        scoreContribution = 0f,
+                        evidence = "Financial receipt keywords: ${financialKeywords.joinToString()}",
+                        source = "SMS_FEATURE"
+                    )
+                )
+            } else {
+                results.add(
+                    RuleResult(
+                        id = "RULE_BANKING_CONTEXT",
+                        category = "FINANCIAL_RISK",
+                        severity = "HIGH",
+                        description = "Message references financial operations or credential verification.",
+                        scoreContribution = 20f,
+                        evidence = "Financial keywords: ${financialKeywords.joinToString()}",
+                        source = "SMS_FEATURE"
+                    )
+                )
+            }
+        }
+
+        // Unknown / Alphanumeric Sender Pattern or Personal Phone sending Banking claims
+        if (evidence.senderPattern == "LOCAL_PHONE" || evidence.senderPattern == "INTERNATIONAL_PHONE") {
+            if (financialKeywords.isNotEmpty() || cleanText.contains("kyc") || cleanText.contains("pan")) {
+                results.add(
+                    RuleResult(
+                        id = "RULE_SENDER_CONTENT_MISMATCH",
+                        category = "SENDER_REPUTATION",
+                        severity = "HIGH",
+                        description = "Personal phone number used to transmit official banking or KYC demands.",
+                        scoreContribution = 25f,
+                        evidence = "Personal phone sender pattern: ${evidence.senderPattern}",
+                        source = "SMS_FEATURE"
+                    )
+                )
+            }
+        } else if (evidence.senderPattern == "ALPHANUMERIC_CUSTOM" || evidence.senderPattern == "UNKNOWN") {
             results.add(
                 RuleResult(
                     id = "RULE_UNKNOWN_SENDER",
@@ -232,6 +285,7 @@ class RuleEngine {
             )
         }
     }
+
 
     private fun evaluateQrRules(qrPayload: String, results: MutableList<RuleResult>) {
         val trimmed = qrPayload.trim().lowercase()

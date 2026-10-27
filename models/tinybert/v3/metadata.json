@@ -1,0 +1,65 @@
+{
+  "model_name": "TinyBERT Smishing Classifier",
+  "version": "tinybert-smishing-v3",
+  "training_date": "2026-10-27 14:52:05",
+  "random_seed": 42,
+  "base_model": "huawei-noah/TinyBERT_General_4L_312D",
+  "architecture": {
+    "layers": 4,
+    "hidden_dimension": 312,
+    "attention_heads": 4,
+    "num_classes": 2,
+    "max_sequence_length": 128
+  },
+  "hyperparameters": {
+    "batch_size": 64,
+    "learning_rate": 0.0003,
+    "weight_decay": 0.01,
+    "optimizer": "AdamW",
+    "epochs": 3,
+    "max_sequence_length": 128,
+    "class_weights": [
+      1.0,
+      1.0
+    ]
+  },
+  "label_mapping": {
+    "0": "safe",
+    "1": "smishing"
+  },
+  "evaluation_metrics": {
+    "accuracy": 0.936,
+    "precision": 0.9402,
+    "recall": 0.9312,
+    "f1": 0.9357,
+    "roc_auc": 0.9849,
+    "false_positive_rate": 0.0592,
+    "confusion_matrix": [
+      [
+        588,
+        37
+      ],
+      [
+        43,
+        582
+      ]
+    ]
+  },
+  "onnx_parity": {
+    "verified": true,
+    "max_abs_diff": 1.1920928955078125e-07
+  },
+  "artifacts": {
+    "pytorch_weights_filename": "model.pth",
+    "pytorch_weights_sha256": "2768cd2ea7672b596b9a33c6f426a1917278b5e57b68381431dbd60ab694e6b0",
+    "pytorch_weights_size_bytes": 56384920,
+    "onnx_filename": "tinybert_smishing.onnx",
+    "onnx_sha256": "d58c97ba950c7abe570fe8195182e54048798c9fd650ae543809a79eb0200efb",
+    "onnx_size_bytes": 56504082
+  },
+  "environment": {
+    "python_version": "3.13.5",
+    "torch_version": "2.9.1+cpu",
+    "onnx_version": "1.22.0"
+  }
+}

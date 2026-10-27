@@ -255,6 +255,24 @@ class RuleEngine:
                 )
             )
 
+        # Rule: Lookalike / Deceptive Brand Domain Spoofing
+        from ai.context_engine.trusted_domains import TrustedDomainAllowlist
+        wl = TrustedDomainAllowlist()
+        d_eval = wl.evaluate_domain(raw_url)
+        if d_eval.get("reputation") == "SUSPICIOUS_LOOKALIKE":
+            results.append(
+                RuleResult(
+                    id="RULE_SUSPICIOUS_LOOKALIKE_DOMAIN",
+                    category="DOMAIN_REPUTATION",
+                    severity="CRITICAL",
+                    description=d_eval["reason"],
+                    score_contribution=40.0,
+                    evidence=f"Deceptive lookalike host '{hostname}' targeting {d_eval.get('institution_name')}",
+                    source=EvidenceSource.URL_FEATURE
+                )
+            )
+
+
     def _evaluate_sms_rules(
         self,
         sms_text: str,
@@ -263,7 +281,7 @@ class RuleEngine:
     ):
         clean_text = sms_text.lower()
 
-        # Rule: Unknown or Suspicious Sender Pattern
+        # Rule: Private Mobile Number claiming organizational or banking alerts
         if sender:
             s_clean = sender.strip()
             # Alphanumeric shortcode without standard verified prefix or international unknown format
@@ -281,13 +299,45 @@ class RuleEngine:
                             source=EvidenceSource.SMS_FEATURE
                         )
                     )
-            elif s_clean.startswith("+") and len(s_clean) > 8:
-                # Private mobile number claiming organizational notifications
-                pass
+            elif re.match(r"^\+?\d{10,13}$", s_clean):
+                # Private telephone number transmitting official banking or sensitive KYC claims
+                if any(t in clean_text for t in ["bank", "kyc", "otp", "account", "pan", "debit", "credit", "suspended", "blocked"]):
+                    results.append(
+                        RuleResult(
+                            id="RULE_SENDER_CONTENT_MISMATCH",
+                            category="SENDER_REPUTATION",
+                            severity="HIGH",
+                            description="Personal mobile number used to transmit official institutional / banking communication.",
+                            score_contribution=25.0,
+                            evidence=f"Private telephone number: {s_clean}",
+                            source=EvidenceSource.SMS_FEATURE
+                        )
+                    )
+
+        # Rule: Credential Harvesting Demand (OTP / PIN / CVV / Password)
+        has_cred_demand = any(t in clean_text for t in ["share otp", "reply with otp", "send otp", "enter pin", "cvv", "share password", "verify password", "share code"])
+        if has_cred_demand:
+            results.append(
+                RuleResult(
+                    id="RULE_CREDENTIAL_HARVESTING",
+                    category="FINANCIAL_RISK",
+                    severity="CRITICAL",
+                    description="Message explicitly solicits sensitive authorization credentials (OTP/PIN/CVV/Password).",
+                    score_contribution=35.0,
+                    evidence="Credential solicitation pattern detected in SMS body.",
+                    source=EvidenceSource.SMS_FEATURE
+                )
+            )
 
         # Rule: Urgency Language
         detected_urgency = [w for w in URGENCY_KEYWORDS if w in clean_text]
-        if detected_urgency:
+        # Check if urgency is purely operational in a safe transaction (e.g., "valid for 10 mins" in OTP or "delivery today")
+        is_safe_operational_urgency = (
+            any(w in clean_text for w in ["valid for", "expires in", "out for delivery", "arriving today"]) and
+            not any(w in clean_text for w in ["suspended", "blocked", "immediate action", "final notice", "deactivated", "compromised"]) and
+            not ("http://" in clean_text or "https://" in clean_text)
+        )
+        if detected_urgency and not is_safe_operational_urgency:
             results.append(
                 RuleResult(
                     id="RULE_URGENCY_LANGUAGE",
@@ -303,17 +353,36 @@ class RuleEngine:
         # Rule: Banking / Payment Context
         detected_banking = [w for w in BANKING_KEYWORDS if w in clean_text]
         if detected_banking:
-            results.append(
-                RuleResult(
-                    id="RULE_BANKING_CONTEXT",
-                    category="FINANCIAL_RISK",
-                    severity="HIGH",
-                    description="Message references financial, banking, or credential verification operations.",
-                    score_contribution=20.0,
-                    evidence=f"Financial keywords detected: {', '.join(detected_banking[:4])}",
-                    source=EvidenceSource.SMS_FEATURE
-                )
+            # Differentiate benign transactional receipts from coercive demands
+            is_transactional_receipt = (
+                any(w in clean_text for w in ["debited by", "credited with", "avl bal", "available balance", "statement for", "paid inr", "received inr", "withdrawn from atm"]) and
+                not any(w in clean_text for w in ["suspended", "blocked", "kyc", "pan", "deactivated", "click", "http://", "https://", "immediate action"])
             )
+            if is_transactional_receipt:
+                results.append(
+                    RuleResult(
+                        id="RULE_BANKING_CONTEXT",
+                        category="FINANCIAL_RISK",
+                        severity="INFO",
+                        description="Message is an informational banking transactional receipt or balance alert.",
+                        score_contribution=0.0,
+                        evidence=f"Financial receipt keywords detected: {', '.join(detected_banking[:4])}",
+                        source=EvidenceSource.SMS_FEATURE
+                    )
+                )
+            else:
+                results.append(
+                    RuleResult(
+                        id="RULE_BANKING_CONTEXT",
+                        category="FINANCIAL_RISK",
+                        severity="HIGH",
+                        description="Message references financial, banking, or credential verification operations.",
+                        score_contribution=20.0,
+                        evidence=f"Financial keywords detected: {', '.join(detected_banking[:4])}",
+                        source=EvidenceSource.SMS_FEATURE
+                    )
+                )
+
 
     def _evaluate_qr_rules(
         self,

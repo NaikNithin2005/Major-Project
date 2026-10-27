@@ -24,9 +24,10 @@ sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..",
 from ai.feature_engineering.url_feature_extractor import FEATURE_NAMES
 
 PROCESSED_DIR = os.path.join("models", "data")
+PROCESSED_V3_DIR = os.path.join("models", "data", "v3")
 RANDOM_SEED = 42
 
-def train_xgboost(version: str = "v2", tune: bool = True):
+def train_xgboost(version: str = "v3", tune: bool = True):
     np.random.seed(RANDOM_SEED)
     output_dir = os.path.join("models", "xgboost", version)
     os.makedirs(output_dir, exist_ok=True)
@@ -36,10 +37,12 @@ def train_xgboost(version: str = "v2", tune: bool = True):
     print(f"TRAINING XGBOOST URL QUISHING CLASSIFIER ({model_version_str.upper()})")
     print(f"{'='*70}")
 
-    print("Loading processed URL datasets...")
-    train_df = pd.read_csv(os.path.join(PROCESSED_DIR, "url_train.csv"))
-    val_df = pd.read_csv(os.path.join(PROCESSED_DIR, "url_val.csv"))
-    test_df = pd.read_csv(os.path.join(PROCESSED_DIR, "url_test.csv"))
+    data_dir = PROCESSED_V3_DIR if version == "v3" and os.path.exists(os.path.join(PROCESSED_V3_DIR, "url_train.csv")) else PROCESSED_DIR
+    print(f"Loading processed URL datasets from: {data_dir}...")
+    train_df = pd.read_csv(os.path.join(data_dir, "url_train.csv"))
+    val_df = pd.read_csv(os.path.join(data_dir, "url_val.csv"))
+    test_df = pd.read_csv(os.path.join(data_dir, "url_test.csv"))
+
 
     X_train = train_df[FEATURE_NAMES].values.astype(np.float32)
     y_train = train_df["label"].values.astype(np.int32)
@@ -56,35 +59,23 @@ def train_xgboost(version: str = "v2", tune: bool = True):
     # Candidate hyperparameter configurations evaluated on Validation set ONLY
     candidates = [
         {
-            "name": "baseline_d6_n150_lr0.1",
+            "name": "candidate_v3_regularized_colsample0.6",
             "params": {
                 "objective": "binary:logistic",
                 "eval_metric": "logloss",
-                "max_depth": 6,
-                "learning_rate": 0.1,
-                "n_estimators": 150,
+                "max_depth": 5,
+                "learning_rate": 0.08,
+                "n_estimators": 180,
                 "subsample": 0.8,
-                "colsample_bytree": 0.8,
+                "colsample_bytree": 0.6,
+                "reg_alpha": 1.5,
+                "reg_lambda": 3.0,
                 "random_state": RANDOM_SEED,
                 "n_jobs": -1
             }
         },
         {
-            "name": "candidate_d8_n150_lr0.1",
-            "params": {
-                "objective": "binary:logistic",
-                "eval_metric": "logloss",
-                "max_depth": 8,
-                "learning_rate": 0.1,
-                "n_estimators": 150,
-                "subsample": 0.8,
-                "colsample_bytree": 0.8,
-                "random_state": RANDOM_SEED,
-                "n_jobs": -1
-            }
-        },
-        {
-            "name": "candidate_d6_n200_lr0.08",
+            "name": "candidate_v3_balanced_colsample0.65",
             "params": {
                 "objective": "binary:logistic",
                 "eval_metric": "logloss",
@@ -92,26 +83,29 @@ def train_xgboost(version: str = "v2", tune: bool = True):
                 "learning_rate": 0.08,
                 "n_estimators": 200,
                 "subsample": 0.85,
-                "colsample_bytree": 0.85,
+                "colsample_bytree": 0.65,
+                "reg_alpha": 1.0,
+                "reg_lambda": 2.0,
                 "random_state": RANDOM_SEED,
                 "n_jobs": -1
             }
         },
         {
-            "name": "candidate_d8_n200_lr0.08",
+            "name": "candidate_d6_n150_lr0.1",
             "params": {
                 "objective": "binary:logistic",
                 "eval_metric": "logloss",
-                "max_depth": 8,
-                "learning_rate": 0.08,
-                "n_estimators": 200,
-                "subsample": 0.85,
-                "colsample_bytree": 0.85,
+                "max_depth": 6,
+                "learning_rate": 0.1,
+                "n_estimators": 150,
+                "subsample": 0.8,
+                "colsample_bytree": 0.75,
                 "random_state": RANDOM_SEED,
                 "n_jobs": -1
             }
         }
     ]
+
 
     print("\n--- Hyperparameter Evaluation on Validation Set ---")
     best_candidate = None
@@ -331,4 +325,4 @@ def train_xgboost(version: str = "v2", tune: bool = True):
     return metadata
 
 if __name__ == "__main__":
-    train_xgboost(version="v2")
+    train_xgboost(version="v3")

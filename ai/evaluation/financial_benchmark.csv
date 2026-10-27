@@ -1,0 +1,332 @@
+text,label,category
+Your medicine order #84920 from Pharmeasy is out for delivery today. Delivery agent will arrive within 2 hours.,0,benign_urgent
+Reminder: Library book 'Clean Code' is due today. Please return or renew online to avoid late fees.,0,benign_urgent
+IndiGo Flight 6E-204 to Mumbai is now boarding at Gate 12. All passengers must report immediately.,0,benign_urgent
+Your passport application file has been processed and dispatched via Speed Post. Track status on official passportindia.gov.in portal.,0,benign_urgent
+IndiaPost: Your package #IN9482910 could not be delivered due to incorrect house number. Please update your delivery address within 12 hours at http://kyc-document-update.info/address,1,fake_delivery
+IndiaPost: Your package #IN9482910 could not be delivered due to incorrect house number. Please update your delivery address within 12 hours at http://hdfc-netbanking-verify.top/address,1,fake_delivery
+"PM Kisan Samman Nidhi: Your 15th installment of Rs 2,000 is on hold. Update your Aadhaar card details immediately at http://kyc-document-update.info/pmkisan to receive payment.",1,fake_government
+"PM Kisan Samman Nidhi: Your 15th installment of Rs 2,000 is on hold. Update your Aadhaar card details immediately at http://hdfc-netbanking-verify.top/pmkisan to receive payment.",1,fake_government
+Your Bank of Baroda YONO account is locked. Complete biometric verification within 24 hours at http://hdfc-netbanking-verify.top/verify or all transactions will be restricted.,1,fraudulent_account_suspension
+Your Axis YONO account is locked. Complete biometric verification within 24 hours at http://pnb-kyc-portal.cc/verify or all transactions will be restricted.,1,fraudulent_account_suspension
+"Dear PNB Customer, your NetBanking account has been suspended today due to unverified PAN. Please update your KYC immediately at http://pnb-kyc-portal.cc/login to prevent permanent block.",1,fraudulent_account_suspension
+Your Axis YONO account is locked. Complete biometric verification within 24 hours at http://hdfc-netbanking-verify.top/verify or all transactions will be restricted.,1,fraudulent_account_suspension
+"Dear Axis Customer, your NetBanking account has been suspended today due to unverified PAN. Please update your KYC immediately at http://hdfc-netbanking-verify.top/login to prevent permanent block.",1,fraudulent_account_suspension
+Your ICICI YONO account is locked. Complete biometric verification within 24 hours at http://pnb-kyc-portal.cc/verify or all transactions will be restricted.,1,fraudulent_account_suspension
+"Dear HDFC Customer, your NetBanking account has been suspended today due to unverified PAN. Please update your KYC immediately at http://bob-card-rewards.biz/login to prevent permanent block.",1,fraudulent_account_suspension
+"Dear Bank of Baroda Customer, your NetBanking account has been suspended today due to unverified PAN. Please update your KYC immediately at http://icici-account-blocked.site/login to prevent permanent block.",1,fraudulent_account_suspension
+"Dear SBI Customer, your NetBanking account has been suspended today due to unverified PAN. Please update your KYC immediately at http://bob-card-rewards.biz/login to prevent permanent block.",1,fraudulent_account_suspension
+"Dear SBI Customer, your NetBanking account has been suspended today due to unverified PAN. Please update your KYC immediately at http://kyc-document-update.info/login to prevent permanent block.",1,fraudulent_account_suspension
+"Dear HDFC Customer, your NetBanking account has been suspended today due to unverified PAN. Please update your KYC immediately at http://account-reactivate-now.link/login to prevent permanent block.",1,fraudulent_account_suspension
+"Dear ICICI Customer, your NetBanking account has been suspended today due to unverified PAN. Please update your KYC immediately at http://bob-card-rewards.biz/login to prevent permanent block.",1,fraudulent_account_suspension
+Your PNB YONO account is locked. Complete biometric verification within 24 hours at http://axis-pan-link.online/verify or all transactions will be restricted.,1,fraudulent_account_suspension
+Your ICICI YONO account is locked. Complete biometric verification within 24 hours at http://hdfc-netbanking-verify.top/verify or all transactions will be restricted.,1,fraudulent_account_suspension
+"Dear Kotak Customer, your NetBanking account has been suspended today due to unverified PAN. Please update your KYC immediately at http://bob-card-rewards.biz/login to prevent permanent block.",1,fraudulent_account_suspension
+"Dear SBI Customer, your NetBanking account has been suspended today due to unverified PAN. Please update your KYC immediately at http://onlinesbi-kyc-update.xyz/login to prevent permanent block.",1,fraudulent_account_suspension
+"Dear Bank of Baroda Customer, your NetBanking account has been suspended today due to unverified PAN. Please update your KYC immediately at http://bank-security-alert.net/login to prevent permanent block.",1,fraudulent_account_suspension
+Your Bank of Baroda YONO account is locked. Complete biometric verification within 24 hours at http://bank-security-alert.net/verify or all transactions will be restricted.,1,fraudulent_account_suspension
+"Dear SBI Customer, your NetBanking account has been suspended today due to unverified PAN. Please update your KYC immediately at http://axis-pan-link.online/login to prevent permanent block.",1,fraudulent_account_suspension
+Your ICICI YONO account is locked. Complete biometric verification within 24 hours at http://bob-card-rewards.biz/verify or all transactions will be restricted.,1,fraudulent_account_suspension
+Your Axis YONO account is locked. Complete biometric verification within 24 hours at http://sbi-yono-secure.club/verify or all transactions will be restricted.,1,fraudulent_account_suspension
+"Dear Kotak Customer, your NetBanking account has been suspended today due to unverified PAN. Please update your KYC immediately at http://onlinesbi-kyc-update.xyz/login to prevent permanent block.",1,fraudulent_account_suspension
+"Dear HDFC Customer, your NetBanking account has been suspended today due to unverified PAN. Please update your KYC immediately at http://sbi-yono-secure.club/login to prevent permanent block.",1,fraudulent_account_suspension
+"Dear ICICI Customer, your NetBanking account has been suspended today due to unverified PAN. Please update your KYC immediately at http://icici-account-blocked.site/login to prevent permanent block.",1,fraudulent_account_suspension
+Your PNB YONO account is locked. Complete biometric verification within 24 hours at http://onlinesbi-kyc-update.xyz/verify or all transactions will be restricted.,1,fraudulent_account_suspension
+"HDFC Bank Alert: We detected an unauthorized transaction of Rs 49,999 on your debit card. If not done by you, block and refund immediately at http://sbi-yono-secure.club/refund",1,fraudulent_banking_impersonation
+"Bank of Baroda Bank Alert: We detected an unauthorized transaction of Rs 49,999 on your debit card. If not done by you, block and refund immediately at http://axis-pan-link.online/refund",1,fraudulent_banking_impersonation
+"PNB Bank Alert: We detected an unauthorized transaction of Rs 49,999 on your debit card. If not done by you, block and refund immediately at http://icici-account-blocked.site/refund",1,fraudulent_banking_impersonation
+"Kotak Bank Alert: We detected an unauthorized transaction of Rs 49,999 on your debit card. If not done by you, block and refund immediately at http://bob-card-rewards.biz/refund",1,fraudulent_banking_impersonation
+"ICICI Bank Alert: We detected an unauthorized transaction of Rs 49,999 on your debit card. If not done by you, block and refund immediately at http://kyc-document-update.info/refund",1,fraudulent_banking_impersonation
+"Kotak Bank Alert: We detected an unauthorized transaction of Rs 49,999 on your debit card. If not done by you, block and refund immediately at http://sbi-yono-secure.club/refund",1,fraudulent_banking_impersonation
+"Axis Bank Alert: We detected an unauthorized transaction of Rs 49,999 on your debit card. If not done by you, block and refund immediately at http://pnb-kyc-portal.cc/refund",1,fraudulent_banking_impersonation
+"Axis Bank Alert: We detected an unauthorized transaction of Rs 49,999 on your debit card. If not done by you, block and refund immediately at http://bob-card-rewards.biz/refund",1,fraudulent_banking_impersonation
+"PNB Bank Alert: We detected an unauthorized transaction of Rs 49,999 on your debit card. If not done by you, block and refund immediately at http://hdfc-netbanking-verify.top/refund",1,fraudulent_banking_impersonation
+"ICICI Bank Alert: We detected an unauthorized transaction of Rs 49,999 on your debit card. If not done by you, block and refund immediately at http://pnb-kyc-portal.cc/refund",1,fraudulent_banking_impersonation
+"HDFC Bank Alert: We detected an unauthorized transaction of Rs 49,999 on your debit card. If not done by you, block and refund immediately at http://pnb-kyc-portal.cc/refund",1,fraudulent_banking_impersonation
+"SBI Bank Alert: We detected an unauthorized transaction of Rs 49,999 on your debit card. If not done by you, block and refund immediately at http://hdfc-netbanking-verify.top/refund",1,fraudulent_banking_impersonation
+"Dear Customer, your SIM card and Bank Account KYC verification is pending. Send Aadhaar & PAN details or verify online at http://onlinesbi-kyc-update.xyz/kyc to avoid sim deactivation.",1,fraudulent_kyc_pan
+"Urgent: Income Tax department alert: Your PAN is not linked to your SBI account. Link today at http://onlinesbi-kyc-update.xyz/pan-link or face penalty of Rs 10,000.",1,fraudulent_kyc_pan
+"Dear Customer, your SIM card and Bank Account KYC verification is pending. Send Aadhaar & PAN details or verify online at http://bank-security-alert.net/kyc to avoid sim deactivation.",1,fraudulent_kyc_pan
+"Urgent: Income Tax department alert: Your PAN is not linked to your SBI account. Link today at http://bob-card-rewards.biz/pan-link or face penalty of Rs 10,000.",1,fraudulent_kyc_pan
+"PhonePe Reward: You have received a cash scratch card of Rs 8,500! Click link to claim money directly to your UPI ID: http://sbi-yono-secure.club/phonepe-win",1,fraudulent_refund
+"Income Tax Refund of INR 24,500 has been approved for AY 2023-24. Please verify your bank account number and OTP at http://bob-card-rewards.biz/tax-refund to receive funds.",1,fraudulent_refund
+"PhonePe Reward: You have received a cash scratch card of Rs 3,499! Click link to claim money directly to your UPI ID: http://axis-pan-link.online/phonepe-win",1,fraudulent_refund
+"Income Tax Refund of INR 15,800 has been approved for AY 2023-24. Please verify your bank account number and OTP at http://bank-security-alert.net/tax-refund to receive funds.",1,fraudulent_refund
+"Income Tax Refund of INR 48,900 has been approved for AY 2023-24. Please verify your bank account number and OTP at http://hdfc-netbanking-verify.top/tax-refund to receive funds.",1,fraudulent_refund
+"Income Tax Refund of INR 24,500 has been approved for AY 2023-24. Please verify your bank account number and OTP at http://sbi-yono-secure.club/tax-refund to receive funds.",1,fraudulent_refund
+"PhonePe Reward: You have received a cash scratch card of Rs 8,500! Click link to claim money directly to your UPI ID: http://icici-account-blocked.site/phonepe-win",1,fraudulent_refund
+"PhonePe Reward: You have received a cash scratch card of Rs 15,800! Click link to claim money directly to your UPI ID: http://bank-security-alert.net/phonepe-win",1,fraudulent_refund
+"PhonePe Reward: You have received a cash scratch card of Rs 8,500! Click link to claim money directly to your UPI ID: http://account-reactivate-now.link/phonepe-win",1,fraudulent_refund
+"Income Tax Refund of INR 15,800 has been approved for AY 2023-24. Please verify your bank account number and OTP at http://hdfc-netbanking-verify.top/tax-refund to receive funds.",1,fraudulent_refund
+"Dear Customer, your HDFC credit card reward points worth INR 9,850 will expire tonight. Redeem as cash directly into your bank account: http://sbi-yono-secure.club/rewards",1,fraudulent_reward_scam
+"Dear Customer, your Bank of Baroda credit card reward points worth INR 9,850 will expire tonight. Redeem as cash directly into your bank account: http://axis-pan-link.online/rewards",1,fraudulent_reward_scam
+"Dear Customer, your PNB credit card reward points worth INR 9,850 will expire tonight. Redeem as cash directly into your bank account: http://icici-account-blocked.site/rewards",1,fraudulent_reward_scam
+"Dear Customer, your Kotak credit card reward points worth INR 9,850 will expire tonight. Redeem as cash directly into your bank account: http://bob-card-rewards.biz/rewards",1,fraudulent_reward_scam
+"Dear Customer, your ICICI credit card reward points worth INR 9,850 will expire tonight. Redeem as cash directly into your bank account: http://kyc-document-update.info/rewards",1,fraudulent_reward_scam
+"Dear Customer, your Kotak credit card reward points worth INR 9,850 will expire tonight. Redeem as cash directly into your bank account: http://sbi-yono-secure.club/rewards",1,fraudulent_reward_scam
+"Dear Customer, your Axis credit card reward points worth INR 9,850 will expire tonight. Redeem as cash directly into your bank account: http://pnb-kyc-portal.cc/rewards",1,fraudulent_reward_scam
+"Dear Customer, your Axis credit card reward points worth INR 9,850 will expire tonight. Redeem as cash directly into your bank account: http://bob-card-rewards.biz/rewards",1,fraudulent_reward_scam
+"Dear Customer, your PNB credit card reward points worth INR 9,850 will expire tonight. Redeem as cash directly into your bank account: http://hdfc-netbanking-verify.top/rewards",1,fraudulent_reward_scam
+"Dear Customer, your ICICI credit card reward points worth INR 9,850 will expire tonight. Redeem as cash directly into your bank account: http://pnb-kyc-portal.cc/rewards",1,fraudulent_reward_scam
+"Dear Customer, your HDFC credit card reward points worth INR 9,850 will expire tonight. Redeem as cash directly into your bank account: http://pnb-kyc-portal.cc/rewards",1,fraudulent_reward_scam
+"Dear Customer, your SBI credit card reward points worth INR 9,850 will expire tonight. Redeem as cash directly into your bank account: http://hdfc-netbanking-verify.top/rewards",1,fraudulent_reward_scam
+"Dear Customer, the available balance for PNB account ending XX5521 as of today is INR 65,178.29. Never share your PIN or netbanking credentials.",0,legitimate_balance_inquiry
+"Dear Customer, the available balance for PNB account ending XX1042 as of today is INR 36,018.10. Never share your PIN or netbanking credentials.",0,legitimate_balance_inquiry
+"Dear Customer, the available balance for Axis Bank account ending XX5521 as of today is INR 45,548.74. Never share your PIN or netbanking credentials.",0,legitimate_balance_inquiry
+"Dear Customer, the available balance for Bank of Baroda account ending XX3910 as of today is INR 32,300.83. Never share your PIN or netbanking credentials.",0,legitimate_balance_inquiry
+"Dear Customer, the available balance for HDFC Bank account ending XX1042 as of today is INR 61,482.25. Never share your PIN or netbanking credentials.",0,legitimate_balance_inquiry
+"Dear Customer, the available balance for Axis Bank account ending XX1042 as of today is INR 79,561.75. Never share your PIN or netbanking credentials.",0,legitimate_balance_inquiry
+"Dear Customer, the available balance for IndusInd Bank account ending XX8492 as of today is INR 3,011.28. Never share your PIN or netbanking credentials.",0,legitimate_balance_inquiry
+"Dear Customer, the available balance for Bank of Baroda account ending XX5521 as of today is INR 51,196.39. Never share your PIN or netbanking credentials.",0,legitimate_balance_inquiry
+"Dear Customer, the available balance for IndusInd Bank account ending XX5521 as of today is INR 21,232.19. Never share your PIN or netbanking credentials.",0,legitimate_balance_inquiry
+"Dear Customer, the available balance for HDFC Bank account ending XX3910 as of today is INR 39,254.75. Never share your PIN or netbanking credentials.",0,legitimate_balance_inquiry
+"INR 450.00 withdrawn from ATM for Bank of Baroda Card ending 3910 on 18-Jan-24 14:20. Avl Bal: INR 88,579.45. If not done by you, SMS BLOCK 3910 to 567676.",0,legitimate_banking_atm
+"INR 150.00 withdrawn from ATM for Bank of Baroda Card ending 5521 on 05-Feb-24 14:20. Avl Bal: INR 35,311.59. If not done by you, SMS BLOCK 5521 to 567676.",0,legitimate_banking_atm
+"INR 450.00 withdrawn from ATM for Union Bank Card ending 5521 on 15-Nov-23 14:20. Avl Bal: INR 53,368.70. If not done by you, SMS BLOCK 5521 to 567676.",0,legitimate_banking_atm
+"INR 2,499.00 withdrawn from ATM for Axis Bank Card ending 8492 on 05-Feb-24 14:20. Avl Bal: INR 25,635.17. If not done by you, SMS BLOCK 8492 to 567676.",0,legitimate_banking_atm
+"INR 1,200.00 withdrawn from ATM for Kotak Bank Card ending 5521 on 15-Nov-23 14:20. Avl Bal: INR 27,241.94. If not done by you, SMS BLOCK 5521 to 567676.",0,legitimate_banking_atm
+"INR 450.00 withdrawn from ATM for HDFC Bank Card ending 5521 on 15-Nov-23 14:20. Avl Bal: INR 26,174.79. If not done by you, SMS BLOCK 5521 to 567676.",0,legitimate_banking_atm
+"INR 450.00 withdrawn from ATM for Bank of Baroda Card ending 8492 on 15-Nov-23 14:20. Avl Bal: INR 65,889.16. If not done by you, SMS BLOCK 8492 to 567676.",0,legitimate_banking_atm
+"INR 2,499.00 withdrawn from ATM for Axis Bank Card ending 1042 on 15-Nov-23 14:20. Avl Bal: INR 26,579.58. If not done by you, SMS BLOCK 1042 to 567676.",0,legitimate_banking_atm
+"INR 150.00 withdrawn from ATM for Bank of Baroda Card ending 8492 on 19-Mar-24 14:20. Avl Bal: INR 18,970.64. If not done by you, SMS BLOCK 8492 to 567676.",0,legitimate_banking_atm
+"INR 1,200.00 withdrawn from ATM for Union Bank Card ending 5521 on 05-Feb-24 14:20. Avl Bal: INR 48,357.55. If not done by you, SMS BLOCK 5521 to 567676.",0,legitimate_banking_atm
+"INR 2,499.00 withdrawn from ATM for HDFC Bank Card ending 1042 on 19-Mar-24 14:20. Avl Bal: INR 23,301.41. If not done by you, SMS BLOCK 1042 to 567676.",0,legitimate_banking_atm
+"INR 150.00 withdrawn from ATM for Kotak Bank Card ending 8492 on 24-Oct-23 14:20. Avl Bal: INR 46,114.65. If not done by you, SMS BLOCK 8492 to 567676.",0,legitimate_banking_atm
+"INR 2,499.00 withdrawn from ATM for SBI Card ending 5521 on 19-Mar-24 14:20. Avl Bal: INR 54,735.44. If not done by you, SMS BLOCK 5521 to 567676.",0,legitimate_banking_atm
+"INR 1,200.00 withdrawn from ATM for PNB Card ending 1042 on 15-Nov-23 14:20. Avl Bal: INR 77,512.29. If not done by you, SMS BLOCK 1042 to 567676.",0,legitimate_banking_atm
+"INR 150.00 withdrawn from ATM for HDFC Bank Card ending 3910 on 05-Feb-24 14:20. Avl Bal: INR 77,512.11. If not done by you, SMS BLOCK 3910 to 567676.",0,legitimate_banking_atm
+"INR 1,200.00 withdrawn from ATM for HDFC Bank Card ending 5521 on 05-Feb-24 14:20. Avl Bal: INR 69,042.12. If not done by you, SMS BLOCK 5521 to 567676.",0,legitimate_banking_atm
+"INR 150.00 withdrawn from ATM for Union Bank Card ending 1042 on 05-Feb-24 14:20. Avl Bal: INR 10,383.54. If not done by you, SMS BLOCK 1042 to 567676.",0,legitimate_banking_atm
+"INR 2,499.00 withdrawn from ATM for IndusInd Bank Card ending 1042 on 15-Nov-23 14:20. Avl Bal: INR 6,854.78. If not done by you, SMS BLOCK 1042 to 567676.",0,legitimate_banking_atm
+"INR 1,200.00 withdrawn from ATM for Bank of Baroda Card ending 1042 on 18-Jan-24 14:20. Avl Bal: INR 87,544.83. If not done by you, SMS BLOCK 1042 to 567676.",0,legitimate_banking_atm
+"INR 150.00 withdrawn from ATM for HDFC Bank Card ending 1042 on 19-Mar-24 14:20. Avl Bal: INR 12,331.39. If not done by you, SMS BLOCK 1042 to 567676.",0,legitimate_banking_atm
+"INR 2,499.00 withdrawn from ATM for PNB Card ending 3910 on 15-Nov-23 14:20. Avl Bal: INR 78,385.62. If not done by you, SMS BLOCK 3910 to 567676.",0,legitimate_banking_atm
+"INR 1,200.00 withdrawn from ATM for HDFC Bank Card ending 1042 on 05-Feb-24 14:20. Avl Bal: INR 70,435.60. If not done by you, SMS BLOCK 1042 to 567676.",0,legitimate_banking_atm
+"INR 150.00 withdrawn from ATM for SBI Card ending 5521 on 18-Jan-24 14:20. Avl Bal: INR 52,819.30. If not done by you, SMS BLOCK 5521 to 567676.",0,legitimate_banking_atm
+"INR 450.00 withdrawn from ATM for SBI Card ending 3910 on 18-Jan-24 14:20. Avl Bal: INR 87,397.89. If not done by you, SMS BLOCK 3910 to 567676.",0,legitimate_banking_atm
+"INR 2,499.00 withdrawn from ATM for HDFC Bank Card ending 5521 on 24-Oct-23 14:20. Avl Bal: INR 45,306.40. If not done by you, SMS BLOCK 5521 to 567676.",0,legitimate_banking_atm
+"INR 2,499.00 withdrawn from ATM for IndusInd Bank Card ending 8492 on 18-Jan-24 14:20. Avl Bal: INR 57,521.72. If not done by you, SMS BLOCK 8492 to 567676.",0,legitimate_banking_atm
+"INR 450.00 withdrawn from ATM for Bank of Baroda Card ending 1042 on 15-Nov-23 14:20. Avl Bal: INR 11,057.41. If not done by you, SMS BLOCK 1042 to 567676.",0,legitimate_banking_atm
+"INR 150.00 withdrawn from ATM for Axis Bank Card ending 3910 on 05-Feb-24 14:20. Avl Bal: INR 13,981.86. If not done by you, SMS BLOCK 3910 to 567676.",0,legitimate_banking_atm
+"INR 2,499.00 withdrawn from ATM for Union Bank Card ending 1042 on 19-Mar-24 14:20. Avl Bal: INR 62,080.32. If not done by you, SMS BLOCK 1042 to 567676.",0,legitimate_banking_atm
+"INR 150.00 withdrawn from ATM for Bank of Baroda Card ending 3910 on 19-Mar-24 14:20. Avl Bal: INR 25,861.70. If not done by you, SMS BLOCK 3910 to 567676.",0,legitimate_banking_atm
+"INR 150.00 withdrawn from ATM for Union Bank Card ending 3910 on 15-Nov-23 14:20. Avl Bal: INR 38,862.53. If not done by you, SMS BLOCK 3910 to 567676.",0,legitimate_banking_atm
+"INR 1,200.00 withdrawn from ATM for PNB Card ending 5521 on 19-Mar-24 14:20. Avl Bal: INR 19,168.58. If not done by you, SMS BLOCK 5521 to 567676.",0,legitimate_banking_atm
+"INR 150.00 withdrawn from ATM for Axis Bank Card ending 5521 on 19-Mar-24 14:20. Avl Bal: INR 56,876.26. If not done by you, SMS BLOCK 5521 to 567676.",0,legitimate_banking_atm
+"INR 2,499.00 withdrawn from ATM for Canara Bank Card ending 1042 on 18-Jan-24 14:20. Avl Bal: INR 21,728.89. If not done by you, SMS BLOCK 1042 to 567676.",0,legitimate_banking_atm
+"INR 1,200.00 withdrawn from ATM for SBI Card ending 1042 on 24-Oct-23 14:20. Avl Bal: INR 17,280.37. If not done by you, SMS BLOCK 1042 to 567676.",0,legitimate_banking_atm
+"INR 2,499.00 withdrawn from ATM for Canara Bank Card ending 3910 on 24-Oct-23 14:20. Avl Bal: INR 67,070.95. If not done by you, SMS BLOCK 3910 to 567676.",0,legitimate_banking_atm
+"INR 450.00 withdrawn from ATM for ICICI Bank Card ending 5521 on 19-Mar-24 14:20. Avl Bal: INR 89,696.22. If not done by you, SMS BLOCK 5521 to 567676.",0,legitimate_banking_atm
+"INR 1,200.00 withdrawn from ATM for ICICI Bank Card ending 3910 on 05-Feb-24 14:20. Avl Bal: INR 80,525.70. If not done by you, SMS BLOCK 3910 to 567676.",0,legitimate_banking_atm
+"INR 450.00 withdrawn from ATM for PNB Card ending 8492 on 24-Oct-23 14:20. Avl Bal: INR 10,778.10. If not done by you, SMS BLOCK 8492 to 567676.",0,legitimate_banking_atm
+"INR 1,200.00 withdrawn from ATM for Kotak Bank Card ending 3910 on 15-Nov-23 14:20. Avl Bal: INR 54,695.96. If not done by you, SMS BLOCK 3910 to 567676.",0,legitimate_banking_atm
+"Your A/c XX3910 is credited with INR 450.00 on 18-Jan-24 by UPI/373811796366/Salary. Total Avl Bal: INR 88,579.45. Thank you for banking with Bank of Baroda.",0,legitimate_banking_credit
+"Your A/c XX5521 is credited with INR 150.00 on 05-Feb-24 by UPI/263803069319/Salary. Total Avl Bal: INR 35,311.59. Thank you for banking with Bank of Baroda.",0,legitimate_banking_credit
+"Your A/c XX5521 is credited with INR 450.00 on 15-Nov-23 by UPI/738506846386/Salary. Total Avl Bal: INR 53,368.70. Thank you for banking with Union Bank.",0,legitimate_banking_credit
+"Your A/c XX8492 is credited with INR 2,499.00 on 05-Feb-24 by UPI/683482989002/Salary. Total Avl Bal: INR 25,635.17. Thank you for banking with Axis Bank.",0,legitimate_banking_credit
+"Your A/c XX5521 is credited with INR 1,200.00 on 15-Nov-23 by UPI/976000808135/Salary. Total Avl Bal: INR 27,241.94. Thank you for banking with Kotak Bank.",0,legitimate_banking_credit
+"Your A/c XX5521 is credited with INR 450.00 on 15-Nov-23 by UPI/939124570476/Salary. Total Avl Bal: INR 26,174.79. Thank you for banking with HDFC Bank.",0,legitimate_banking_credit
+"Your A/c XX8492 is credited with INR 450.00 on 15-Nov-23 by UPI/669924601388/Salary. Total Avl Bal: INR 65,889.16. Thank you for banking with Bank of Baroda.",0,legitimate_banking_credit
+"Your A/c XX1042 is credited with INR 2,499.00 on 15-Nov-23 by UPI/168300472052/Salary. Total Avl Bal: INR 26,579.58. Thank you for banking with Axis Bank.",0,legitimate_banking_credit
+"Your A/c XX8492 is credited with INR 150.00 on 19-Mar-24 by UPI/928467665569/Salary. Total Avl Bal: INR 18,970.64. Thank you for banking with Bank of Baroda.",0,legitimate_banking_credit
+"Your A/c XX5521 is credited with INR 1,200.00 on 05-Feb-24 by UPI/704499189734/Salary. Total Avl Bal: INR 48,357.55. Thank you for banking with Union Bank.",0,legitimate_banking_credit
+"Your A/c XX1042 is credited with INR 2,499.00 on 19-Mar-24 by UPI/388376437635/Salary. Total Avl Bal: INR 23,301.41. Thank you for banking with HDFC Bank.",0,legitimate_banking_credit
+"Your A/c XX8492 is credited with INR 150.00 on 24-Oct-23 by UPI/900348631876/Salary. Total Avl Bal: INR 46,114.65. Thank you for banking with Kotak Bank.",0,legitimate_banking_credit
+"Your A/c XX5521 is credited with INR 2,499.00 on 19-Mar-24 by UPI/607507949295/Salary. Total Avl Bal: INR 54,735.44. Thank you for banking with SBI.",0,legitimate_banking_credit
+"Your A/c XX1042 is credited with INR 1,200.00 on 15-Nov-23 by UPI/916503502249/Salary. Total Avl Bal: INR 77,512.29. Thank you for banking with PNB.",0,legitimate_banking_credit
+"Your A/c XX3910 is credited with INR 150.00 on 05-Feb-24 by UPI/377150435753/Salary. Total Avl Bal: INR 77,512.11. Thank you for banking with HDFC Bank.",0,legitimate_banking_credit
+"Your A/c XX5521 is credited with INR 1,200.00 on 05-Feb-24 by UPI/454759765684/Salary. Total Avl Bal: INR 69,042.12. Thank you for banking with HDFC Bank.",0,legitimate_banking_credit
+"Your A/c XX1042 is credited with INR 150.00 on 05-Feb-24 by UPI/961424120992/Salary. Total Avl Bal: INR 10,383.54. Thank you for banking with Union Bank.",0,legitimate_banking_credit
+"Your A/c XX1042 is credited with INR 2,499.00 on 15-Nov-23 by UPI/431483177363/Salary. Total Avl Bal: INR 6,854.78. Thank you for banking with IndusInd Bank.",0,legitimate_banking_credit
+"Your A/c XX1042 is credited with INR 1,200.00 on 18-Jan-24 by UPI/557222530916/Salary. Total Avl Bal: INR 87,544.83. Thank you for banking with Bank of Baroda.",0,legitimate_banking_credit
+"Your A/c XX1042 is credited with INR 150.00 on 19-Mar-24 by UPI/459422681391/Salary. Total Avl Bal: INR 12,331.39. Thank you for banking with HDFC Bank.",0,legitimate_banking_credit
+"Your A/c XX3910 is credited with INR 2,499.00 on 15-Nov-23 by UPI/956217530058/Salary. Total Avl Bal: INR 78,385.62. Thank you for banking with PNB.",0,legitimate_banking_credit
+"Your A/c XX1042 is credited with INR 1,200.00 on 05-Feb-24 by UPI/818172762479/Salary. Total Avl Bal: INR 70,435.60. Thank you for banking with HDFC Bank.",0,legitimate_banking_credit
+"Your A/c XX5521 is credited with INR 150.00 on 18-Jan-24 by UPI/797732084371/Salary. Total Avl Bal: INR 52,819.30. Thank you for banking with SBI.",0,legitimate_banking_credit
+"Your A/c XX3910 is credited with INR 450.00 on 18-Jan-24 by UPI/424493543665/Salary. Total Avl Bal: INR 87,397.89. Thank you for banking with SBI.",0,legitimate_banking_credit
+"Your A/c XX5521 is credited with INR 2,499.00 on 24-Oct-23 by UPI/988335239225/Salary. Total Avl Bal: INR 45,306.40. Thank you for banking with HDFC Bank.",0,legitimate_banking_credit
+"Your A/c XX8492 is credited with INR 2,499.00 on 18-Jan-24 by UPI/172250436572/Salary. Total Avl Bal: INR 57,521.72. Thank you for banking with IndusInd Bank.",0,legitimate_banking_credit
+"Your A/c XX1042 is credited with INR 450.00 on 15-Nov-23 by UPI/126402684235/Salary. Total Avl Bal: INR 11,057.41. Thank you for banking with Bank of Baroda.",0,legitimate_banking_credit
+"Your A/c XX3910 is credited with INR 150.00 on 05-Feb-24 by UPI/305519951312/Salary. Total Avl Bal: INR 13,981.86. Thank you for banking with Axis Bank.",0,legitimate_banking_credit
+"Your A/c XX1042 is credited with INR 2,499.00 on 19-Mar-24 by UPI/270541592056/Salary. Total Avl Bal: INR 62,080.32. Thank you for banking with Union Bank.",0,legitimate_banking_credit
+"Your A/c XX3910 is credited with INR 150.00 on 19-Mar-24 by UPI/591979363867/Salary. Total Avl Bal: INR 25,861.70. Thank you for banking with Bank of Baroda.",0,legitimate_banking_credit
+"Your A/c XX3910 is credited with INR 150.00 on 15-Nov-23 by UPI/487458104455/Salary. Total Avl Bal: INR 38,862.53. Thank you for banking with Union Bank.",0,legitimate_banking_credit
+"Your A/c XX5521 is credited with INR 1,200.00 on 19-Mar-24 by UPI/272944613643/Salary. Total Avl Bal: INR 19,168.58. Thank you for banking with PNB.",0,legitimate_banking_credit
+"Your A/c XX5521 is credited with INR 150.00 on 19-Mar-24 by UPI/388787957213/Salary. Total Avl Bal: INR 56,876.26. Thank you for banking with Axis Bank.",0,legitimate_banking_credit
+"Your A/c XX1042 is credited with INR 2,499.00 on 18-Jan-24 by UPI/614711052552/Salary. Total Avl Bal: INR 21,728.89. Thank you for banking with Canara Bank.",0,legitimate_banking_credit
+"Your A/c XX1042 is credited with INR 1,200.00 on 24-Oct-23 by UPI/130201276659/Salary. Total Avl Bal: INR 17,280.37. Thank you for banking with SBI.",0,legitimate_banking_credit
+"Your A/c XX3910 is credited with INR 2,499.00 on 24-Oct-23 by UPI/238463496194/Salary. Total Avl Bal: INR 67,070.95. Thank you for banking with Canara Bank.",0,legitimate_banking_credit
+"Your A/c XX5521 is credited with INR 450.00 on 19-Mar-24 by UPI/820151617123/Salary. Total Avl Bal: INR 89,696.22. Thank you for banking with ICICI Bank.",0,legitimate_banking_credit
+"Your A/c XX3910 is credited with INR 1,200.00 on 05-Feb-24 by UPI/730855031651/Salary. Total Avl Bal: INR 80,525.70. Thank you for banking with ICICI Bank.",0,legitimate_banking_credit
+"Your A/c XX8492 is credited with INR 450.00 on 24-Oct-23 by UPI/404209733660/Salary. Total Avl Bal: INR 10,778.10. Thank you for banking with PNB.",0,legitimate_banking_credit
+"Your A/c XX3910 is credited with INR 1,200.00 on 15-Nov-23 by UPI/831950243582/Salary. Total Avl Bal: INR 54,695.96. Thank you for banking with Kotak Bank.",0,legitimate_banking_credit
+"Dear Customer, your Bank of Baroda A/c XX3910 has been debited by INR 450.00 on 18-Jan-24 at DMART. UPI Ref: 373811796366. Avl Bal: INR 88,579.45. Call 18002586161 if not done by you.",0,legitimate_banking_debit
+"Dear Customer, your Bank of Baroda A/c XX5521 has been debited by INR 150.00 on 05-Feb-24 at ZOMATO. UPI Ref: 263803069319. Avl Bal: INR 35,311.59. Call 18002586161 if not done by you.",0,legitimate_banking_debit
+"Dear Customer, your Union Bank A/c XX5521 has been debited by INR 450.00 on 15-Nov-23 at DMART. UPI Ref: 738506846386. Avl Bal: INR 53,368.70. Call 18002586161 if not done by you.",0,legitimate_banking_debit
+"Dear Customer, your Axis Bank A/c XX8492 has been debited by INR 2,499.00 on 05-Feb-24 at RELIANCE RETAIL. UPI Ref: 683482989002. Avl Bal: INR 25,635.17. Call 18002586161 if not done by you.",0,legitimate_banking_debit
+"Dear Customer, your Kotak Bank A/c XX5521 has been debited by INR 1,200.00 on 15-Nov-23 at RELIANCE RETAIL. UPI Ref: 976000808135. Avl Bal: INR 27,241.94. Call 18002586161 if not done by you.",0,legitimate_banking_debit
+"Dear Customer, your HDFC Bank A/c XX5521 has been debited by INR 450.00 on 15-Nov-23 at AMAZON. UPI Ref: 939124570476. Avl Bal: INR 26,174.79. Call 18002586161 if not done by you.",0,legitimate_banking_debit
+"Dear Customer, your Bank of Baroda A/c XX8492 has been debited by INR 450.00 on 15-Nov-23 at AMAZON. UPI Ref: 669924601388. Avl Bal: INR 65,889.16. Call 18002586161 if not done by you.",0,legitimate_banking_debit
+"Dear Customer, your Axis Bank A/c XX1042 has been debited by INR 2,499.00 on 15-Nov-23 at SHELL PETROL. UPI Ref: 168300472052. Avl Bal: INR 26,579.58. Call 18002586161 if not done by you.",0,legitimate_banking_debit
+"Dear Customer, your Bank of Baroda A/c XX8492 has been debited by INR 150.00 on 19-Mar-24 at SWIGGY. UPI Ref: 928467665569. Avl Bal: INR 18,970.64. Call 18002586161 if not done by you.",0,legitimate_banking_debit
+"Dear Customer, your Union Bank A/c XX5521 has been debited by INR 1,200.00 on 05-Feb-24 at APOLLO PHARMACY. UPI Ref: 704499189734. Avl Bal: INR 48,357.55. Call 18002586161 if not done by you.",0,legitimate_banking_debit
+"Dear Customer, your HDFC Bank A/c XX1042 has been debited by INR 2,499.00 on 19-Mar-24 at RELIANCE RETAIL. UPI Ref: 388376437635. Avl Bal: INR 23,301.41. Call 18002586161 if not done by you.",0,legitimate_banking_debit
+"Dear Customer, your Kotak Bank A/c XX8492 has been debited by INR 150.00 on 24-Oct-23 at SHELL PETROL. UPI Ref: 900348631876. Avl Bal: INR 46,114.65. Call 18002586161 if not done by you.",0,legitimate_banking_debit
+"Dear Customer, your SBI A/c XX5521 has been debited by INR 2,499.00 on 19-Mar-24 at FLIPKART. UPI Ref: 607507949295. Avl Bal: INR 54,735.44. Call 18002586161 if not done by you.",0,legitimate_banking_debit
+"Dear Customer, your PNB A/c XX1042 has been debited by INR 1,200.00 on 15-Nov-23 at DMART. UPI Ref: 916503502249. Avl Bal: INR 77,512.29. Call 18002586161 if not done by you.",0,legitimate_banking_debit
+"Dear Customer, your HDFC Bank A/c XX3910 has been debited by INR 150.00 on 05-Feb-24 at RELIANCE RETAIL. UPI Ref: 377150435753. Avl Bal: INR 77,512.11. Call 18002586161 if not done by you.",0,legitimate_banking_debit
+"Dear Customer, your HDFC Bank A/c XX5521 has been debited by INR 1,200.00 on 05-Feb-24 at SWIGGY. UPI Ref: 454759765684. Avl Bal: INR 69,042.12. Call 18002586161 if not done by you.",0,legitimate_banking_debit
+"Dear Customer, your Union Bank A/c XX1042 has been debited by INR 150.00 on 05-Feb-24 at ZOMATO. UPI Ref: 961424120992. Avl Bal: INR 10,383.54. Call 18002586161 if not done by you.",0,legitimate_banking_debit
+"Dear Customer, your IndusInd Bank A/c XX1042 has been debited by INR 2,499.00 on 15-Nov-23 at APOLLO PHARMACY. UPI Ref: 431483177363. Avl Bal: INR 6,854.78. Call 18002586161 if not done by you.",0,legitimate_banking_debit
+"Dear Customer, your Bank of Baroda A/c XX1042 has been debited by INR 1,200.00 on 18-Jan-24 at ZOMATO. UPI Ref: 557222530916. Avl Bal: INR 87,544.83. Call 18002586161 if not done by you.",0,legitimate_banking_debit
+"Dear Customer, your HDFC Bank A/c XX1042 has been debited by INR 150.00 on 19-Mar-24 at FLIPKART. UPI Ref: 459422681391. Avl Bal: INR 12,331.39. Call 18002586161 if not done by you.",0,legitimate_banking_debit
+"Dear Customer, your PNB A/c XX3910 has been debited by INR 2,499.00 on 15-Nov-23 at ZOMATO. UPI Ref: 956217530058. Avl Bal: INR 78,385.62. Call 18002586161 if not done by you.",0,legitimate_banking_debit
+"Dear Customer, your HDFC Bank A/c XX1042 has been debited by INR 1,200.00 on 05-Feb-24 at APOLLO PHARMACY. UPI Ref: 818172762479. Avl Bal: INR 70,435.60. Call 18002586161 if not done by you.",0,legitimate_banking_debit
+"Dear Customer, your SBI A/c XX5521 has been debited by INR 150.00 on 18-Jan-24 at DMART. UPI Ref: 797732084371. Avl Bal: INR 52,819.30. Call 18002586161 if not done by you.",0,legitimate_banking_debit
+"Dear Customer, your SBI A/c XX3910 has been debited by INR 450.00 on 18-Jan-24 at ZOMATO. UPI Ref: 424493543665. Avl Bal: INR 87,397.89. Call 18002586161 if not done by you.",0,legitimate_banking_debit
+"Dear Customer, your HDFC Bank A/c XX5521 has been debited by INR 2,499.00 on 24-Oct-23 at APOLLO PHARMACY. UPI Ref: 988335239225. Avl Bal: INR 45,306.40. Call 18002586161 if not done by you.",0,legitimate_banking_debit
+"Dear Customer, your IndusInd Bank A/c XX8492 has been debited by INR 2,499.00 on 18-Jan-24 at ZOMATO. UPI Ref: 172250436572. Avl Bal: INR 57,521.72. Call 18002586161 if not done by you.",0,legitimate_banking_debit
+"Dear Customer, your Bank of Baroda A/c XX1042 has been debited by INR 450.00 on 15-Nov-23 at FLIPKART. UPI Ref: 126402684235. Avl Bal: INR 11,057.41. Call 18002586161 if not done by you.",0,legitimate_banking_debit
+"Dear Customer, your Axis Bank A/c XX3910 has been debited by INR 150.00 on 05-Feb-24 at ZOMATO. UPI Ref: 305519951312. Avl Bal: INR 13,981.86. Call 18002586161 if not done by you.",0,legitimate_banking_debit
+"Dear Customer, your Union Bank A/c XX1042 has been debited by INR 2,499.00 on 19-Mar-24 at RELIANCE RETAIL. UPI Ref: 270541592056. Avl Bal: INR 62,080.32. Call 18002586161 if not done by you.",0,legitimate_banking_debit
+"Dear Customer, your Bank of Baroda A/c XX3910 has been debited by INR 150.00 on 19-Mar-24 at SHELL PETROL. UPI Ref: 591979363867. Avl Bal: INR 25,861.70. Call 18002586161 if not done by you.",0,legitimate_banking_debit
+"Dear Customer, your Union Bank A/c XX3910 has been debited by INR 150.00 on 15-Nov-23 at RELIANCE RETAIL. UPI Ref: 487458104455. Avl Bal: INR 38,862.53. Call 18002586161 if not done by you.",0,legitimate_banking_debit
+"Dear Customer, your PNB A/c XX5521 has been debited by INR 1,200.00 on 19-Mar-24 at FLIPKART. UPI Ref: 272944613643. Avl Bal: INR 19,168.58. Call 18002586161 if not done by you.",0,legitimate_banking_debit
+"Dear Customer, your Axis Bank A/c XX5521 has been debited by INR 150.00 on 19-Mar-24 at APOLLO PHARMACY. UPI Ref: 388787957213. Avl Bal: INR 56,876.26. Call 18002586161 if not done by you.",0,legitimate_banking_debit
+"Dear Customer, your Canara Bank A/c XX1042 has been debited by INR 2,499.00 on 18-Jan-24 at AMAZON. UPI Ref: 614711052552. Avl Bal: INR 21,728.89. Call 18002586161 if not done by you.",0,legitimate_banking_debit
+"Dear Customer, your SBI A/c XX1042 has been debited by INR 1,200.00 on 24-Oct-23 at SHELL PETROL. UPI Ref: 130201276659. Avl Bal: INR 17,280.37. Call 18002586161 if not done by you.",0,legitimate_banking_debit
+"Dear Customer, your Canara Bank A/c XX3910 has been debited by INR 2,499.00 on 24-Oct-23 at AMAZON. UPI Ref: 238463496194. Avl Bal: INR 67,070.95. Call 18002586161 if not done by you.",0,legitimate_banking_debit
+"Dear Customer, your ICICI Bank A/c XX5521 has been debited by INR 450.00 on 19-Mar-24 at SWIGGY. UPI Ref: 820151617123. Avl Bal: INR 89,696.22. Call 18002586161 if not done by you.",0,legitimate_banking_debit
+"Dear Customer, your ICICI Bank A/c XX3910 has been debited by INR 1,200.00 on 05-Feb-24 at AMAZON. UPI Ref: 730855031651. Avl Bal: INR 80,525.70. Call 18002586161 if not done by you.",0,legitimate_banking_debit
+"Dear Customer, your PNB A/c XX8492 has been debited by INR 450.00 on 24-Oct-23 at SHELL PETROL. UPI Ref: 404209733660. Avl Bal: INR 10,778.10. Call 18002586161 if not done by you.",0,legitimate_banking_debit
+"Dear Customer, your Kotak Bank A/c XX3910 has been debited by INR 1,200.00 on 15-Nov-23 at FLIPKART. UPI Ref: 831950243582. Avl Bal: INR 54,695.96. Call 18002586161 if not done by you.",0,legitimate_banking_debit
+Aadhaar OTP is 470774 for authentication at UIDAI Aadhaar. Valid for 10 minutes. (Ref ID: 5712). UIDAI never calls asking for OTP.,0,legitimate_otp
+810526 is your One Time Password (OTP) for transaction of INR 450.00 at Amazon with card ending 4912. Valid for 10 mins. Do not share OTP with anyone.,0,legitimate_otp
+"403507 is your One Time Password (OTP) for transaction of INR 1,200.00 at EPFO with card ending 4912. Valid for 10 mins. Do not share OTP with anyone.",0,legitimate_otp
+Aadhaar OTP is 701253 for authentication at SBI Netbanking. Valid for 10 minutes. (Ref ID: 5743). UIDAI never calls asking for OTP.,0,legitimate_otp
+Aadhaar OTP is 499889 for authentication at Amazon. Valid for 10 minutes. (Ref ID: 5837). UIDAI never calls asking for OTP.,0,legitimate_otp
+Aadhaar OTP is 326040 for authentication at EPFO. Valid for 10 minutes. (Ref ID: 8043). UIDAI never calls asking for OTP.,0,legitimate_otp
+897305 is your One Time Password (OTP) for transaction of INR 150.00 at Flipkart with card ending 5510. Valid for 10 mins. Do not share OTP with anyone.,0,legitimate_otp
+"123005 is your One Time Password (OTP) for transaction of INR 2,499.00 at Amazon with card ending 3019. Valid for 10 mins. Do not share OTP with anyone.",0,legitimate_otp
+Aadhaar OTP is 693830 for authentication at UIDAI Aadhaar. Valid for 10 minutes. (Ref ID: 3324). UIDAI never calls asking for OTP.,0,legitimate_otp
+"Your OTP for login to IRCTC is 786735. Valid for 5 minutes. Do not disclose this OTP to anyone, including bank officials.",0,legitimate_otp
+"Your OTP for login to Swiggy is 238579. Valid for 5 minutes. Do not disclose this OTP to anyone, including bank officials.",0,legitimate_otp
+"744883 is your One Time Password (OTP) for transaction of INR 2,499.00 at HDFC SmartBuy with card ending 5510. Valid for 10 mins. Do not share OTP with anyone.",0,legitimate_otp
+"820184 is your One Time Password (OTP) for transaction of INR 2,499.00 at Income Tax Portal with card ending 4912. Valid for 10 mins. Do not share OTP with anyone.",0,legitimate_otp
+561124 is your One Time Password (OTP) for transaction of INR 150.00 at HDFC SmartBuy with card ending 5510. Valid for 10 mins. Do not share OTP with anyone.,0,legitimate_otp
+Aadhaar OTP is 346205 for authentication at IRCTC. Valid for 10 minutes. (Ref ID: 8432). UIDAI never calls asking for OTP.,0,legitimate_otp
+393328 is your One Time Password (OTP) for transaction of INR 150.00 at IRCTC with card ending 3019. Valid for 10 mins. Do not share OTP with anyone.,0,legitimate_otp
+Aadhaar OTP is 967611 for authentication at Income Tax Portal. Valid for 10 minutes. (Ref ID: 7815). UIDAI never calls asking for OTP.,0,legitimate_otp
+"701253 is your One Time Password (OTP) for transaction of INR 2,499.00 at SBI Netbanking with card ending 5510. Valid for 10 mins. Do not share OTP with anyone.",0,legitimate_otp
+"Your OTP for login to IRCTC is 989227. Valid for 5 minutes. Do not disclose this OTP to anyone, including bank officials.",0,legitimate_otp
+Aadhaar OTP is 744883 for authentication at HDFC SmartBuy. Valid for 10 minutes. (Ref ID: 1672). UIDAI never calls asking for OTP.,0,legitimate_otp
+Aadhaar OTP is 989227 for authentication at IRCTC. Valid for 10 minutes. (Ref ID: 4475). UIDAI never calls asking for OTP.,0,legitimate_otp
+"470774 is your One Time Password (OTP) for transaction of INR 2,499.00 at UIDAI Aadhaar with card ending 4912. Valid for 10 mins. Do not share OTP with anyone.",0,legitimate_otp
+468154 is your One Time Password (OTP) for transaction of INR 450.00 at HDFC SmartBuy with card ending 8120. Valid for 10 mins. Do not share OTP with anyone.,0,legitimate_otp
+621841 is your One Time Password (OTP) for transaction of INR 450.00 at Flipkart with card ending 8120. Valid for 10 mins. Do not share OTP with anyone.,0,legitimate_otp
+582087 is your One Time Password (OTP) for transaction of INR 150.00 at SBI Netbanking with card ending 3019. Valid for 10 mins. Do not share OTP with anyone.,0,legitimate_otp
+"Your OTP for login to UIDAI Aadhaar is 714953. Valid for 5 minutes. Do not disclose this OTP to anyone, including bank officials.",0,legitimate_otp
+970127 is your One Time Password (OTP) for transaction of INR 450.00 at Zomato with card ending 8120. Valid for 10 mins. Do not share OTP with anyone.,0,legitimate_otp
+"Your OTP for login to HDFC SmartBuy is 468154. Valid for 5 minutes. Do not disclose this OTP to anyone, including bank officials.",0,legitimate_otp
+"Your OTP for login to Flipkart is 493049. Valid for 5 minutes. Do not disclose this OTP to anyone, including bank officials.",0,legitimate_otp
+"Your OTP for login to Swiggy is 926918. Valid for 5 minutes. Do not disclose this OTP to anyone, including bank officials.",0,legitimate_otp
+"736565 is your One Time Password (OTP) for transaction of INR 2,499.00 at EPFO with card ending 5510. Valid for 10 mins. Do not share OTP with anyone.",0,legitimate_otp
+137642 is your One Time Password (OTP) for transaction of INR 150.00 at Flipkart with card ending 8120. Valid for 10 mins. Do not share OTP with anyone.,0,legitimate_otp
+Aadhaar OTP is 469038 for authentication at HDFC SmartBuy. Valid for 10 minutes. (Ref ID: 8565). UIDAI never calls asking for OTP.,0,legitimate_otp
+"Your OTP for login to Zomato is 970127. Valid for 5 minutes. Do not disclose this OTP to anyone, including bank officials.",0,legitimate_otp
+Aadhaar OTP is 222343 for authentication at IRCTC. Valid for 10 minutes. (Ref ID: 1609). UIDAI never calls asking for OTP.,0,legitimate_otp
+799233 is your One Time Password (OTP) for transaction of INR 150.00 at Amazon with card ending 5510. Valid for 10 mins. Do not share OTP with anyone.,0,legitimate_otp
+"Your OTP for login to Flipkart is 440131. Valid for 5 minutes. Do not disclose this OTP to anyone, including bank officials.",0,legitimate_otp
+"972097 is your One Time Password (OTP) for transaction of INR 1,200.00 at HDFC SmartBuy with card ending 4912. Valid for 10 mins. Do not share OTP with anyone.",0,legitimate_otp
+"Your OTP for login to Swiggy is 194689. Valid for 5 minutes. Do not disclose this OTP to anyone, including bank officials.",0,legitimate_otp
+247594 is your One Time Password (OTP) for transaction of INR 450.00 at Swiggy with card ending 5510. Valid for 10 mins. Do not share OTP with anyone.,0,legitimate_otp
+"988456 is your One Time Password (OTP) for transaction of INR 2,499.00 at Income Tax Portal with card ending 5510. Valid for 10 mins. Do not share OTP with anyone.",0,legitimate_otp
+283573 is your One Time Password (OTP) for transaction of INR 150.00 at Flipkart with card ending 5510. Valid for 10 mins. Do not share OTP with anyone.,0,legitimate_otp
+Aadhaar OTP is 220768 for authentication at SBI Netbanking. Valid for 10 minutes. (Ref ID: 6321). UIDAI never calls asking for OTP.,0,legitimate_otp
+"766269 is your One Time Password (OTP) for transaction of INR 2,499.00 at IRCTC with card ending 3019. Valid for 10 mins. Do not share OTP with anyone.",0,legitimate_otp
+"Your OTP for login to Zomato is 215266. Valid for 5 minutes. Do not disclose this OTP to anyone, including bank officials.",0,legitimate_otp
+"Your OTP for login to UIDAI Aadhaar is 335137. Valid for 5 minutes. Do not disclose this OTP to anyone, including bank officials.",0,legitimate_otp
+"Your OTP for login to Amazon is 499889. Valid for 5 minutes. Do not disclose this OTP to anyone, including bank officials.",0,legitimate_otp
+Aadhaar OTP is 781403 for authentication at Flipkart. Valid for 10 minutes. (Ref ID: 9742). UIDAI never calls asking for OTP.,0,legitimate_otp
+"462351 is your One Time Password (OTP) for transaction of INR 1,200.00 at Amazon with card ending 5510. Valid for 10 mins. Do not share OTP with anyone.",0,legitimate_otp
+"762055 is your One Time Password (OTP) for transaction of INR 1,200.00 at HDFC SmartBuy with card ending 3019. Valid for 10 mins. Do not share OTP with anyone.",0,legitimate_otp
+"Your OTP for login to EPFO is 403507. Valid for 5 minutes. Do not disclose this OTP to anyone, including bank officials.",0,legitimate_otp
+986209 is your One Time Password (OTP) for transaction of INR 150.00 at UIDAI Aadhaar with card ending 3019. Valid for 10 mins. Do not share OTP with anyone.,0,legitimate_otp
+Aadhaar OTP is 427704 for authentication at Income Tax Portal. Valid for 10 minutes. (Ref ID: 3500). UIDAI never calls asking for OTP.,0,legitimate_otp
+"442589 is your One Time Password (OTP) for transaction of INR 2,499.00 at Swiggy with card ending 8120. Valid for 10 mins. Do not share OTP with anyone.",0,legitimate_otp
+"910389 is your One Time Password (OTP) for transaction of INR 2,499.00 at HDFC SmartBuy with card ending 5510. Valid for 10 mins. Do not share OTP with anyone.",0,legitimate_otp
+"Your OTP for login to EPFO is 416061. Valid for 5 minutes. Do not disclose this OTP to anyone, including bank officials.",0,legitimate_otp
+781403 is your One Time Password (OTP) for transaction of INR 150.00 at Flipkart with card ending 3019. Valid for 10 mins. Do not share OTP with anyone.,0,legitimate_otp
+Aadhaar OTP is 419149 for authentication at IRCTC. Valid for 10 minutes. (Ref ID: 2592). UIDAI never calls asking for OTP.,0,legitimate_otp
+"Your OTP for login to Swiggy is 867934. Valid for 5 minutes. Do not disclose this OTP to anyone, including bank officials.",0,legitimate_otp
+Aadhaar OTP is 416061 for authentication at EPFO. Valid for 10 minutes. (Ref ID: 5186). UIDAI never calls asking for OTP.,0,legitimate_otp
+913423 is your One Time Password (OTP) for transaction of INR 450.00 at Amazon with card ending 3019. Valid for 10 mins. Do not share OTP with anyone.,0,legitimate_otp
+"Your OTP for login to Amazon is 462351. Valid for 5 minutes. Do not disclose this OTP to anyone, including bank officials.",0,legitimate_otp
+"Your OTP for login to Income Tax Portal is 820184. Valid for 5 minutes. Do not disclose this OTP to anyone, including bank officials.",0,legitimate_otp
+Aadhaar OTP is 867934 for authentication at Swiggy. Valid for 10 minutes. (Ref ID: 5835). UIDAI never calls asking for OTP.,0,legitimate_otp
+"926918 is your One Time Password (OTP) for transaction of INR 2,499.00 at Swiggy with card ending 4912. Valid for 10 mins. Do not share OTP with anyone.",0,legitimate_otp
+"369452 is your One Time Password (OTP) for transaction of INR 2,499.00 at Swiggy with card ending 3019. Valid for 10 mins. Do not share OTP with anyone.",0,legitimate_otp
+"Your OTP for login to HDFC SmartBuy is 571579. Valid for 5 minutes. Do not disclose this OTP to anyone, including bank officials.",0,legitimate_otp
+"Your OTP for login to Income Tax Portal is 573489. Valid for 5 minutes. Do not disclose this OTP to anyone, including bank officials.",0,legitimate_otp
+"Your OTP for login to HDFC SmartBuy is 910389. Valid for 5 minutes. Do not disclose this OTP to anyone, including bank officials.",0,legitimate_otp
+"194689 is your One Time Password (OTP) for transaction of INR 2,499.00 at Swiggy with card ending 4912. Valid for 10 mins. Do not share OTP with anyone.",0,legitimate_otp
+573489 is your One Time Password (OTP) for transaction of INR 450.00 at Income Tax Portal with card ending 5510. Valid for 10 mins. Do not share OTP with anyone.,0,legitimate_otp
+Aadhaar OTP is 931621 for authentication at Income Tax Portal. Valid for 10 minutes. (Ref ID: 8046). UIDAI never calls asking for OTP.,0,legitimate_otp
+"Your OTP for login to SBI Netbanking is 621546. Valid for 5 minutes. Do not disclose this OTP to anyone, including bank officials.",0,legitimate_otp
+"814220 is your One Time Password (OTP) for transaction of INR 1,200.00 at HDFC SmartBuy with card ending 3019. Valid for 10 mins. Do not share OTP with anyone.",0,legitimate_otp
+335137 is your One Time Password (OTP) for transaction of INR 150.00 at UIDAI Aadhaar with card ending 3019. Valid for 10 mins. Do not share OTP with anyone.,0,legitimate_otp
+867934 is your One Time Password (OTP) for transaction of INR 450.00 at Swiggy with card ending 4912. Valid for 10 mins. Do not share OTP with anyone.,0,legitimate_otp
+Aadhaar OTP is 409222 for authentication at Income Tax Portal. Valid for 10 minutes. (Ref ID: 2624). UIDAI never calls asking for OTP.,0,legitimate_otp
+916964 is your One Time Password (OTP) for transaction of INR 450.00 at SBI Netbanking with card ending 4912. Valid for 10 mins. Do not share OTP with anyone.,0,legitimate_otp
+"Your OTP for login to Flipkart is 897305. Valid for 5 minutes. Do not disclose this OTP to anyone, including bank officials.",0,legitimate_otp
+767542 is your One Time Password (OTP) for transaction of INR 450.00 at Amazon with card ending 3019. Valid for 10 mins. Do not share OTP with anyone.,0,legitimate_otp
+"204180 is your One Time Password (OTP) for transaction of INR 1,200.00 at IRCTC with card ending 3019. Valid for 10 mins. Do not share OTP with anyone.",0,legitimate_otp
+"Your OTP for login to Flipkart is 498468. Valid for 5 minutes. Do not disclose this OTP to anyone, including bank officials.",0,legitimate_otp
+"409222 is your One Time Password (OTP) for transaction of INR 2,499.00 at Income Tax Portal with card ending 5510. Valid for 10 mins. Do not share OTP with anyone.",0,legitimate_otp
+Aadhaar OTP is 444519 for authentication at Zomato. Valid for 10 minutes. (Ref ID: 5542). UIDAI never calls asking for OTP.,0,legitimate_otp
+Aadhaar OTP is 763984 for authentication at SBI Netbanking. Valid for 10 minutes. (Ref ID: 6724). UIDAI never calls asking for OTP.,0,legitimate_otp
+Aadhaar OTP is 717476 for authentication at SBI Netbanking. Valid for 10 minutes. (Ref ID: 7484). UIDAI never calls asking for OTP.,0,legitimate_otp
+Aadhaar OTP is 722503 for authentication at Zomato. Valid for 10 minutes. (Ref ID: 9254). UIDAI never calls asking for OTP.,0,legitimate_otp
+Aadhaar OTP is 215266 for authentication at Zomato. Valid for 10 minutes. (Ref ID: 1243). UIDAI never calls asking for OTP.,0,legitimate_otp
+"Your OTP for login to IRCTC is 766269. Valid for 5 minutes. Do not disclose this OTP to anyone, including bank officials.",0,legitimate_otp
+"Your OTP for login to SBI Netbanking is 516359. Valid for 5 minutes. Do not disclose this OTP to anyone, including bank officials.",0,legitimate_otp
+"Paid INR 32,400.00 to DMART via PhonePe. Transaction ID: UPI/145424634923. Money debited from your linked bank account.",0,legitimate_payment_confirmation
+Paid INR 150.00 to DMART via Google Pay. Transaction ID: UPI/179259461026. Money debited from your linked bank account.,0,legitimate_payment_confirmation
+"Paid INR 2,499.00 to SWIGGY via PhonePe. Transaction ID: UPI/576266444796. Money debited from your linked bank account.",0,legitimate_payment_confirmation
+"Received INR 32,400.00 from Ramesh Kumar on PhonePe. Transferred directly to your primary bank account. UPI Ref 145424634923.",0,legitimate_payment_confirmation
+Paid INR 450.00 to SHELL PETROL via PhonePe. Transaction ID: UPI/400401507048. Money debited from your linked bank account.,0,legitimate_payment_confirmation
+"Paid INR 15,000.00 to SWIGGY via PhonePe. Transaction ID: UPI/941811753545. Money debited from your linked bank account.",0,legitimate_payment_confirmation
+"Paid INR 8,750.00 to ZOMATO via Google Pay. Transaction ID: UPI/280644769871. Money debited from your linked bank account.",0,legitimate_payment_confirmation
+"Paid INR 2,499.00 to SWIGGY via BHIM UPI. Transaction ID: UPI/392932052116. Money debited from your linked bank account.",0,legitimate_payment_confirmation
+"Paid INR 1,200.00 to FLIPKART via Google Pay. Transaction ID: UPI/226380009561. Money debited from your linked bank account.",0,legitimate_payment_confirmation
+"Paid INR 15,000.00 to DMART via Google Pay. Transaction ID: UPI/922894448206. Money debited from your linked bank account.",0,legitimate_payment_confirmation
+Received INR 150.00 from Ramesh Kumar on Amazon Pay. Transferred directly to your primary bank account. UPI Ref 861977213598.,0,legitimate_payment_confirmation
+Received INR 150.00 from Ramesh Kumar on Paytm UPI. Transferred directly to your primary bank account. UPI Ref 668956468715.,0,legitimate_payment_confirmation
+Received INR 450.00 from Ramesh Kumar on BHIM UPI. Transferred directly to your primary bank account. UPI Ref 931602880237.,0,legitimate_payment_confirmation
+Received INR 450.00 from Ramesh Kumar on Paytm UPI. Transferred directly to your primary bank account. UPI Ref 408877180672.,0,legitimate_payment_confirmation
+"Paid INR 1,200.00 to RELIANCE RETAIL via BHIM UPI. Transaction ID: UPI/588017414546. Money debited from your linked bank account.",0,legitimate_payment_confirmation
+"Received INR 15,000.00 from Ramesh Kumar on Paytm UPI. Transferred directly to your primary bank account. UPI Ref 835818342333.",0,legitimate_payment_confirmation
+"Received INR 5,000.00 from Ramesh Kumar on BHIM UPI. Transferred directly to your primary bank account. UPI Ref 417516936790.",0,legitimate_payment_confirmation
+"Received INR 15,000.00 from Ramesh Kumar on Amazon Pay. Transferred directly to your primary bank account. UPI Ref 666355478456.",0,legitimate_payment_confirmation
+"Received INR 2,499.00 from Ramesh Kumar on Amazon Pay. Transferred directly to your primary bank account. UPI Ref 196442742929.",0,legitimate_payment_confirmation
+"Paid INR 5,000.00 to RELIANCE RETAIL via Paytm UPI. Transaction ID: UPI/202946308354. Money debited from your linked bank account.",0,legitimate_payment_confirmation
+"Security Alert from IndusInd Bank: New login detected on Internet Banking from Chrome (Windows) at 11:45 AM. If this was you, please ignore. If not you, call 1800-425-3800 immediately.",0,legitimate_security_alert
+"Security Alert from Kotak Bank: New login detected on Internet Banking from Chrome (Windows) at 11:45 AM. If this was you, please ignore. If not you, call 1800-425-3800 immediately.",0,legitimate_security_alert
+Alert: Beneficiary Rahul Sharma has been activated for fund transfer in your Canara Bank Netbanking account. Contact bank immediately if not added by you.,0,legitimate_security_alert
+Alert: Beneficiary Rahul Sharma has been activated for fund transfer in your Kotak Bank Netbanking account. Contact bank immediately if not added by you.,0,legitimate_security_alert
+Alert: Beneficiary Rahul Sharma has been activated for fund transfer in your ICICI Bank Netbanking account. Contact bank immediately if not added by you.,0,legitimate_security_alert
+"Security Alert from Axis Bank: New login detected on Internet Banking from Chrome (Windows) at 11:45 AM. If this was you, please ignore. If not you, call 1800-425-3800 immediately.",0,legitimate_security_alert
+"Your IndusInd Bank NetBanking password has been changed successfully. If you did not make this request, please contact our 24x7 customer support desk immediately.",0,legitimate_security_alert
+"Security Alert from Union Bank: New login detected on Internet Banking from Chrome (Windows) at 11:45 AM. If this was you, please ignore. If not you, call 1800-425-3800 immediately.",0,legitimate_security_alert
+Your monthly electronic account statement for PNB account XX5521 for month SEP-2023 has been sent to your registered email address.,0,legitimate_statement_alert
+Your monthly electronic account statement for PNB account XX1042 for month SEP-2023 has been sent to your registered email address.,0,legitimate_statement_alert
+Your monthly electronic account statement for Axis Bank account XX5521 for month SEP-2023 has been sent to your registered email address.,0,legitimate_statement_alert
+Your monthly electronic account statement for Bank of Baroda account XX3910 for month SEP-2023 has been sent to your registered email address.,0,legitimate_statement_alert
+Your monthly electronic account statement for HDFC Bank account XX1042 for month SEP-2023 has been sent to your registered email address.,0,legitimate_statement_alert
+Your monthly electronic account statement for Axis Bank account XX1042 for month SEP-2023 has been sent to your registered email address.,0,legitimate_statement_alert
+Your monthly electronic account statement for IndusInd Bank account XX8492 for month SEP-2023 has been sent to your registered email address.,0,legitimate_statement_alert
+Your monthly electronic account statement for Bank of Baroda account XX5521 for month SEP-2023 has been sent to your registered email address.,0,legitimate_statement_alert
+Your monthly electronic account statement for IndusInd Bank account XX5521 for month SEP-2023 has been sent to your registered email address.,0,legitimate_statement_alert
+Your monthly electronic account statement for HDFC Bank account XX3910 for month SEP-2023 has been sent to your registered email address.,0,legitimate_statement_alert
+"Dear Valued Customer, please be advised that your monthly billing statement has been generated. For your convenience and security, please access the client portal at http://secure-statement-portal.org/login to review your account summary.",1,neutral_professional_phishing
+"Notice of Regulatory Compliance: In accordance with standard financial regulations, all active account holders are requested to confirm their registered details. Please sign in to the client verification portal at http://client-compliance-review.net to complete your submission.",1,neutral_professional_phishing

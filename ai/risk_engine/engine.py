@@ -20,9 +20,6 @@ from ai.risk_engine.contracts import (
     ContextFinding,
     ExplanationReason,
 )
-from ai.rule_engine.engine import RuleEngine
-from ai.context_engine.engine import ContextCorrelationEngine
-from ai.explainable_ai.explainer import ExplainableAiEngine
 from ai.feature_engineering.url_feature_extractor import extract_url_features
 
 
@@ -41,13 +38,23 @@ class RiskEngine:
 
     def __init__(
         self,
-        rule_engine: Optional[RuleEngine] = None,
-        context_engine: Optional[ContextCorrelationEngine] = None,
-        xai_engine: Optional[ExplainableAiEngine] = None,
+        rule_engine: Optional[Any] = None,
+        context_engine: Optional[Any] = None,
+        xai_engine: Optional[Any] = None,
     ):
-        self.rule_engine = rule_engine or RuleEngine()
-        self.context_engine = context_engine or ContextCorrelationEngine()
-        self.xai_engine = xai_engine or ExplainableAiEngine()
+        if rule_engine is None:
+            from ai.rule_engine.engine import RuleEngine
+            rule_engine = RuleEngine()
+        if context_engine is None:
+            from ai.context_engine.engine import ContextCorrelationEngine
+            context_engine = ContextCorrelationEngine()
+        if xai_engine is None:
+            from ai.explainable_ai.explainer import ExplainableAiEngine
+            xai_engine = ExplainableAiEngine()
+
+        self.rule_engine = rule_engine
+        self.context_engine = context_engine
+        self.xai_engine = xai_engine
 
     def categorize_score(self, score: float) -> ThreatCategory:
         """

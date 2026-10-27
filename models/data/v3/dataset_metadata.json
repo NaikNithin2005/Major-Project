@@ -1,0 +1,32 @@
+{
+  "dataset_version": "v3.0.0-banking-enhanced",
+  "timestamp": "2026-10-27T14:44:31.527007",
+  "train_rows": 9142,
+  "val_rows": 1959,
+  "test_rows": 1959,
+  "benchmark_rows": 331,
+  "train_class_counts": {
+    "ham_0": 4974,
+    "smish_1": 4168
+  },
+  "benchmark_categories": {
+    "legitimate_otp": 90,
+    "legitimate_banking_atm": 40,
+    "legitimate_banking_debit": 40,
+    "legitimate_banking_credit": 40,
+    "fraudulent_account_suspension": 25,
+    "legitimate_payment_confirmation": 20,
+    "fraudulent_reward_scam": 12,
+    "fraudulent_banking_impersonation": 12,
+    "fraudulent_refund": 10,
+    "legitimate_balance_inquiry": 10,
+    "legitimate_statement_alert": 10,
+    "legitimate_security_alert": 8,
+    "benign_urgent": 4,
+    "fraudulent_kyc_pan": 4,
+    "fake_delivery": 2,
+    "fake_government": 2,
+    "neutral_professional_phishing": 2
+  },
+  "leakage_verified": true
+}

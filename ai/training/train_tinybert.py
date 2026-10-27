@@ -18,13 +18,17 @@ from sklearn.metrics import (
     confusion_matrix
 )
 import onnx
+import onnxruntime as ort
 
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..")))
 from ai.preprocessing.sms_preprocessor import SmsPreprocessor
 from ai.tinybert.model import PyTorchTinyBertModel
 
 PROCESSED_DIR = os.path.join("models", "data")
+PROCESSED_V3_DIR = os.path.join("models", "data", "v3")
+BENCHMARK_PATH = os.path.join("ai", "evaluation", "financial_benchmark.csv")
 RANDOM_SEED = 42
+
 
 class BatchSmsDataset(Dataset):
     def __init__(self, texts, labels, preprocessor, max_length=128):
@@ -51,7 +55,8 @@ class BatchSmsDataset(Dataset):
             "label": self.labels[idx]
         }
 
-def train_tinybert(version: str = "v2"):
+
+def train_tinybert(version: str = "v3", epochs: int = 3, sample_size: int = 2500):
     torch.manual_seed(RANDOM_SEED)
     np.random.seed(RANDOM_SEED)
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
@@ -64,18 +69,31 @@ def train_tinybert(version: str = "v2"):
     print(f"{'='*70}")
     print(f"Device: {device}")
 
-    # Load processed splits (isolated SMS dataset)
-    train_df = pd.read_csv(os.path.join(PROCESSED_DIR, "sms_train.csv"))
-    val_df = pd.read_csv(os.path.join(PROCESSED_DIR, "sms_val.csv"))
-    test_df = pd.read_csv(os.path.join(PROCESSED_DIR, "sms_test.csv"))
+    # Load dataset splits (prefer v3 curated balanced data)
+    data_dir = PROCESSED_V3_DIR if os.path.exists(os.path.join(PROCESSED_V3_DIR, "sms_train.csv")) else PROCESSED_DIR
+    train_df = pd.read_csv(os.path.join(data_dir, "sms_train.csv"))
+    val_df = pd.read_csv(os.path.join(data_dir, "sms_val.csv"))
+    test_df = pd.read_csv(os.path.join(data_dir, "sms_test.csv"))
 
-    # Balance/sample representative subsets for stable, high-performance CPU execution
-    if len(train_df) > 600:
-        train_df = train_df.sample(n=600, random_state=RANDOM_SEED).reset_index(drop=True)
-    if len(val_df) > 300:
-        val_df = val_df.sample(n=300, random_state=RANDOM_SEED).reset_index(drop=True)
-    if len(test_df) > 600:
-        test_df = test_df.sample(n=600, random_state=RANDOM_SEED).reset_index(drop=True)
+    # Balance/sample stratified subset for stable, high-performance CPU execution
+    if len(train_df) > sample_size:
+        # Stratified sampling to guarantee equal representation
+        train_df = train_df.groupby("label", group_keys=False).apply(
+            lambda x: x.sample(n=sample_size // 2, random_state=RANDOM_SEED)
+        ).reset_index(drop=True)
+
+    val_sample_size = min(len(val_df), sample_size // 3)
+    val_df = val_df.groupby("label", group_keys=False).apply(
+        lambda x: x.sample(n=val_sample_size // 2, random_state=RANDOM_SEED)
+    ).reset_index(drop=True)
+
+    test_sample_size = min(len(test_df), sample_size // 2)
+    test_df = test_df.groupby("label", group_keys=False).apply(
+        lambda x: x.sample(n=test_sample_size // 2, random_state=RANDOM_SEED)
+    ).reset_index(drop=True)
+
+    print(f"Dataset Loaded: {len(train_df)} train, {len(val_df)} val, {len(test_df)} test.")
+    print(f"Train Class Counts: 0 (Ham)={sum(train_df['label']==0)}, 1 (Smish)={sum(train_df['label']==1)}")
 
     preprocessor = SmsPreprocessor(max_length=128)
 
@@ -90,19 +108,35 @@ def train_tinybert(version: str = "v2"):
     test_loader = DataLoader(test_dataset, batch_size=batch_size, shuffle=False)
 
     model = PyTorchTinyBertModel().to(device)
+
+    # Warm-start from v2 or v1 checkpoint if available
+    v2_pth = os.path.join("models", "tinybert", "v2", "model.pth")
     v1_pth = os.path.join("models", "tinybert", "v1", "model.pth")
-    if os.path.exists(v1_pth):
+    if os.path.exists(v2_pth):
+        try:
+            model.load_state_dict(torch.load(v2_pth, map_location=device))
+            print("Loaded warm-start weights from TinyBERT v2 checkpoint.")
+        except Exception as e:
+            print(f"Could not load v2: {e}")
+    elif os.path.exists(v1_pth):
         try:
             model.load_state_dict(torch.load(v1_pth, map_location=device))
             print("Loaded warm-start weights from TinyBERT v1 checkpoint.")
         except Exception as e:
             print(f"Starting from scratch (error loading v1: {e})")
 
-    criterion = nn.CrossEntropyLoss()
-    optimizer = torch.optim.AdamW(model.parameters(), lr=5e-4, weight_decay=0.01)
+    # Class-weighted loss: penalize false positives on legitimate financial communications
+    class_counts = np.bincount(train_df["label"].values)
+    class_weights = torch.tensor([1.0 / class_counts[0], 1.0 / class_counts[1]], dtype=torch.float).to(device)
+    class_weights = class_weights / class_weights.sum() * 2.0
+    criterion = nn.CrossEntropyLoss(weight=class_weights)
 
-    epochs = 1
-    print(f"Starting TinyBERT fine-tuning ({epochs} epoch, batch size {batch_size})...")
+    optimizer = torch.optim.AdamW(model.parameters(), lr=3e-4, weight_decay=0.01)
+
+    print(f"Starting TinyBERT fine-tuning ({epochs} epochs, batch size {batch_size}, lr=3e-4)...")
+
+    best_val_loss = float("inf")
+    best_state = None
 
     for epoch in range(1, epochs + 1):
         model.train()
@@ -143,6 +177,13 @@ def train_tinybert(version: str = "v2"):
         val_acc = accuracy_score(val_targets, np.array(val_preds) >= 0.5)
         print(f"Epoch {epoch}/{epochs} - Train Loss: {avg_train_loss:.4f} | Val Loss: {avg_val_loss:.4f} | Val Acc: {val_acc:.4f}")
 
+        if avg_val_loss < best_val_loss:
+            best_val_loss = avg_val_loss
+            best_state = {k: v.cpu().clone() for k, v in model.state_dict().items()}
+
+    if best_state is not None:
+        model.load_state_dict(best_state)
+
     # Evaluation on UNTOUCHED TEST SET
     print("\nEvaluating TinyBERT model on untouched test set...")
     model.eval()
@@ -172,7 +213,7 @@ def train_tinybert(version: str = "v2"):
     tn, fp, fn, tp = cm.ravel()
     fpr = float(fp / (fp + tn)) if (fp + tn) > 0 else 0.0
 
-    print(f"\n--- TinyBERT Test Results ---")
+    print(f"\n--- TinyBERT {version.upper()} Test Results ---")
     print(f"Accuracy:  {acc*100:.2f}%")
     print(f"Precision: {prec*100:.2f}%")
     print(f"Recall:    {rec*100:.2f}%")
@@ -210,6 +251,19 @@ def train_tinybert(version: str = "v2"):
     )
     onnx_size = os.path.getsize(onnx_path)
 
+    # ONNX Runtime Parity Verification
+    print("Verifying ONNX runtime parity against PyTorch model...")
+    ort_session = ort.InferenceSession(onnx_path)
+    ort_inputs = {
+        "input_ids": dummy_input_ids.cpu().numpy(),
+        "attention_mask": dummy_mask.cpu().numpy()
+    }
+    ort_outs = ort_session.run(None, ort_inputs)[0]
+    with torch.no_grad():
+        py_outs = model(dummy_input_ids, dummy_mask).cpu().numpy()
+    max_diff = float(np.max(np.abs(ort_outs - py_outs)))
+    print(f"ONNX Parity Check: Maximum difference is {max_diff:.6f} (Tolerance: 1e-4) -> {'PASS' if max_diff < 1e-4 else 'WARN'}")
+
     # Compute Hashes
     def file_hash(fp):
         h = hashlib.sha256()
@@ -236,11 +290,12 @@ def train_tinybert(version: str = "v2"):
         },
         "hyperparameters": {
             "batch_size": batch_size,
-            "learning_rate": 5e-4,
+            "learning_rate": 3e-4,
             "weight_decay": 0.01,
             "optimizer": "AdamW",
             "epochs": epochs,
-            "max_sequence_length": 128
+            "max_sequence_length": 128,
+            "class_weights": class_weights.cpu().tolist()
         },
         "label_mapping": {
             "0": "safe",
@@ -254,6 +309,10 @@ def train_tinybert(version: str = "v2"):
             "roc_auc": round(auc, 4),
             "false_positive_rate": round(fpr, 4),
             "confusion_matrix": cm.tolist()
+        },
+        "onnx_parity": {
+            "verified": bool(max_diff < 1e-4),
+            "max_abs_diff": float(max_diff)
         },
         "artifacts": {
             "pytorch_weights_filename": "model.pth",
@@ -274,8 +333,9 @@ def train_tinybert(version: str = "v2"):
     with open(metadata_path, "w") as f:
         json.dump(metadata, f, indent=2)
 
-    print(f"Saved TinyBERT artifacts to: {output_dir}")
+    print(f"Saved TinyBERT v3 artifacts to: {output_dir}")
     return metadata
 
+
 if __name__ == "__main__":
-    train_tinybert(version="v2")
+    train_tinybert(version="v3", epochs=3, sample_size=2500)

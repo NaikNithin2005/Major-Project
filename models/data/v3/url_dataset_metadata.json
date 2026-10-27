@@ -1,0 +1,10 @@
+{
+  "dataset_version": "url-v3.0.0-balanced-https",
+  "timestamp": "2026-10-27T14:55:04.342547",
+  "train_rows": 20300,
+  "val_rows": 4350,
+  "test_rows": 4350,
+  "benchmark_rows": 1010,
+  "feature_count": 16,
+  "leakage_verified": true
+}

@@ -51,11 +51,22 @@ def extract_base_domain(hostname: str) -> str:
     return ".".join(parts[-2:])
 
 
+from ai.context_engine.trusted_domains import (
+    TrustedDomainAllowlist,
+    SenderReputationEngine,
+    extract_effective_base_domain
+)
+
+
 class ContextCorrelationEngine:
     """
     Evaluates contextual consistency across multi-modal indicators (SMS, Sender, URL, QR).
     Produces an explainable context score from 0 to 100.
     """
+
+    def __init__(self):
+        self.allowlist = TrustedDomainAllowlist()
+        self.sender_engine = SenderReputationEngine()
 
     def correlate(
         self,
@@ -76,10 +87,37 @@ class ContextCorrelationEngine:
 
         url_hostname = ""
         url_base_domain = ""
+        domain_eval = None
         if target_url:
             parsed = urlparse(target_url if "://" in target_url else "http://" + target_url)
             url_hostname = (parsed.hostname or "").lower()
-            url_base_domain = extract_base_domain(url_hostname)
+            url_base_domain = extract_effective_base_domain(url_hostname)
+            domain_eval = self.allowlist.evaluate_domain(target_url)
+
+            # Check for deceptive lookalike domain spoofing
+            if domain_eval.get("reputation") == "SUSPICIOUS_LOOKALIKE":
+                findings.append(
+                    ContextFinding(
+                        check_name="LOOKALIKE_DOMAIN_SPOOF",
+                        matched=True,
+                        severity="CRITICAL",
+                        description=domain_eval["reason"],
+                        evidence=f"Deceptive host: {url_hostname} | Destination Domain: {domain_eval.get('effective_domain')}",
+                        source=EvidenceSource.CONTEXT
+                    )
+                )
+                inconsistency_points += 75.0
+            elif domain_eval.get("is_trusted"):
+                findings.append(
+                    ContextFinding(
+                        check_name="TRUSTED_BANKING_DOMAIN",
+                        matched=True,
+                        severity="INFO",
+                        description=domain_eval["reason"],
+                        evidence=f"Verified legitimate domain: {url_hostname}",
+                        source=EvidenceSource.CONTEXT
+                    )
+                )
 
         # 1. Detect Claimed Brands in Sender or SMS Text
         detected_brands = self._detect_brands(sms_text, sender)
@@ -117,6 +155,8 @@ class ContextCorrelationEngine:
                             source=EvidenceSource.CONTEXT
                         )
                     )
+
+
 
         # 3. Check Banking / Financial Context vs Non-Banking Destination
         if sms_text and target_url:

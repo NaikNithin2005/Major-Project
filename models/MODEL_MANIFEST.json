@@ -1,23 +1,24 @@
 {
-  "manifest_version": "1.0.0",
-  "release_version": "v2",
-  "generated_at": "2026-10-13T14:30:00Z",
+  "manifest_version": "2.0.0",
+  "release_version": "v3",
+  "generated_at": "2026-10-27T15:00:00Z",
   "models": {
     "tinybert_sms": {
       "name": "TinyBERT Smishing Classifier",
-      "version": "v2",
-      "architecture": "TinyBERT (4 layers, 312 hidden size, 12 attention heads)",
-      "task": "SMS text classification (Binary: Safe vs Smishing)",
+      "version": "v3",
+      "architecture": "TinyBERT (4 layers, 312 hidden size, 4 attention heads)",
+      "task": "SMS text classification (Binary: Safe vs Smishing) with Financial Calibration",
+      "dataset_provenance": "v3.0.0-banking-enhanced (Curated legitimate banking debits, credits, OTPs, UPI, and real banking scams)",
       "files": {
         "onnx": {
-          "path": "models/tinybert/v2/tinybert_smishing.onnx",
-          "sha256": "9e568f120e403d0a2a76e40ecacbdda482f48e4e834c16d994164a5fad0df8a6",
+          "path": "models/tinybert/v3/tinybert_smishing.onnx",
+          "sha256": "d58c97ba950c7abe570fe8195182e54048798c9fd650ae543809a79eb0200efb",
           "size_bytes": 56504082,
           "target_runtime": "Android ONNX Runtime / Mobile Inference"
         },
         "pytorch": {
-          "path": "models/tinybert/v2/model.pth",
-          "sha256": "4ffdc185d9d8e88f148bf99e32573edf43bd7a69d6ea4d4bd01b701bf8d5b86c",
+          "path": "models/tinybert/v3/model.pth",
+          "sha256": "2768cd2ea7672b596b9a33c6f426a1917278b5e57b68381431dbd60ab694e6b0",
           "size_bytes": 56384920,
           "target_runtime": "PyTorch Python Testing & Validation"
         },
@@ -27,45 +28,58 @@
           "size_bytes": 231508
         },
         "metadata": {
-          "path": "models/tinybert/v2/metadata.json",
-          "sha256": "ba55e96cf31aeb7aa0643e27ca4e8572e85658bc96d93c3149585b83509579f2"
+          "path": "models/tinybert/v3/metadata.json"
         }
       },
       "metrics": {
-        "accuracy": 0.985,
-        "precision": 0.982,
-        "recall": 0.988,
-        "f1_score": 0.985
+        "financial_benchmark_accuracy": 0.9940,
+        "financial_benchmark_precision": 0.9718,
+        "financial_benchmark_recall": 1.0000,
+        "financial_benchmark_f1": 0.9857,
+        "financial_benchmark_fpr": 0.0076,
+        "financial_benchmark_fnr": 0.0000
+      },
+      "rollback_version": "v2",
+      "rollback_files": {
+        "onnx": "android/app/src/main/assets/models/v2/tinybert_smishing.onnx",
+        "pytorch": "models/tinybert/v2/model.pth"
       }
     },
     "xgboost_url": {
       "name": "XGBoost URL Quishing Classifier",
-      "version": "v2",
+      "version": "v3",
       "architecture": "Extreme Gradient Boosting Decision Trees",
-      "task": "URL Quishing Detection based on 16 lexical and structural features",
+      "task": "URL Quishing Detection based on 16 lexical and structural features (HTTPS-debiased)",
+      "dataset_provenance": "url-v3.0.0-balanced-https (Umar legitimate URLs + Phishing URLs modern HTTPS phishing)",
       "files": {
         "onnx": {
-          "path": "models/xgboost/v2/xgboost_url.onnx",
-          "sha256": "00759e1be61979991bb220909a72dd481d0d4c1884988a1d6a0edaa267063757",
-          "size_bytes": 757337,
+          "path": "models/xgboost/v3/xgboost_url.onnx",
+          "sha256": "ec01e253ed7aa0c5de4eb92a37300ae9ee27117bddf5f512f8e591524fd4c6d3",
+          "size_bytes": 260243,
           "target_runtime": "Android ONNX Runtime / Mobile Inference"
         },
         "json": {
-          "path": "models/xgboost/v2/model.json",
-          "sha256": "5768cc3bc2eac1e1b184eb6746ae2ddf05be741a7eb5b8eeef18bd64e581bad0",
-          "size_bytes": 1425064,
+          "path": "models/xgboost/v3/model.json",
+          "sha256": "66815e957e42364b0ccd3656a3cc509f7cc35733b6e74876d548f063a0f64ca9",
+          "size_bytes": 526312,
           "target_runtime": "XGBoost Native Python Runtime"
         },
         "metadata": {
-          "path": "models/xgboost/v2/metadata.json",
-          "sha256": "2c0d72314ffbf8dfecf72f45c30edb74f6dd345ae31c76d888dc5b4d1b256044"
+          "path": "models/xgboost/v3/metadata.json"
         }
       },
       "metrics": {
-        "accuracy": 0.976,
-        "precision": 0.973,
-        "recall": 0.979,
-        "f1_score": 0.976
+        "accuracy": 0.9506,
+        "precision": 0.9785,
+        "recall": 0.9214,
+        "f1_score": 0.9491,
+        "roc_auc": 0.9884,
+        "false_positive_rate": 0.0202
+      },
+      "rollback_version": "v2",
+      "rollback_files": {
+        "onnx": "android/app/src/main/assets/models/v2/xgboost_url.onnx",
+        "json": "models/xgboost/v2/model.json"
       }
     },
     "isolation_forest_anomaly": {
@@ -87,8 +101,7 @@
           "target_runtime": "Scikit-Learn Python Runtime"
         },
         "metadata": {
-          "path": "models/isolation_forest/v2/metadata.json",
-          "sha256": "e64e68b0f9f36993a58c1d95046eb59f4e2da4507ffc11cb82288e30109c51fc"
+          "path": "models/isolation_forest/v2/metadata.json"
         }
       },
       "metrics": {
