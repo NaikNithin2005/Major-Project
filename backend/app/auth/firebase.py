@@ -171,22 +171,22 @@ def verify_id_token(token: str) -> Optional[Dict[str, Any]]:
 
     # 1. Check Mock Developer Tokens for offline-first testing (strictly blocked in production)
     if settings.allow_mock_auth and settings.environment != "production":
-        if clean_token == "mock-admin-token":
+        if clean_token in ("mock-admin-token", "dev-mock-admin-token", "admin-token"):
             return {
                 "uid": "admin-mock-uid-0001",
                 "email": "admin@squishshield.local",
                 "name": "System Administrator",
                 "role": "ADMIN"
             }
-        elif clean_token == "mock-user-token":
+        elif clean_token in ("mock-user-token", "dev-mock-token", "user-token"):
             return {
                 "uid": "user-mock-uid-0001",
                 "email": "user@squishshield.local",
                 "name": "Standard User",
                 "role": "USER"
             }
-        elif clean_token.startswith("mock-user-"):
-            uid_suffix = clean_token.removeprefix("mock-user-")
+        elif clean_token.startswith("mock-user-") or clean_token.startswith("dev-mock-user-"):
+            uid_suffix = clean_token.split("-")[-1]
             return {
                 "uid": f"user-mock-{uid_suffix}",
                 "email": f"user_{uid_suffix}@squishshield.local",
@@ -194,8 +194,8 @@ def verify_id_token(token: str) -> Optional[Dict[str, Any]]:
                 "role": "USER"
             }
 
-    # 2. Verify via Live Firebase Admin SDK if active
-    if firebase_initialized:
+    # 2. Verify via Live Firebase Admin SDK if active (only for structurally valid 3-part JWTs)
+    if firebase_initialized and clean_token.count(".") == 2:
         try:
             decoded = firebase_auth.verify_id_token(clean_token)
             return {

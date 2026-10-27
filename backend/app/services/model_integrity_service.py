@@ -117,6 +117,7 @@ class ModelIntegrityService:
                     all_healthy = False
 
                 results.append({
+                    "model": "tinybert" if "tinybert" in model_key.lower() else ("xgboost" if "xgboost" in model_key.lower() else "isolation forest"),
                     "model_id": model_key,
                     "name": m_info.get("name", model_key),
                     "version": m_info.get("version", "v2"),
@@ -131,18 +132,29 @@ class ModelIntegrityService:
             except Exception as ex:
                 all_healthy = False
                 results.append({
+                    "model": "tinybert" if "tinybert" in model_key.lower() else ("xgboost" if "xgboost" in model_key.lower() else "isolation forest"),
                     "model_id": model_key,
                     "status": "READ_ERROR",
                     "error": str(ex),
                     "verified": False,
                 })
 
+        verified_count = sum(1 for r in results if r.get("verified"))
+        pct = 100.0 if all_healthy and len(results) > 0 else (round((verified_count / len(results) * 100), 1) if results else 0.0)
+
         return {
             "status": "HEALTHY" if all_healthy else "INTEGRITY_VIOLATION",
             "manifest_version": manifest_data.get("manifest_version", "1.0.0"),
             "release_version": manifest_data.get("release_version", "v2"),
             "total_models": len(results),
-            "verified_count": sum(1 for r in results if r.get("verified")),
+            "verified_count": verified_count,
+            "percent_verified": pct,
             "all_healthy": all_healthy,
             "models": results,
+            "results": results,
+            "summary": {
+                "percent_verified": pct,
+                "total": len(results),
+                "verified": verified_count,
+            }
         }

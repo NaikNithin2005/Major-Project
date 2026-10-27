@@ -40,4 +40,9 @@ object SyncScheduler {
                 request
             )
     }
+
+    fun cancelPeriodicSync(context: Context) {
+        WorkManager.getInstance(context.applicationContext)
+            .cancelUniqueWork(UNIQUE_WORK_PERIODIC)
+    }
 }

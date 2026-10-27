@@ -114,6 +114,10 @@ def ensure_tables():
                 "ALTER TABLE users ADD COLUMN phone_number VARCHAR(32)",
                 "ALTER TABLE threat_events ADD COLUMN user_action VARCHAR(32)",
                 "ALTER TABLE threat_events ADD COLUMN updated_at TIMESTAMP",
+                "ALTER TABLE threat_intel ADD COLUMN verification_status VARCHAR(32) DEFAULT 'VERIFIED'",
+                "ALTER TABLE threat_intel ADD COLUMN expires_at TIMESTAMP",
+                "ALTER TABLE threat_intel ADD COLUMN revocation_reason VARCHAR(512)",
+                "ALTER TABLE threat_intel ADD COLUMN promoted_from_report_id VARCHAR(36)",
             ]:
                 try:
                     conn.execute(text(sql))

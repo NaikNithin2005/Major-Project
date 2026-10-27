@@ -1,5 +1,5 @@
 {
-  "benchmark_timestamp": "2026-10-17T08:24:25Z",
+  "benchmark_timestamp": "2026-10-19T08:07:29Z",
   "phase": "Phase 13 - Operational Model Quality Benchmark",
   "environment": "ONNX Runtime Mobile Contract Verification",
   "models": {
@@ -16,11 +16,11 @@
       "false_positive_rate": 0.04,
       "false_negative_rate": 0.12,
       "latency_ms": {
-        "p50": 6.44,
-        "p95": 9.41,
-        "mean": 369.82,
-        "min": 4.81,
-        "max": 36322.69
+        "p50": 13.67,
+        "p95": 16.92,
+        "mean": 114.25,
+        "min": 10.27,
+        "max": 10088.27
       },
       "model_id": "tinybert_smishing:v2",
       "status": "PASSED"
@@ -38,11 +38,11 @@
       "false_positive_rate": 0.0,
       "false_negative_rate": 0.0244,
       "latency_ms": {
-        "p50": 0.02,
-        "p95": 0.04,
-        "mean": 0.03,
-        "min": 0.02,
-        "max": 0.23
+        "p50": 0.03,
+        "p95": 0.05,
+        "mean": 0.04,
+        "min": 0.03,
+        "max": 0.19
       },
       "model_id": "xgboost_quishing:v2",
       "status": "PASSED"
@@ -54,11 +54,11 @@
       "outliers_detected": 31,
       "anomaly_rate": 0.155,
       "latency_ms": {
-        "p50": 3.58,
-        "p95": 5.68,
-        "mean": 3.78,
-        "min": 1.95,
-        "max": 7.31
+        "p50": 4.01,
+        "p95": 6.57,
+        "mean": 4.2,
+        "min": 1.81,
+        "max": 19.85
       },
       "status": "PASSED"
     }

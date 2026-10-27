@@ -47,7 +47,8 @@ class DashboardViewModel(
     private val qrAnalysisRepository: com.example.android.domain.repository.QrAnalysisRepository? = null,
     private val addThreatRecordUseCase: AddThreatRecordUseCase? = null,
     private val deleteThreatRecordUseCase: DeleteThreatRecordUseCase? = null,
-    private val syncRepository: SyncRepository? = null
+    private val syncRepository: SyncRepository? = null,
+    private val submitFeedbackUseCase: com.example.android.domain.usecase.SubmitFeedbackUseCase? = null
 ) : ViewModel() {
 
     val authState: StateFlow<AuthState> = getAuthStateUseCase().stateIn(
@@ -155,6 +156,38 @@ class DashboardViewModel(
             if (existing != null) {
                 val updated = existing.copy(actionTaken = action)
                 threatHistoryRepository.updateThreat(updated)
+            }
+        }
+    }
+
+    fun saveThreat(threat: ThreatRecord) {
+        viewModelScope.launch {
+            threatHistoryRepository.addThreat(threat)
+        }
+    }
+
+    fun clearAllThreats() {
+        viewModelScope.launch {
+            threatHistoryRepository.clearAllThreats()
+        }
+    }
+
+    fun submitFeedback(threatId: String, category: String, comment: String) {
+        viewModelScope.launch {
+            submitFeedbackUseCase?.invoke(
+                com.example.android.domain.model.UserFeedback(
+                    id = java.util.UUID.randomUUID().toString(),
+                    threatId = threatId,
+                    timestamp = System.currentTimeMillis(),
+                    userCategory = category,
+                    comment = comment,
+                    isSubmitted = true
+                )
+            )
+            if (category == "FALSE_POSITIVE") {
+                updateThreatAction(threatId, "FALSE_POSITIVE")
+            } else if (category == "CORRECT_THREAT") {
+                updateThreatAction(threatId, "CONFIRMED_THREAT")
             }
         }
     }

@@ -130,6 +130,14 @@ class IncidentService:
             )
         return self._to_incident_detail_response(incident)
 
+    def delete_incident(self, incident_id: str, admin: User) -> bool:
+        incident = self.repo.get_by_id(incident_id)
+        if incident:
+            self.db.delete(incident)
+            self.db.commit()
+            return True
+        return False
+
     def list_incidents(
         self,
         skip: int = 0,
@@ -188,12 +196,10 @@ class IncidentService:
                 }
             )
 
-        # Require resolution summary when moving to RESOLVED
-        if target_status == "RESOLVED" and not request.resolution_summary:
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail={"code": "RESOLUTION_SUMMARY_REQUIRED", "message": "Resolution summary is required when marking an incident as RESOLVED."}
-            )
+        # Default resolution summary when moving to RESOLVED if not provided
+        res_summary = request.resolution_summary
+        if target_status == "RESOLVED" and not res_summary:
+            res_summary = "Incident resolved by administrator action."
 
         # Require reason when reopening from CLOSED or RESOLVED back to INVESTIGATING
         if incident.status in ("RESOLVED", "CLOSED") and target_status == "INVESTIGATING" and not request.reason:
@@ -207,7 +213,7 @@ class IncidentService:
             incident=incident,
             new_status=target_status,
             actor_admin_id=actor_admin.id,
-            resolution_summary=request.resolution_summary,
+            resolution_summary=res_summary,
             reason=request.reason
         )
 

@@ -5,10 +5,7 @@ import android.content.ClipboardManager
 import android.content.Context
 import android.widget.Toast
 import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -22,52 +19,96 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
+import com.example.android.domain.classifier.SmishingClassifier
+import com.example.android.domain.classifier.UrlClassifier
 import com.example.android.domain.model.ThreatRecord
 import com.example.android.domain.model.User
+import com.example.android.domain.rules.RuleEngine
+import com.example.android.domain.usecase.ProcessQrCodeUseCase
+import com.example.android.domain.xai.ExplainableAiEngine
+import com.example.android.presentation.ai.AssistantContext
+import com.example.android.presentation.ai.AssistantContextType
+import com.example.android.presentation.ai.SquishAiAssistantSheet
+import com.example.android.presentation.ai.SquishAiAssistantViewModel
+import com.example.android.presentation.ai.SquishAiFab
+import com.example.android.presentation.alerts.AlertsTab
+import com.example.android.presentation.history.HistoryTab
+import com.example.android.presentation.scanner.ScannerTab
+import com.example.android.presentation.settings.SettingsTab
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun DashboardScreen(
     currentUser: User?,
     uiState: DashboardUiState = DashboardUiState(),
     onDeleteThreat: (String) -> Unit = {},
     onUpdateThreatAction: (String, String) -> Unit = { _, _ -> },
+    onSaveThreat: (ThreatRecord) -> Unit = {},
+    onClearAllThreats: () -> Unit = {},
+    onSubmitFeedback: (String, String, String) -> Unit = { _, _, _ -> },
     onTriggerManualSync: () -> Unit = {},
-    onNavigateToSettings: () -> Unit,
+    onOpenEducation: () -> Unit = {},
     onNavigateToSmsMonitoring: () -> Unit = {},
     onNavigateToQrScanner: () -> Unit = {},
-    onLogoutClicked: () -> Unit
+    onLogoutClicked: () -> Unit,
+    onOpenSecurityCheck: (url: String, source: String) -> Unit = { _, _ -> },
+    smishingClassifier: SmishingClassifier,
+    urlClassifier: UrlClassifier,
+    ruleEngine: RuleEngine,
+    explainableAiEngine: ExplainableAiEngine,
+    processQrCodeUseCase: ProcessQrCodeUseCase,
+    aiViewModel: SquishAiAssistantViewModel
 ) {
     var selectedTab by remember { mutableStateOf(0) }
-    var selectedThreat by remember { mutableStateOf<ThreatRecord?>(null) }
-    val context = LocalContext.current
+    var selectedThreatForDialog by remember { mutableStateOf<ThreatRecord?>(null) }
+    var isAiAssistantOpen by remember { mutableStateOf(false) }
 
-    val greetingName = when {
-        currentUser?.isGuest == true -> "User"
-        !currentUser?.displayName.isNullOrBlank() -> currentUser?.displayName!!
-        else -> "User"
+    val unreviewedThreatsCount = remember(uiState.threatHistory) {
+        uiState.threatHistory.count { it.actionTaken != "RESOLVED" && it.actionTaken != "FALSE_POSITIVE" }
     }
 
-    if (selectedThreat != null) {
+    if (selectedThreatForDialog != null) {
         ThreatDetailDialog(
-            threat = selectedThreat!!,
-            onDismiss = { selectedThreat = null },
+            threat = selectedThreatForDialog!!,
+            onDismiss = { selectedThreatForDialog = null },
             onDelete = {
-                onDeleteThreat(selectedThreat!!.id)
-                selectedThreat = null
+                onDeleteThreat(selectedThreatForDialog!!.id)
+                selectedThreatForDialog = null
             },
             onUpdateAction = { action ->
-                onUpdateThreatAction(selectedThreat!!.id, action)
-                selectedThreat = null
+                onUpdateThreatAction(selectedThreatForDialog!!.id, action)
+                selectedThreatForDialog = null
+            },
+            onExplainWithAi = { threat ->
+                aiViewModel.setContext(
+                    AssistantContext(
+                        title = threat.sender,
+                        severity = threat.category,
+                        type = AssistantContextType.ALERT_EXPLANATION,
+                        details = "Threat: ${threat.details}; Score: ${threat.riskScore}; Source: ${threat.source}"
+                    )
+                )
+                isAiAssistantOpen = true
+            }
+        )
+    }
+
+    if (isAiAssistantOpen) {
+        SquishAiAssistantSheet(
+            viewModel = aiViewModel,
+            onDismiss = { isAiAssistantOpen = false },
+            onNavigateToScanner = {
+                selectedTab = 2
+                isAiAssistantOpen = false
             }
         )
     }
@@ -78,26 +119,37 @@ fun DashboardScreen(
                 containerColor = Color(0xFF0F172A),
                 contentColor = Color(0xFF94A3B8)
             ) {
-                val items = listOf(
-                    Triple("Home", Icons.Default.Home, 0),
+                val navItems = listOf(
+                    Triple("Home", Icons.Default.Shield, 0),
                     Triple("History", Icons.Default.History, 1),
                     Triple("Scanner", Icons.Default.QrCodeScanner, 2),
                     Triple("Alerts", Icons.Default.Notifications, 3),
                     Triple("Settings", Icons.Default.Settings, 4)
                 )
 
-                items.forEach { (label, icon, index) ->
+                navItems.forEach { (label, icon, index) ->
                     NavigationBarItem(
                         selected = selectedTab == index,
-                        onClick = {
-                            selectedTab = index
-                            if (index == 2) {
-                                onNavigateToQrScanner()
-                            } else if (index == 4) {
-                                onNavigateToSettings()
+                        onClick = { selectedTab = index },
+                        icon = {
+                            BadgedBox(
+                                badge = {
+                                    if (index == 3 && unreviewedThreatsCount > 0) {
+                                        Badge(
+                                            containerColor = Color(0xFFEF4444),
+                                            contentColor = Color.White
+                                        ) {
+                                            Text(
+                                                text = if (unreviewedThreatsCount > 9) "9+" else unreviewedThreatsCount.toString(),
+                                                fontSize = 10.sp
+                                            )
+                                        }
+                                    }
+                                }
+                            ) {
+                                Icon(icon, contentDescription = label)
                             }
                         },
-                        icon = { Icon(icon, contentDescription = label) },
                         label = { Text(label, fontSize = 11.sp) },
                         colors = NavigationBarItemDefaults.colors(
                             selectedIconColor = Color(0xFF38BDF8),
@@ -108,6 +160,15 @@ fun DashboardScreen(
                         )
                     )
                 }
+            }
+        },
+        floatingActionButton = {
+            // Feature 19: Persistent Floating AI Assistant Button across Home, History, Scanner, and Alerts
+            if (selectedTab != 4) {
+                SquishAiFab(
+                    hasUnresolvedAlerts = unreviewedThreatsCount > 0,
+                    onClick = { isAiAssistantOpen = true }
+                )
             }
         }
     ) { innerPadding ->
@@ -121,506 +182,59 @@ fun DashboardScreen(
                 )
                 .padding(innerPadding)
         ) {
-            if (selectedTab == 1) {
-                // HISTORY TAB CONTENT
-                ThreatHistoryView(
+            when (selectedTab) {
+                0 -> HomeTab(
+                    currentUser = currentUser,
+                    uiState = uiState,
+                    onNavigateToTab = { selectedTab = it },
+                    onOpenEducation = onOpenEducation,
+                    onThreatClicked = { selectedThreatForDialog = it },
+                    onTriggerManualSync = onTriggerManualSync
+                )
+                1 -> HistoryTab(
                     threats = uiState.threatHistory,
                     onDeleteThreat = onDeleteThreat,
-                    onThreatClicked = { selectedThreat = it },
-                    onNavigateToSmsMonitoring = onNavigateToSmsMonitoring
+                    onThreatClicked = { selectedThreatForDialog = it },
+                    onNavigateToScanner = { selectedTab = 2 }
                 )
-            } else {
-                // HOME DASHBOARD CONTENT
-                LazyColumn(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .padding(20.dp),
-                    verticalArrangement = Arrangement.spacedBy(20.dp)
-                ) {
-                    // Header User Greeting
-                    item {
-                        Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.SpaceBetween,
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            Column {
-                                Text(
-                                    text = "Hello, $greetingName",
-                                    fontSize = 20.sp,
-                                    fontWeight = FontWeight.Bold,
-                                    color = Color.White
-                                )
-                                Text(
-                                    text = if (currentUser?.isGuest == true) "Guest Session" else currentUser?.email ?: "",
-                                    fontSize = 12.sp,
-                                    color = Color(0xFF94A3B8)
-                                )
-                            }
-
-                            IconButton(
-                                onClick = onNavigateToSettings,
-                                modifier = Modifier
-                                    .size(42.dp)
-                                    .background(Color(0xFF1E293B), CircleShape)
-                            ) {
-                                Icon(Icons.Default.Person, contentDescription = "Profile", tint = Color(0xFF38BDF8))
-                            }
-                        }
-                    }
-
-                    // Security Overview Card
-                    item {
-                        Card(
-                            modifier = Modifier.fillMaxWidth(),
-                            shape = RoundedCornerShape(20.dp),
-                            colors = CardDefaults.cardColors(containerColor = Color(0xFF1E293B))
-                        ) {
-                            Row(
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .padding(20.dp),
-                                verticalAlignment = Alignment.CenterVertically,
-                                horizontalArrangement = Arrangement.SpaceBetween
-                            ) {
-                                Column {
-                                    Row(verticalAlignment = Alignment.CenterVertically) {
-                                        Surface(
-                                            color = Color(0xFF10B981).copy(alpha = 0.15f),
-                                            shape = RoundedCornerShape(20.dp)
-                                        ) {
-                                            Row(
-                                                modifier = Modifier.padding(horizontal = 10.dp, vertical = 4.dp),
-                                                verticalAlignment = Alignment.CenterVertically
-                                            ) {
-                                                Box(
-                                                    modifier = Modifier
-                                                        .size(6.dp)
-                                                        .background(Color(0xFF10B981), CircleShape)
-                                                )
-                                                Spacer(modifier = Modifier.width(6.dp))
-                                                Text("Protection Active", fontSize = 12.sp, color = Color(0xFF34D399), fontWeight = FontWeight.Medium)
-                                            }
-                                        }
-
-                                        Spacer(modifier = Modifier.width(8.dp))
-
-                                        // Interactive Cloud Synchronization Status Indicator
-                                        Surface(
-                                            color = if (uiState.pendingSyncCount == 0) {
-                                                Color(0xFF0EA5E9).copy(alpha = 0.18f)
-                                            } else {
-                                                Color(0xFFF59E0B).copy(alpha = 0.22f)
-                                            },
-                                            shape = RoundedCornerShape(20.dp),
-                                            modifier = Modifier
-                                                .clip(RoundedCornerShape(20.dp))
-                                                .clickable {
-                                                    onTriggerManualSync()
-                                                    Toast.makeText(context, "Initiating cloud sync...", Toast.LENGTH_SHORT).show()
-                                                }
-                                        ) {
-                                            Row(
-                                                modifier = Modifier.padding(horizontal = 9.dp, vertical = 4.dp),
-                                                verticalAlignment = Alignment.CenterVertically
-                                            ) {
-                                                Icon(
-                                                    imageVector = if (uiState.pendingSyncCount == 0) Icons.Default.CloudDone else Icons.Default.Sync,
-                                                    contentDescription = "Sync",
-                                                    tint = if (uiState.pendingSyncCount == 0) Color(0xFF38BDF8) else Color(0xFFFBBF24),
-                                                    modifier = Modifier.size(13.dp)
-                                                )
-                                                Spacer(modifier = Modifier.width(5.dp))
-                                                Text(
-                                                    text = when {
-                                                        uiState.pendingSyncCount == 0 -> "Synced"
-                                                        else -> "⏳ ${uiState.pendingSyncCount} pending"
-                                                    },
-                                                    fontSize = 11.sp,
-                                                    color = when {
-                                                        uiState.pendingSyncCount == 0 -> Color(0xFF38BDF8)
-                                                        else -> Color(0xFFFBBF24)
-                                                    },
-                                                    fontWeight = FontWeight.Medium
-                                                )
-                                            }
-                                        }
-                                    }
-
-                                    Spacer(modifier = Modifier.height(12.dp))
-
-                                    Text("Security Score", fontSize = 13.sp, color = Color(0xFF94A3B8))
-                                    Text("${uiState.securityScore} / 100", fontSize = 28.sp, fontWeight = FontWeight.Bold, color = Color.White)
-                                }
-
-                                Box(
-                                    modifier = Modifier
-                                        .size(72.dp)
-                                        .background(Color(0xFF0EA5E9).copy(alpha = 0.15f), CircleShape),
-                                    contentAlignment = Alignment.Center
-                                ) {
-                                    Icon(Icons.Default.VerifiedUser, contentDescription = null, tint = Color(0xFF38BDF8), modifier = Modifier.size(40.dp))
-                                }
-                            }
-                        }
-                    }
-
-                    // Dynamic Activity Counters Grid
-                    item {
-                        Text("Today's Activity", fontSize = 16.sp, fontWeight = FontWeight.SemiBold, color = Color.White)
-                        Spacer(modifier = Modifier.height(10.dp))
-                        Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.spacedBy(12.dp)
-                        ) {
-                            StatCard("Threats", "${uiState.threatCount}", Icons.Default.Warning, Color(0xFFEF4444), Modifier.weight(1f)) {
-                                selectedTab = 1
-                            }
-                            StatCard("SMS Scanned", "${uiState.smsScannedCount}", Icons.Default.Sms, Color(0xFF3B82F6), Modifier.weight(1f), onClick = onNavigateToSmsMonitoring)
-                            StatCard("QR Scanned", "${uiState.qrScannedCount}", Icons.Default.QrCode, Color(0xFF10B981), Modifier.weight(1f), onClick = onNavigateToQrScanner)
-                        }
-                    }
-
-                    // Quick Actions
-                    item {
-                        Text("Quick Actions", fontSize = 16.sp, fontWeight = FontWeight.SemiBold, color = Color.White)
-                        Spacer(modifier = Modifier.height(10.dp))
-                        Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.spacedBy(12.dp)
-                        ) {
-                            Button(
-                                onClick = onNavigateToSmsMonitoring,
-                                modifier = Modifier.weight(1f).height(48.dp),
-                                shape = RoundedCornerShape(12.dp),
-                                colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF0EA5E9))
-                            ) {
-                                Icon(Icons.Default.Sms, contentDescription = null, modifier = Modifier.size(16.dp))
-                                Spacer(modifier = Modifier.width(6.dp))
-                                Text("SMS Monitor", fontSize = 13.sp)
-                            }
-
-                            Button(
-                                onClick = onNavigateToQrScanner,
-                                modifier = Modifier.weight(1f).height(48.dp),
-                                shape = RoundedCornerShape(12.dp),
-                                colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF10B981))
-                            ) {
-                                Icon(Icons.Default.QrCodeScanner, contentDescription = null, modifier = Modifier.size(16.dp))
-                                Spacer(modifier = Modifier.width(6.dp))
-                                Text("QR Scanner", fontSize = 13.sp)
-                            }
-                        }
-                    }
-
-                    // Recent Threat Activity List
-                    item {
-                        Text("Recent Threat Log", fontSize = 16.sp, fontWeight = FontWeight.SemiBold, color = Color.White)
-                    }
-
-                    if (uiState.threatHistory.isEmpty()) {
-                        item {
-                            Card(
-                                modifier = Modifier.fillMaxWidth(),
-                                shape = RoundedCornerShape(16.dp),
-                                colors = CardDefaults.cardColors(containerColor = Color(0xFF1E293B))
-                            ) {
-                                Column(modifier = Modifier.padding(16.dp)) {
-                                    Text("No threat activity detected today.", fontSize = 13.sp, color = Color(0xFF94A3B8))
-                                }
-                            }
-                        }
-                    } else {
-                        items(uiState.threatHistory.take(5), key = { it.id }) { threat ->
-                            ThreatRecordItemCard(
-                                threat = threat,
-                                onClick = { selectedThreat = threat },
-                                onDelete = onDeleteThreat
+                2 -> ScannerTab(
+                    smishingClassifier = smishingClassifier,
+                    urlClassifier = urlClassifier,
+                    ruleEngine = ruleEngine,
+                    explainableAiEngine = explainableAiEngine,
+                    processQrCodeUseCase = processQrCodeUseCase,
+                    onSaveThreatToHistory = onSaveThreat,
+                    onOpenLiveCameraQr = onNavigateToQrScanner,
+                    onAskAiAssistant = { prompt ->
+                        aiViewModel.sendMessage(prompt)
+                        isAiAssistantOpen = true
+                    },
+                    onOpenSecurityCheck = onOpenSecurityCheck
+                )
+                3 -> AlertsTab(
+                    threats = uiState.threatHistory,
+                    onUpdateThreatAction = onUpdateThreatAction,
+                    onSubmitFeedback = onSubmitFeedback,
+                    onExplainWithAi = { threat ->
+                        aiViewModel.setContext(
+                            AssistantContext(
+                                title = threat.sender,
+                                severity = threat.category,
+                                type = AssistantContextType.ALERT_EXPLANATION,
+                                details = "Threat: ${threat.details}; Score: ${threat.riskScore}; Source: ${threat.source}"
                             )
-                        }
-                    }
-                }
-            }
-        }
-    }
-}
-
-@Composable
-fun ThreatHistoryView(
-    threats: List<ThreatRecord>,
-    onDeleteThreat: (String) -> Unit,
-    onThreatClicked: (ThreatRecord) -> Unit,
-    onNavigateToSmsMonitoring: () -> Unit
-) {
-    LazyColumn(
-        modifier = Modifier
-            .fillMaxSize()
-            .padding(20.dp),
-        verticalArrangement = Arrangement.spacedBy(16.dp)
-    ) {
-        item {
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Text(
-                    text = "Threat History Log",
-                    fontSize = 22.sp,
-                    fontWeight = FontWeight.Bold,
-                    color = Color.White
+                        )
+                        isAiAssistantOpen = true
+                    },
+                    onOpenEducation = onOpenEducation
                 )
-                Text(
-                    text = "${threats.size} Recorded",
-                    fontSize = 13.sp,
-                    color = Color(0xFF38BDF8)
+                4 -> SettingsTab(
+                    currentUser = currentUser,
+                    threats = uiState.threatHistory,
+                    onClearAllThreats = onClearAllThreats,
+                    onOpenEducation = onOpenEducation,
+                    onLogoutClicked = onLogoutClicked
                 )
-            }
-        }
-
-        if (threats.isEmpty()) {
-            item {
-                Card(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(top = 32.dp),
-                    shape = RoundedCornerShape(16.dp),
-                    colors = CardDefaults.cardColors(containerColor = Color(0xFF1E293B))
-                ) {
-                    Column(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(32.dp),
-                        horizontalAlignment = Alignment.CenterHorizontally
-                    ) {
-                        Icon(
-                            Icons.Default.Shield,
-                            contentDescription = null,
-                            modifier = Modifier.size(56.dp),
-                            tint = Color(0xFF34D399)
-                        )
-                        Spacer(modifier = Modifier.height(12.dp))
-                        Text(
-                            text = "No Threats Recorded",
-                            fontSize = 18.sp,
-                            fontWeight = FontWeight.Bold,
-                            color = Color.White
-                        )
-                        Spacer(modifier = Modifier.height(4.dp))
-                        Text(
-                            text = "Your device is clean. Incoming smishing SMS and malicious QR codes will automatically log threats here.",
-                            fontSize = 13.sp,
-                            color = Color(0xFF94A3B8)
-                        )
-                        Spacer(modifier = Modifier.height(16.dp))
-                        Button(
-                            onClick = onNavigateToSmsMonitoring,
-                            colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF0EA5E9))
-                        ) {
-                            Text("Open SMS Monitor")
-                        }
-                    }
-                }
-            }
-        } else {
-            items(threats, key = { it.id }) { threat ->
-                ThreatRecordItemCard(
-                    threat = threat,
-                    onClick = { onThreatClicked(threat) },
-                    onDelete = onDeleteThreat
-                )
-            }
-        }
-    }
-}
-
-@OptIn(ExperimentalMaterial3Api::class)
-@Composable
-fun ThreatRecordItemCard(
-    threat: ThreatRecord,
-    onClick: () -> Unit = {},
-    onDelete: (String) -> Unit
-) {
-    val dateFormat = remember { SimpleDateFormat("dd MMM, HH:mm", Locale.getDefault()) }
-    val timeStr = remember(threat.timestamp) { dateFormat.format(Date(threat.timestamp)) }
-
-    val isHigh = threat.category.contains("HIGH", ignoreCase = true) ||
-            threat.category.contains("SMISHING", ignoreCase = true) ||
-            threat.category.contains("QUISHING", ignoreCase = true) ||
-            threat.riskScore >= 75
-    val isMedium = !isHigh && (threat.category.contains("MEDIUM", ignoreCase = true) ||
-            threat.category.contains("SPAM", ignoreCase = true) ||
-            threat.riskScore >= 50)
-    val isLow = !isHigh && !isMedium && (threat.category.contains("LOW", ignoreCase = true) || threat.riskScore >= 25)
-
-    val (categoryLabel, categoryColor, categoryBg) = when {
-        isHigh -> Triple("HIGH RISK", Color(0xFFEF4444), Color(0xFFEF4444).copy(alpha = 0.15f))
-        isMedium -> Triple("MEDIUM RISK", Color(0xFFF59E0B), Color(0xFFF59E0B).copy(alpha = 0.15f))
-        isLow -> Triple("LOW RISK", Color(0xFF38BDF8), Color(0xFF38BDF8).copy(alpha = 0.15f))
-        else -> Triple("SAFE", Color(0xFF10B981), Color(0xFF10B981).copy(alpha = 0.15f))
-    }
-
-    val icon = when {
-        threat.source.contains("QR", ignoreCase = true) -> Icons.Default.QrCodeScanner
-        isHigh -> Icons.Default.Dangerous
-        isMedium -> Icons.Default.Warning
-        else -> Icons.Default.Sms
-    }
-
-    Card(
-        onClick = onClick,
-        modifier = Modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(14.dp),
-        colors = CardDefaults.cardColors(containerColor = Color(0xFF1E293B))
-    ) {
-        Column(modifier = Modifier.padding(16.dp)) {
-            // Top Row: Sender & Category + Risk Badges
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Row(
-                    modifier = Modifier.weight(1f, fill = false),
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Icon(
-                        imageVector = icon,
-                        contentDescription = null,
-                        tint = categoryColor,
-                        modifier = Modifier.size(20.dp)
-                    )
-                    Spacer(modifier = Modifier.width(8.dp))
-                    Text(
-                        text = threat.sender,
-                        fontSize = 15.sp,
-                        fontWeight = FontWeight.Bold,
-                        color = Color.White,
-                        maxLines = 1,
-                        overflow = TextOverflow.Ellipsis
-                    )
-                }
-
-                Spacer(modifier = Modifier.width(8.dp))
-
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    // Category Badge
-                    Surface(
-                        color = categoryBg,
-                        shape = RoundedCornerShape(6.dp)
-                    ) {
-                        Text(
-                            text = categoryLabel,
-                            fontSize = 10.sp,
-                            fontWeight = FontWeight.Bold,
-                            color = categoryColor,
-                            modifier = Modifier.padding(horizontal = 6.dp, vertical = 3.dp)
-                        )
-                    }
-
-                    Spacer(modifier = Modifier.width(6.dp))
-
-                    // Risk Score Badge
-                    Surface(
-                        color = categoryBg,
-                        shape = RoundedCornerShape(6.dp)
-                    ) {
-                        Text(
-                            text = "${threat.riskScore}% Risk",
-                            fontSize = 11.sp,
-                            fontWeight = FontWeight.Bold,
-                            color = categoryColor,
-                            modifier = Modifier.padding(horizontal = 6.dp, vertical = 3.dp)
-                        )
-                    }
-                }
-            }
-
-            // Action Badge (if present)
-            if (threat.actionTaken.isNotBlank()) {
-                Spacer(modifier = Modifier.height(6.dp))
-                Surface(
-                    color = Color(0xFF334155).copy(alpha = 0.6f),
-                    shape = RoundedCornerShape(4.dp)
-                ) {
-                    Text(
-                        text = "Action: ${threat.actionTaken}",
-                        fontSize = 10.sp,
-                        fontWeight = FontWeight.Medium,
-                        color = Color(0xFF94A3B8),
-                        modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
-                    )
-                }
-            }
-
-            Spacer(modifier = Modifier.height(8.dp))
-            val cleanedDetails = remember(threat.details) {
-                var d = threat.details.trim()
-                if (d.contains("keywords:", ignoreCase = true)) {
-                    val idx = d.indexOf("keywords:", ignoreCase = true)
-                    val prefix = d.substring(0, idx).trim().trim(',', ' ')
-                    val kw = d.substring(idx + 9).trim().trim(',', ' ')
-                    d = if (kw.isBlank() || kw.equals("none", ignoreCase = true)) {
-                        prefix
-                    } else if (prefix.isNotBlank()) {
-                        "$prefix • Keywords: $kw"
-                    } else {
-                        "Keywords: $kw"
-                    }
-                }
-                if (d.startsWith("Detected 1 URLs", ignoreCase = true)) {
-                    d = d.replace("Detected 1 URLs", "Detected 1 external URL")
-                }
-                d.ifBlank { "Suspicious pattern flagged by AI engine" }
-            }
-            Text(
-                text = cleanedDetails,
-                fontSize = 13.sp,
-                color = Color(0xFFCBD5E1),
-                maxLines = 2,
-                overflow = TextOverflow.Ellipsis
-            )
-
-            Spacer(modifier = Modifier.height(10.dp))
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Text(
-                    text = "$timeStr • ${threat.source}",
-                    fontSize = 11.sp,
-                    color = Color(0xFF64748B)
-                )
-
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Text(
-                        text = "Inspect",
-                        fontSize = 11.sp,
-                        fontWeight = FontWeight.Medium,
-                        color = Color(0xFF38BDF8)
-                    )
-                    Icon(
-                        Icons.Default.ChevronRight,
-                        contentDescription = "Inspect",
-                        tint = Color(0xFF38BDF8),
-                        modifier = Modifier.size(16.dp)
-                    )
-
-                    Spacer(modifier = Modifier.width(8.dp))
-
-                    IconButton(
-                        onClick = { onDelete(threat.id) },
-                        modifier = Modifier.size(28.dp)
-                    ) {
-                        Icon(
-                            Icons.Default.Delete,
-                            contentDescription = "Delete",
-                            tint = Color(0xFF64748B),
-                            modifier = Modifier.size(16.dp)
-                        )
-                    }
-                }
             }
         }
     }
@@ -631,7 +245,8 @@ fun ThreatDetailDialog(
     threat: ThreatRecord,
     onDismiss: () -> Unit,
     onDelete: () -> Unit,
-    onUpdateAction: (String) -> Unit = {}
+    onUpdateAction: (String) -> Unit = {},
+    onExplainWithAi: (ThreatRecord) -> Unit = {}
 ) {
     val context = LocalContext.current
     val dateFormat = remember { SimpleDateFormat("dd MMMM yyyy, HH:mm:ss", Locale.getDefault()) }
@@ -928,19 +543,24 @@ fun ThreatDetailDialog(
                     }
                 }
 
-                Spacer(modifier = Modifier.height(12.dp))
+                Spacer(modifier = Modifier.height(16.dp))
 
-                // 6. TIMESTAMP
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically
+                // EXPLAIN WITH SQUISH AI BUTTON
+                Button(
+                    onClick = {
+                        onDismiss()
+                        onExplainWithAi(threat)
+                    },
+                    modifier = Modifier.fillMaxWidth().height(46.dp),
+                    shape = RoundedCornerShape(12.dp),
+                    colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF0EA5E9))
                 ) {
-                    Text("Timestamp", fontSize = 11.sp, color = Color(0xFF64748B))
-                    Text(formattedTime, fontSize = 11.sp, color = Color(0xFF94A3B8))
+                    Icon(Icons.Default.AutoAwesome, contentDescription = null, modifier = Modifier.size(18.dp))
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Text("Explain with Squish AI", fontSize = 13.sp, fontWeight = FontWeight.SemiBold)
                 }
 
-                Spacer(modifier = Modifier.height(20.dp))
+                Spacer(modifier = Modifier.height(12.dp))
 
                 // Defensive User Action Buttons
                 Row(
@@ -998,33 +618,12 @@ fun ThreatDetailDialog(
                         onClick = onDismiss,
                         modifier = Modifier.weight(1f),
                         shape = RoundedCornerShape(10.dp),
-                        colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF0EA5E9))
+                        colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF334155))
                     ) {
                         Text("Close", fontSize = 12.sp)
                     }
                 }
             }
-        }
-    }
-}
-
-@OptIn(ExperimentalMaterial3Api::class)
-@Composable
-fun StatCard(label: String, value: String, icon: ImageVector, tint: Color, modifier: Modifier = Modifier, onClick: () -> Unit = {}) {
-    Card(
-        onClick = onClick,
-        modifier = modifier,
-        shape = RoundedCornerShape(14.dp),
-        colors = CardDefaults.cardColors(containerColor = Color(0xFF1E293B))
-    ) {
-        Column(
-            modifier = Modifier.padding(14.dp),
-            horizontalAlignment = Alignment.Start
-        ) {
-            Icon(icon, contentDescription = null, tint = tint, modifier = Modifier.size(22.dp))
-            Spacer(modifier = Modifier.height(8.dp))
-            Text(value, fontSize = 20.sp, fontWeight = FontWeight.Bold, color = Color.White)
-            Text(label, fontSize = 11.sp, color = Color(0xFF94A3B8))
         }
     }
 }

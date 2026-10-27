@@ -66,7 +66,7 @@ class DetectionRepository(BaseRepository[ThreatEvent]):
         query_stmt = (
             select(ThreatEvent)
             .where(where_clause)
-            .order_by(ThreatEvent.timestamp.desc())
+            .order_by(ThreatEvent.created_at.desc())
             .offset(skip)
             .limit(limit)
         )
@@ -112,7 +112,7 @@ class DetectionRepository(BaseRepository[ThreatEvent]):
         query_stmt = (
             select(ThreatEvent)
             .where(where_clause)
-            .order_by(ThreatEvent.timestamp.desc())
+            .order_by(ThreatEvent.created_at.desc())
             .offset(skip)
             .limit(limit)
         )
@@ -141,16 +141,15 @@ class DetectionRepository(BaseRepository[ThreatEvent]):
             return None
         
         event.user_action = action.upper()
-        if action.upper() == "BLOCK":
+        act = action.upper()
+        if act.startswith("BLOCK"):
             event.status = "BLOCKED"
-        elif action.upper() in ("RESOLVED", "MARK_SAFE"):
+        elif act in ("RESOLVED", "MARK_SAFE", "IGNORE", "COPY_SAFE_LINK"):
             event.status = "RESOLVED"
-        elif action.upper() == "FALSE_POSITIVE":
+        elif act == "FALSE_POSITIVE":
             event.status = "FALSE_POSITIVE"
-        elif action.upper() == "REPORT":
+        elif act == "REPORT":
             event.status = "REVIEWED"
-        elif action.upper() == "IGNORE":
-            event.status = "RESOLVED"
 
         event.updated_at = datetime.now(timezone.utc)
         self.db.commit()

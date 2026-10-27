@@ -58,3 +58,21 @@ def list_feedback(
         page_size=page_size,
         pages=pages
     )
+
+
+@router.delete("/{feedback_id}", status_code=status.HTTP_200_OK)
+def delete_feedback(
+    feedback_id: str,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    """Delete a feedback submission."""
+    service = FeedbackService(db)
+    success = service.delete_feedback(feedback_id, current_user.id, current_user.role == "ADMIN")
+    if not success:
+        from fastapi import HTTPException
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail={"code": "FEEDBACK_NOT_FOUND", "message": f"Feedback {feedback_id} not found."}
+        )
+    return {"success": True, "message": "Feedback deleted successfully"}

@@ -1,7 +1,7 @@
 {
   "phase": 14,
   "title": "Phase 14 Threat Intelligence & Adaptive Detection Evaluation Report",
-  "timestamp": "2026-10-17T08:24:37.721826+00:00",
+  "timestamp": "2026-10-19T08:07:42.946834+00:00",
   "dataset": {
     "name": "emerging_threats_test.csv",
     "total_samples": 30,
@@ -34,8 +34,8 @@
       "tn": 14,
       "fp": 0,
       "fn": 12,
-      "latency_p50_ms": 3.861,
-      "latency_p95_ms": 7.587
+      "latency_p50_ms": 6.583,
+      "latency_p95_ms": 12.631
     },
     "phase14_enriched_model_and_intel": {
       "accuracy": 0.8667,
@@ -48,8 +48,8 @@
       "tn": 14,
       "fp": 0,
       "fn": 4,
-      "latency_p50_ms": 4.084,
-      "latency_p95_ms": 7.89
+      "latency_p50_ms": 6.863,
+      "latency_p95_ms": 13.127
     },
     "performance_gain": {
       "recall_lift_pct": 50.0,

@@ -1,6 +1,6 @@
 from datetime import datetime, timezone
 from typing import Any, Dict, List, Optional
-from pydantic import BaseModel, ConfigDict, Field, field_validator
+from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
 
 
 class DetectionCreateRequest(BaseModel):
@@ -8,7 +8,7 @@ class DetectionCreateRequest(BaseModel):
     event_type: str = Field(..., description="Telemetry source: QR or SMS")
     risk_score: int = Field(..., ge=0, le=100, description="Risk Score from 0 to 100")
     threat_category: str = Field(..., description="Threat category: SAFE, LOW, MEDIUM, or HIGH")
-    recommended_action: str = Field(..., description="Recommended action policy")
+    recommended_action: str = Field(default="WARN", description="Recommended action policy")
     timestamp: datetime = Field(default_factory=lambda: datetime.now(timezone.utc), description="Event occurrence timestamp")
 
     # Minimized AI & Context telemetry (no raw SMS text!)
@@ -23,13 +23,41 @@ class DetectionCreateRequest(BaseModel):
     related_threat_id: Optional[str] = None
     campaign_id: Optional[str] = None
 
+    @model_validator(mode="before")
+    @classmethod
+    def normalize_aliases(cls, data: Any) -> Any:
+        if isinstance(data, dict):
+            data = dict(data)
+            ctx = dict(data.get("context_results") or {})
+            if "sender_or_source" in data:
+                ctx["sender_or_source"] = data["sender_or_source"]
+            if "threat_type" in data:
+                ctx["threat_type"] = data["threat_type"]
+                if "event_type" not in data:
+                    data["event_type"] = data["threat_type"]
+            if "threat_level" in data:
+                ctx["threat_level"] = data["threat_level"]
+                if "threat_category" not in data:
+                    data["threat_category"] = data["threat_level"]
+            data["context_results"] = ctx
+
+            if "device_detection_id" in data and "client_event_id" not in data:
+                data["client_event_id"] = data["device_detection_id"]
+            if "recommended_action" not in data:
+                data["recommended_action"] = "BLOCK_SENDER" if data.get("risk_score", 0) >= 70 else "ALLOW"
+            if "risk_reasons" in data and "reasons" not in data:
+                data["reasons"] = data["risk_reasons"]
+        return data
+
     @field_validator("event_type")
     @classmethod
     def validate_event_type(cls, v: str) -> str:
         upper = v.strip().upper()
-        if upper not in ("QR", "SMS"):
-            raise ValueError("event_type must be either 'QR' or 'SMS'")
-        return upper
+        if "SMS" in upper or "SMISH" in upper or upper in ("TEXT",):
+            return "SMS"
+        if "QR" in upper or "QUISH" in upper or upper in ("URL", "BARCODE"):
+            return "QR"
+        raise ValueError("event_type must be either 'QR' or 'SMS'")
 
     @field_validator("threat_category")
     @classmethod
@@ -49,6 +77,11 @@ class DetectionCreateRequest(BaseModel):
 class DetectionResponse(BaseModel):
     id: str
     client_event_id: Optional[str] = None
+    device_detection_id: Optional[str] = None
+    threat_type: Optional[str] = None
+    threat_level: Optional[str] = None
+    sender_or_source: Optional[str] = None
+    risk_reasons: Optional[List[str]] = None
     user_id: Optional[str] = None
     device_id: Optional[str] = None
     event_type: str
@@ -69,6 +102,27 @@ class DetectionResponse(BaseModel):
     user_action: Optional[str] = None
     created_at: datetime
     updated_at: Optional[datetime] = None
+
+    @model_validator(mode="before")
+    @classmethod
+    def populate_response_aliases(cls, data: Any) -> Any:
+        if hasattr(data, "__table__"):
+            d = {c.name: getattr(data, c.name) for c in data.__table__.columns}
+        elif hasattr(data, "__dict__"):
+            d = data.__dict__.copy()
+        elif isinstance(data, dict):
+            d = dict(data)
+        else:
+            return data
+        ctx = d.get("context_results") or {}
+        if not isinstance(ctx, dict):
+            ctx = {}
+        d["device_detection_id"] = d.get("client_event_id") or d.get("device_detection_id") or str(d.get("id"))
+        d["threat_type"] = ctx.get("threat_type") or d.get("threat_type") or d.get("event_type")
+        d["threat_level"] = ctx.get("threat_level") or d.get("threat_level") or d.get("threat_category")
+        d["sender_or_source"] = ctx.get("sender_or_source") or d.get("sender_or_source") or "unknown"
+        d["risk_reasons"] = d.get("reasons") or []
+        return d
 
     model_config = ConfigDict(from_attributes=True)
 
@@ -104,8 +158,12 @@ class UserActionRequest(BaseModel):
     @classmethod
     def validate_action(cls, v: str) -> str:
         upper = v.strip().upper()
-        if upper not in ("BLOCK", "REPORT", "IGNORE", "MARK_SAFE", "RESOLVED", "FALSE_POSITIVE"):
-            raise ValueError("action must be one of: BLOCK, REPORT, IGNORE, MARK_SAFE, RESOLVED, FALSE_POSITIVE")
+        allowed = (
+            "BLOCK", "BLOCK_SENDER", "COPY_SAFE_LINK", "REPORT", "IGNORE",
+            "MARK_SAFE", "RESOLVED", "FALSE_POSITIVE"
+        )
+        if upper not in allowed:
+            raise ValueError(f"action must be one of: {', '.join(allowed)}")
         return upper
 
 

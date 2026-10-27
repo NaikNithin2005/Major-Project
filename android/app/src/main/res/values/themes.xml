@@ -1,5 +1,14 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-
-    <style name="Theme.Android" parent="android:Theme.Material.Light.NoActionBar" />
+    <style name="Theme.Android" parent="android:Theme.Material.NoActionBar">
+        <!-- Match background to the app's in-built splash screen (#0F172A) -->
+        <item name="android:windowBackground">@color/splash_background</item>
+        
+        <!-- For API < 31: disable window preview to show only the in-built splash screen -->
+        <item name="android:windowDisablePreview">true</item>
+        
+        <!-- Status and navigation bar matching dark theme -->
+        <item name="android:statusBarColor">@color/splash_background</item>
+        <item name="android:navigationBarColor">@color/splash_background</item>
+    </style>
 </resources>

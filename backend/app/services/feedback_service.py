@@ -61,3 +61,13 @@ class FeedbackService:
 
     def list_all_feedback(self, skip: int = 0, limit: int = 50) -> Tuple[List[Feedback], int]:
         return self.feedback_repo.list_all_feedback(skip, limit)
+
+    def delete_feedback(self, feedback_id: str, user_id: str, is_admin: bool = False) -> bool:
+        fb = self.db.query(Feedback).filter(Feedback.id == feedback_id).first()
+        if not fb:
+            return False
+        if not is_admin and fb.user_id != user_id:
+            return False
+        self.db.delete(fb)
+        self.db.commit()
+        return True

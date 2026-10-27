@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <style name="Theme.Android" parent="android:Theme.Material.NoActionBar">
+        <!-- Match window background to the in-built splash screen background (#0F172A) -->
+        <item name="android:windowBackground">@color/splash_background</item>
+        
+        <!-- Android 12+ Splash Screen attributes: suppress system icon & blend background -->
+        <item name="android:windowSplashScreenBackground">@color/splash_background</item>
+        <item name="android:windowSplashScreenAnimatedIcon">@drawable/transparent_splash_icon</item>
+        <item name="android:windowSplashScreenIconBackgroundColor">@android:color/transparent</item>
+        
+        <!-- System bars styling -->
+        <item name="android:statusBarColor">@color/splash_background</item>
+        <item name="android:navigationBarColor">@color/splash_background</item>
+    </style>
+</resources>

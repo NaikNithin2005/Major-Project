@@ -1,0 +1,92 @@
+[
+  {
+    "id": "TC001",
+    "title": "API Availability & Liveness Probe",
+    "description": "Verify that GET /health/live returns HTTP 200 with status alive and correct service metadata indicating process health."
+  },
+  {
+    "id": "TC002",
+    "title": "API Dependency Health & Readiness Probe",
+    "description": "Verify that GET /health/ready returns HTTP 200 with status ready, connected SQLite WAL database, mock auth active in dev, and 3/3 verified ONNX model artifacts."
+  },
+  {
+    "id": "TC003",
+    "title": "Root Service Information & Versioning",
+    "description": "Verify that GET / returns HTTP 200 with service name, release version, and operational phase details."
+  },
+  {
+    "id": "TC004",
+    "title": "Authentication Token Verification",
+    "description": "Verify that POST /api/v1/v1/auth/verify with a valid development/mock Bearer token returns HTTP 200 with authenticated user identity and role assignment."
+  },
+  {
+    "id": "TC005",
+    "title": "Unauthenticated Request Rejection",
+    "description": "Verify that requests to protected endpoints (/api/v1/v1/auth/me, /api/v1/v1/detections) without an Authorization header or with an invalid token strictly return HTTP 401 Unauthorized."
+  },
+  {
+    "id": "TC006",
+    "title": "RBAC Authorization & Admin Endpoint Protection",
+    "description": "Verify that standard user accounts attempting to access admin endpoints (/api/v1/v1/admin/incidents, /api/v1/v1/admin/operations/verify-models) are rejected with HTTP 403 Forbidden."
+  },
+  {
+    "id": "TC007",
+    "title": "SMS Smishing Telemetry Ingestion (Synthetic Threat)",
+    "description": "Verify that POST /api/v1/v1/detections ingests a high-risk synthetic smishing event (e.g. urgent account suspension alert) with risk score 88, persists threat metadata without raw text, and returns HTTP 201 Created."
+  },
+  {
+    "id": "TC008",
+    "title": "SMS Legitimate Telemetry Ingestion (Synthetic Benign)",
+    "description": "Verify that POST /api/v1/v1/detections ingests a low-risk synthetic benign event (e.g. appointment reminder) with risk score 12, persists threat metadata, and returns HTTP 201 Created."
+  },
+  {
+    "id": "TC009",
+    "title": "Telemetry Deduplication via Device Detection ID",
+    "description": "Verify that submitting the same device_detection_id to POST /api/v1/v1/detections acts idempotently without creating duplicate database records."
+  },
+  {
+    "id": "TC010",
+    "title": "QR-Decoded Malicious URL Reputation Lookup",
+    "description": "Verify that POST /api/v1/v1/threat-intel/lookup with a synthetic malicious QR URL (e.g. http://malicious-secure-login.top/verify) returns HTTP 200 with classification, reputation score, and threat indicators."
+  },
+  {
+    "id": "TC011",
+    "title": "QR-Decoded Benign URL Reputation Lookup",
+    "description": "Verify that POST /api/v1/v1/threat-intel/lookup with a benign URL (e.g. https://google.com) returns HTTP 200 confirming clean reputation."
+  },
+  {
+    "id": "TC012",
+    "title": "Invalid Payload & Schema Validation Handling",
+    "description": "Verify that sending malformed JSON, missing required fields, or out-of-bound risk scores to POST /api/v1/v1/detections returns HTTP 422 Unprocessable Entity with structured validation error details."
+  },
+  {
+    "id": "TC013",
+    "title": "Threat History Retrieval & Pagination",
+    "description": "Verify that GET /api/v1/v1/detections returns a paginated list of user threat detection records sorted by creation timestamp."
+  },
+  {
+    "id": "TC014",
+    "title": "User Threat Defensive Action Recording",
+    "description": "Verify that POST /api/v1/v1/detections/{detection_id}/action records a defensive user mitigation action (BLOCK_SENDER or COPY_SAFE_LINK) and returns HTTP 200."
+  },
+  {
+    "id": "TC015",
+    "title": "SOC Incident Creation by Admin",
+    "description": "Verify that an authenticated admin user can create a security incident via POST /api/v1/v1/admin/incidents with title, severity (CRITICAL), and summary, returning HTTP 201 Created."
+  },
+  {
+    "id": "TC016",
+    "title": "SOC Incident Lifecycle Transition",
+    "description": "Verify that PATCH /api/v1/v1/admin/incidents/{incident_id}/status transitions incident status from OPEN to INVESTIGATING to RESOLVED, rejecting invalid state transitions with HTTP 400."
+  },
+  {
+    "id": "TC017",
+    "title": "User Feedback & False Positive Submission",
+    "description": "Verify that POST /api/v1/v1/feedback allows submitting classification feedback with comments and feedback type, returning HTTP 201 Created."
+  },
+  {
+    "id": "TC018",
+    "title": "Cryptographic AI Model Integrity Verification",
+    "description": "Verify that POST /api/v1/v1/admin/operations/verify-models audits SHA-256 hashes of TinyBERT, XGBoost, and Isolation Forest against MODEL_MANIFEST.json and returns 100% verified status."
+  }
+]

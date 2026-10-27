@@ -86,7 +86,7 @@ async def validation_exception_handler(request: Request, exc: RequestValidationE
 
     return JSONResponse(
         status_code=422,
-        content={"error": error_body},
+        content={"error": error_body, "detail": errors},
         headers=headers,
     )
 

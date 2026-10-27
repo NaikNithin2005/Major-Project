@@ -193,4 +193,13 @@ class AppContainer(private val context: Context) {
     val checkCameraPermissionUseCase: CheckCameraPermissionUseCase by lazy {
         CheckCameraPermissionUseCase(context)
     }
+
+    val squishAiAssistantEngine: com.example.android.presentation.ai.SquishAiAssistantEngine by lazy {
+        com.example.android.presentation.ai.SquishAiAssistantEngine(
+            smishingClassifier = smishingClassifier,
+            urlClassifier = urlClassifier,
+            ruleEngine = ruleEngine,
+            xaiEngine = explainableAiEngine
+        )
+    }
 }

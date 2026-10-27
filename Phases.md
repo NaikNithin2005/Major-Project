@@ -2226,3 +2226,95 @@ Strengthen the Squish AI/ML-Based Quishing and Smishing Detection and Prevention
 
 ## Status
 `COMPLETE` — Fully verified, zero regressions, all quality gates passed.
+
+------------------------------------------------------------------------
+
+# 22. Phase 20 --- Complete UI/UX Redesign, Universal Compatibility, and Squish AI Assistant
+
+## Objective
+Transform the Squish application into a production-grade, modern Android cybersecurity product featuring a dark security theme, five core navigation tabs (Home, History, Scanner, Alerts, Settings), an interactive Education Center, universal 16 KB page-size compliance across all Android architectures, elimination of the system white splash flicker, and integration of Feature 19: Squish AI Assistant (Floating Cybersecurity Chatbot).
+
+## Key Deliverables Implemented
+
+### 1. 16 KB Page-Size Compatibility & Universal Execution
+- Upgraded `com.microsoft.onnxruntime:onnxruntime-android` to `1.22.0`, natively compiled with 16 KB (`0x4000`) ELF load segment alignment across both 64-bit architectures (`arm64-v8a` and `x86_64`).
+- Configured `packaging.jniLibs.useLegacyPackaging = true` in `build.gradle.kts` and verified automatic `android:extractNativeLibs="true"` generation for deterministic installation on Android 7.0 (API 24) through Android 15/16.
+- Decoupled hardware telephony (`android.hardware.telephony`) and autofocus (`android.hardware.camera.autofocus`) with `android:required="false"`.
+- Dual V1 and V2 APK signing configured for universal sideloading and Play Store distribution.
+
+### 2. Elimination of Android System White Splash Screen
+- Created `transparent_splash_icon.xml` and configured `values-v31/themes.xml` with `windowSplashScreenBackground` set to `@color/splash_background` (`#0F172A`).
+- Set `windowDisablePreview=true` and integrated `splashScreen.setOnExitAnimationListener { it.remove() }` in `MainActivity.kt` to eliminate the white screen flicker before app initialization.
+
+### 3. Five-Tab Cybersecurity Navigation Architecture
+- **Home Tab (`HomeTab.kt`):**
+  - Prominent deterministic security score (0–100) factoring unreviewed threats and actual granted permissions.
+  - Dynamic Real-Time Protection Indicators (SMS, Camera, Notifications).
+  - Synchronized Today's Threat Statistics (Threats Detected, SMS Scanned, QR Scanned).
+  - Quick Actions for SMS Monitor, QR Scanner, Education, and Settings.
+  - Offline Daily Security Tip cards with practical defense recommendations.
+  - Recent security activity list with instant inspection actions.
+- **History Tab (`HistoryTab.kt`):**
+  - Instant debounced search indexing threat details, senders, categories, and IDs.
+  - Multi-criteria filter chips for Date (Today, 7 Days, 30 Days), Type (SMS, QR, URL), and Severity.
+  - Detailed inspection cards with one-tap clipboard sanitization and delete actions.
+- **Scanner Tab (`ScannerTab.kt`):**
+  - Manual Message Text Scanner with on-device TinyBERT NLP inference.
+  - Safe URL Scanner with XGBoost & structural feature evaluation without auto-opening links.
+  - Safe QR Code Decoder supporting gallery image picking via `GalleryQrScanner` and live camera triggers.
+  - WorkManager background periodic synchronization scheduling toggle.
+- **Alerts Tab (`AlertsTab.kt`):**
+  - Unreviewed/Reviewed filter chips and severity filtering.
+  - Context-sensitive step-by-step guidance for smishing, quishing, and phishing URLs.
+  - Accuracy feedback reporting dialog (Confirmed Threat, False Positive, Missed Threat).
+  - One-tap "Explain with AI" integration.
+- **Settings Tab (`SettingsTab.kt`):**
+  - Real-time protection toggles and permission management.
+  - Notification channel preferences (High, Medium, Daily Tips, Preview visibility).
+  - AI model metadata viewer displaying TinyBERT and XGBoost on-device engine metrics.
+  - Telemetry & AI Learning opt-in consent controls (privacy-first default).
+  - JSON scan history export and secure local wipe.
+
+### 4. Education Center (`EducationScreen.kt`)
+- 5 comprehensive security lessons (SMS Phishing, QR Code Quishing, Banking Fraud, OTP Theft, Malicious Shortened URLs).
+- Warning signs, realistic attack scenarios, protective actions, and interactive knowledge-check quizzes.
+- Offline-first accessibility without live malicious links.
+
+### 5. Feature 19: Squish AI Assistant (Floating Cybersecurity Chatbot)
+- Persistent circular Floating Action Button (`SquishAiFab.kt`) with subtle pulse animation and unreviewed alert indicator.
+- Expandable Modal Bottom Sheet (`SquishAiAssistantSheet.kt`) with quick-action prompt chips, user/assistant chat bubbles, and structured security verdict cards.
+- Context-aware explanations (`SquishAiAssistantEngine.kt`) integrating on-device TinyBERT and XGBoost pipelines for user-pasted text, URLs, and alert events.
+
+---
+
+# Phase 12: AI/ML Threat Detection and Android Deep-Link Integration
+
+## Objective
+Integrate Squish with Android's supported URL-opening, deep-link, App Link, and Sharesheet mechanisms so users can submit suspicious URLs to Squish for AI/ML-based threat analysis before deciding whether to visit the destination.
+
+## Key Deliverables & Implementation
+1. **Manifest & Intent Filter Registration (`AndroidManifest.xml`):**
+   - Registered `ACTION_VIEW` for custom schemes `squish://scan` and `squish://check`.
+   - Registered `ACTION_VIEW` with `autoVerify="true"` for verified Android App Links on `squish.security` and `squish-shield.app` (`/scan`, `/check`, `/verify`).
+   - Registered generic `http` and `https` `ACTION_VIEW` filters for intercepting web links.
+   - Registered `ACTION_SEND` with MIME type `text/plain` for direct Android Sharesheet integration.
+2. **Deep Link Parsing & SSRF Defense (`DeepLinkHandler.kt`):**
+   - Handles `ACTION_VIEW`, `ACTION_SEND`, and custom schemes safely.
+   - Blocks dangerous protocol schemes (`javascript:`, `file:`, `data:`, `content:`, `intent:`).
+   - Enforces SSRF defense detecting localhost, loopback (`127.0.0.1`), cloud metadata (`169.254.169.254`), and RFC 1918 private IP ranges (`10.0.0.0/8`, `192.168.0.0/16`, `172.16.0.0/12`), quarantining them with risk score 95.
+   - Enforces maximum URL length limits (2048 characters) and handles URL normalization.
+3. **Dedicated Squish Security Check Screen (`SecurityCheckScreen.kt` & `SecurityCheckViewModel.kt`):**
+   - Displays clear destination domain and protocol indicators.
+   - Displays threat classification (`MALICIOUS_INDICATORS_DETECTED`, `SUSPICIOUS`, `SAFE_INDICATORS_FOUND`, `UNKNOWN`). Unknown URLs are **never** automatically marked safe.
+   - Displays 4 core threat categories: Phishing URLs, Quishing Attacks, Smishing & Social Engineering, Malware & Web Threats.
+   - Risk score (0–100), calibrated model confidence, and Explainable AI (XAI) indicators.
+   - Model and rules version metadata, timestamp, and offline/cloud detection badges.
+   - Action buttons: "Explain with AI", "Report Feedback", "Return Safely" (default/recommended), and "Proceed (Risky)" behind an explicit warning dialog.
+4. **Automated Unit & Pipeline Tests:**
+   - `DeepLinkHandlerTest.kt`: 18 tests covering scheme parsing, App Link extraction, SSRF defense, dangerous protocol blocking, and length validation.
+   - `SecurityCheckPipelineTest.kt`: Integration tests covering benign URLs, phishing lookalikes, SSRF loopback quarantining, quishing classification, user feedback, and safe fallback behaviors.
+
+## Status
+`COMPLETE` — Fully verified with `./gradlew.bat compileDebugKotlin`, `./gradlew.bat testDebugUnitTest` (108 tests passing, 0 failures), `./gradlew.bat assembleDebug`, and `./gradlew.bat assembleRelease`.
+
+

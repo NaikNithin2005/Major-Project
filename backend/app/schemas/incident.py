@@ -4,12 +4,13 @@ Pydantic Schemas for Phase 15: Security Incidents & SOC Investigation.
 
 from datetime import datetime
 from typing import Dict, Any, List, Optional
-from pydantic import BaseModel, Field, ConfigDict
+from pydantic import BaseModel, Field, ConfigDict, model_validator
 
 
 # Enums and Constants
 LEGAL_STATUS_TRANSITIONS = {
     "NEW": {"TRIAGED", "INVESTIGATING", "CLOSED"},
+    "OPEN": {"TRIAGED", "INVESTIGATING", "CLOSED"},
     "TRIAGED": {"INVESTIGATING", "CLOSED"},
     "INVESTIGATING": {"CONTAINED", "RESOLVED", "CLOSED"},
     "CONTAINED": {"RESOLVED", "INVESTIGATING"},
@@ -18,7 +19,7 @@ LEGAL_STATUS_TRANSITIONS = {
 }
 
 VALID_SEVERITIES = {"LOW", "MEDIUM", "HIGH", "CRITICAL"}
-VALID_STATUSES = {"NEW", "TRIAGED", "INVESTIGATING", "CONTAINED", "RESOLVED", "CLOSED"}
+VALID_STATUSES = {"NEW", "OPEN", "TRIAGED", "INVESTIGATING", "CONTAINED", "RESOLVED", "CLOSED"}
 VALID_CATEGORIES = {
     "QUISHING_CAMPAIGN",
     "SMISHING_SURGE",
@@ -33,11 +34,23 @@ VALID_RELATIONSHIPS = {"CONFIRMED", "LIKELY", "UNVERIFIED"}
 class IncidentCreateRequest(BaseModel):
     title: str = Field(..., min_length=3, max_length=255, description="Descriptive summary of the security incident")
     description: Optional[str] = Field(default=None, description="Detailed initial findings and context")
+    summary: Optional[str] = Field(default=None, description="Optional alias for description")
     severity: str = Field(default="MEDIUM", description="LOW, MEDIUM, HIGH, or CRITICAL")
     category: str = Field(default="UNKNOWN", description="Incident category")
     assigned_admin_id: Optional[str] = Field(default=None, description="Optional ID of assigned administrator")
     seed_threat_event_id: Optional[str] = Field(default=None, description="Optional initial threat event to link to this incident")
     metadata_json: Optional[Dict[str, Any]] = Field(default=None, description="Arbitrary threat tags or campaign context")
+
+    @model_validator(mode="before")
+    @classmethod
+    def populate_aliases(cls, data: Any) -> Any:
+        if isinstance(data, dict):
+            data = dict(data)
+            if "summary" in data and not data.get("description"):
+                data["description"] = data["summary"]
+            elif "description" in data and not data.get("summary"):
+                data["summary"] = data["description"]
+        return data
 
 
 class IncidentStatusUpdateRequest(BaseModel):
@@ -134,9 +147,31 @@ class IncidentResponse(BaseModel):
     resolved_at: Optional[datetime] = None
     closed_at: Optional[datetime] = None
     resolution_summary: Optional[str] = None
+    summary: Optional[str] = None
     linked_threats_count: int = 0
     notes_count: int = 0
     metadata_json: Optional[Dict[str, Any]] = None
+
+    @model_validator(mode="before")
+    @classmethod
+    def populate_incident_response_aliases(cls, data: Any) -> Any:
+        if hasattr(data, "__table__"):
+            d = {c.name: getattr(data, c.name) for c in data.__table__.columns}
+        elif hasattr(data, "__dict__"):
+            d = data.__dict__.copy()
+        elif isinstance(data, dict):
+            d = dict(data)
+        else:
+            return data
+
+        desc = d.get("description")
+        summ = d.get("summary")
+        d["summary"] = summ or desc or ""
+        d["description"] = desc or summ or ""
+        if d.get("status") == "NEW":
+            d["status"] = "OPEN"
+        return d
+
     model_config = ConfigDict(from_attributes=True)
 
 

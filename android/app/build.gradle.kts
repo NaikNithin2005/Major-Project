@@ -14,8 +14,20 @@ android {
         targetSdk = 35
         versionCode = 1
         versionName = "1.0"
+        multiDexEnabled = true
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
+
+        ndk {
+            abiFilters.addAll(listOf("arm64-v8a", "armeabi-v7a", "x86", "x86_64"))
+        }
+    }
+
+    signingConfigs {
+        getByName("debug") {
+            enableV1Signing = true
+            enableV2Signing = true
+        }
     }
 
     buildTypes {
@@ -36,7 +48,7 @@ android {
     }
     packaging {
         jniLibs {
-            useLegacyPackaging = false
+            useLegacyPackaging = true
         }
     }
     lint {
@@ -84,8 +96,8 @@ dependencies {
     // ZXing QR Decoder
     implementation(libs.zxing.core)
 
-    // ONNX Runtime Android
-    implementation("com.microsoft.onnxruntime:onnxruntime-android:1.19.2")
+    // ONNX Runtime Android (1.22.0+ supports 16 KB page sizes)
+    implementation("com.microsoft.onnxruntime:onnxruntime-android:1.22.0")
 
     // Retrofit & OkHttp Networking
     implementation(libs.retrofit)

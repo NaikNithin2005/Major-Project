@@ -277,3 +277,15 @@ def get_incident_timeline(
     service = IncidentService(db)
     detail = service.get_incident_detail(incident_id)
     return detail.events
+
+
+@router.delete("/{incident_id}", status_code=status.HTTP_200_OK, summary="Delete Security Incident")
+def delete_incident(
+    incident_id: str,
+    admin: User = Depends(require_admin),
+    db: Session = Depends(get_db)
+):
+    """Delete an incident (SOC admin only)."""
+    service = IncidentService(db)
+    service.delete_incident(incident_id, admin)
+    return {"success": True, "message": "Incident deleted successfully"}

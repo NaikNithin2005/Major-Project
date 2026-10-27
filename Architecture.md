@@ -1861,3 +1861,95 @@ particularly its sections covering:
 The PRD defines the overall product as a real-time AI/ML Android
 cybersecurity system for Smishing and Quishing detection.
 fileciteturn1file6L1275-L1292
+
+------------------------------------------------------------------------
+
+## 36. UI/UX Redesign & Squish AI Assistant Architecture (Phase 20)
+
+### 36.1 Five-Tab Modular Presentation Layer
+The Android mobile presentation layer is organized into five primary tabs within `DashboardScreen`:
+1. **HomeTab:** Security score engine (0–100), dynamic real-time protection indicator, synchronized today's stats, offline daily security tip provider, and recent threat activity log.
+2. **HistoryTab:** Indexed search and multi-dimensional filtering (date, channel, severity) over Room-persisted `ThreatRecord` entities with sanitized preview rendering.
+3. **ScannerTab:** Unified on-device security scanning studio for message text (TinyBERT), URL safety (XGBoost), and QR payloads (`GalleryQrScanner` + ZXing).
+4. **AlertsTab:** Severity-ranked incident review, step-by-step contextual mitigation guidance, and user accuracy feedback loops (`FeedbackRepository`).
+5. **SettingsTab:** Real-time permission controls, notification preferences, AI model metadata introspection, privacy opt-in toggles, and data export/wipe capabilities.
+
+### 36.2 Feature 19: Squish AI Assistant Architecture
+The Squish AI Assistant is integrated as an on-device, context-aware cybersecurity copilot:
+```text
+┌────────────────────────────────────────────────────────┐
+│             Squish AI Floating Action Button           │
+│        (Persistent across Home, History, Scanner, Alerts)│
+└───────────────────────────┬────────────────────────────┘
+                            │ On Tap / "Explain with AI"
+                            ▼
+┌────────────────────────────────────────────────────────┐
+│               SquishAiAssistantSheet                   │
+│      (Modal Bottom Sheet with Structured Chat UI)      │
+└───────────────────────────┬────────────────────────────┘
+                            │ User Prompt / Alert Context
+                            ▼
+┌────────────────────────────────────────────────────────┐
+│             SquishAiAssistantViewModel                 │
+└───────────────────────────┬────────────────────────────┘
+                            │ Dispatches to
+                            ▼
+┌────────────────────────────────────────────────────────┐
+│               SquishAiAssistantEngine                  │
+│  ┌──────────────────┬─────────────────┬─────────────┐  │
+│  │ TinyBERT ONNX    │ XGBoost URL     │ RuleEngine  │  │
+│  │ SMS Classifier   │ Classifier      │ & XAI Engine│  │
+│  └──────────────────┴─────────────────┴─────────────┘  │
+└───────────────────────────┬────────────────────────────┘
+                            │ Structured Response
+                            ▼
+┌────────────────────────────────────────────────────────┐
+│     SecurityVerdictCard & Actionable Mitigations       │
+└────────────────────────────────────────────────────────┘
+```
+The assistant operates offline-first, never sends private user messages to third-party APIs without explicit consent, and derives verdicts directly from the authoritative on-device AI/ML and heuristic detection pipeline.
+ 
+------------------------------------------------------------------------
+
+## 13. Android Deep-Link & Squish Security Check Architecture
+
+``` text
+┌────────────────────────────────────────────────────────┐
+│            Incoming Android Intent / Deep Link         │
+│  • ACTION_VIEW (squish://scan, squish://check)         │
+│  • App Links (squish.security, squish-shield.app)      │
+│  • Android Sharesheet (ACTION_SEND text/plain)         │
+│  • Generic HTTP / HTTPS ACTION_VIEW                    │
+└───────────────────────────┬────────────────────────────┘
+                            │ Read Intent / Query Params
+                            ▼
+┌────────────────────────────────────────────────────────┐
+│                   DeepLinkHandler                      │
+│  • Dangerous scheme filter (javascript, file, data)   │
+│  • SSRF Defense (127.0.0.1, 169.254.169.254, RFC 1918) │
+│  • URL length validation & normalization               │
+└───────────────────────────┬────────────────────────────┘
+                            │ DeepLinkRequest
+                            ▼
+┌────────────────────────────────────────────────────────┐
+│             SecurityCheckViewModel (MVVM)              │
+│  ┌──────────────────┬─────────────────┬─────────────┐  │
+│  │ UrlFeatureExtractor│ OnnxUrlClassifier│ RuleEngine  ││
+│  │ (30+ features)   │ (XGBoost ONNX)  │ & XAI Engine│  │
+│  └──────────────────┴─────────────────┴─────────────┘  │
+└───────────────────────────┬────────────────────────────┘
+                            │ SecurityCheckResult
+                            ▼
+┌────────────────────────────────────────────────────────┐
+│               SecurityCheckScreen (UI)                 │
+│  • Destination Domain & Source                         │
+│  • Threat Classification & Threat Category             │
+│  • Risk Score (0-100) & Model Confidence               │
+│  • Key Threat Indicators (XAI Explanations)            │
+│  • Recommended Security Actions                        │
+│  • "Return Safely" & "Proceed (Risky)" with Warning    │
+│  • False Positive / Missed Threat Feedback             │
+└────────────────────────────────────────────────────────┘
+```
+
+
