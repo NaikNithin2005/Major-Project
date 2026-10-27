@@ -35,6 +35,12 @@ class ThreatHistoryRepositoryImpl(
         }
     }
 
+    override fun observeQuarantinedThreats(): Flow<List<ThreatRecord>> {
+        return dao.observeQuarantinedThreats().map { list ->
+            list.map { it.toDomain() }
+        }
+    }
+
     override suspend fun getAllThreats(): Result<List<ThreatRecord>> {
         return try {
             val list = dao.getAllThreats().map { it.toDomain() }
@@ -47,6 +53,33 @@ class ThreatHistoryRepositoryImpl(
     override suspend fun updateThreat(threat: ThreatRecord): Result<Unit> {
         return try {
             dao.updateThreat(threat.toEntity())
+            Result.success(Unit)
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
+
+    override suspend fun updateQuarantineStatus(id: String, isQuarantined: Boolean): Result<Unit> {
+        return try {
+            dao.updateQuarantineStatus(id, isQuarantined)
+            Result.success(Unit)
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
+
+    override suspend fun updateReviewStatus(id: String, reviewStatus: String): Result<Unit> {
+        return try {
+            dao.updateReviewStatus(id, reviewStatus)
+            Result.success(Unit)
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
+
+    override suspend fun updateThreatAction(id: String, action: String): Result<Unit> {
+        return try {
+            dao.updateThreatAction(id, action)
             Result.success(Unit)
         } catch (e: Exception) {
             Result.failure(e)
@@ -79,7 +112,15 @@ class ThreatHistoryRepositoryImpl(
         riskScore = riskScore,
         category = category,
         actionTaken = actionTaken,
-        details = details
+        details = details,
+        rawContent = rawContent,
+        extractedUrl = extractedUrl,
+        payloadType = payloadType,
+        severity = severity,
+        modelVersion = modelVersion,
+        isQuarantined = isQuarantined,
+        reviewStatus = reviewStatus,
+        contentRetentionMode = contentRetentionMode
     )
 
     private fun ThreatHistoryEntity.toDomain() = ThreatRecord(
@@ -90,6 +131,14 @@ class ThreatHistoryRepositoryImpl(
         riskScore = riskScore,
         category = category,
         actionTaken = actionTaken,
-        details = details
+        details = details,
+        rawContent = rawContent,
+        extractedUrl = extractedUrl,
+        payloadType = payloadType,
+        severity = severity,
+        modelVersion = modelVersion,
+        isQuarantined = isQuarantined,
+        reviewStatus = reviewStatus,
+        contentRetentionMode = contentRetentionMode
     )
 }

@@ -93,6 +93,9 @@ export function mapDocToThreatEvent(id: string, data: Record<string, any>, uid: 
     campaign_id: data.campaignId || null,
     status: data.reviewStatus || data.status || 'NEW',
     user_action: data.userAction || data.user_action || null,
+    sanitized_preview: data.sanitizedPreview || data.sanitized_preview || data.sanitizedDescription || null,
+    content_retention_mode: data.contentRetentionMode || data.content_retention_mode || 'LOCAL_SAVED',
+    decoded_url: data.decodedUrl || data.decoded_url || null,
     created_at: createdAt,
     updated_at: data.updatedAt ? toIsoString(data.updatedAt) : null,
   };

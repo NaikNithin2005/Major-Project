@@ -39,6 +39,7 @@ import com.example.android.presentation.ai.SquishAiAssistantViewModel
 import com.example.android.presentation.ai.SquishAiFab
 import com.example.android.presentation.alerts.AlertsTab
 import com.example.android.presentation.history.HistoryTab
+import com.example.android.presentation.scandetail.ScanDetailsDialog
 import com.example.android.presentation.scanner.ScannerTab
 import com.example.android.presentation.settings.SettingsTab
 import java.text.SimpleDateFormat
@@ -52,6 +53,7 @@ fun DashboardScreen(
     uiState: DashboardUiState = DashboardUiState(),
     onDeleteThreat: (String) -> Unit = {},
     onUpdateThreatAction: (String, String) -> Unit = { _, _ -> },
+    onToggleQuarantine: (String, Boolean) -> Unit = { _, _ -> },
     onSaveThreat: (ThreatRecord) -> Unit = {},
     onClearAllThreats: () -> Unit = {},
     onSubmitFeedback: (String, String, String) -> Unit = { _, _, _ -> },
@@ -77,16 +79,20 @@ fun DashboardScreen(
     }
 
     if (selectedThreatForDialog != null) {
-        ThreatDetailDialog(
+        ScanDetailsDialog(
             threat = selectedThreatForDialog!!,
             onDismiss = { selectedThreatForDialog = null },
             onDelete = {
                 onDeleteThreat(selectedThreatForDialog!!.id)
                 selectedThreatForDialog = null
             },
+            onToggleQuarantine = { isQuarantined ->
+                onToggleQuarantine(selectedThreatForDialog!!.id, isQuarantined)
+                selectedThreatForDialog = selectedThreatForDialog!!.copy(isQuarantined = isQuarantined)
+            },
             onUpdateAction = { action ->
                 onUpdateThreatAction(selectedThreatForDialog!!.id, action)
-                selectedThreatForDialog = null
+                selectedThreatForDialog = selectedThreatForDialog!!.copy(actionTaken = action)
             },
             onExplainWithAi = { threat ->
                 aiViewModel.setContext(
@@ -94,11 +100,12 @@ fun DashboardScreen(
                         title = threat.sender,
                         severity = threat.category,
                         type = AssistantContextType.ALERT_EXPLANATION,
-                        details = "Threat: ${threat.details}; Score: ${threat.riskScore}; Source: ${threat.source}"
+                        details = "Threat: ${threat.details}; Score: ${threat.riskScore}; Source: ${threat.source}; Content: ${threat.rawContent ?: "N/A"}"
                     )
                 )
                 isAiAssistantOpen = true
-            }
+            },
+            onOpenSecurityCheck = onOpenSecurityCheck
         )
     }
 
@@ -213,6 +220,7 @@ fun DashboardScreen(
                 )
                 3 -> AlertsTab(
                     threats = uiState.threatHistory,
+                    onThreatClicked = { selectedThreatForDialog = it },
                     onUpdateThreatAction = onUpdateThreatAction,
                     onSubmitFeedback = onSubmitFeedback,
                     onExplainWithAi = { threat ->

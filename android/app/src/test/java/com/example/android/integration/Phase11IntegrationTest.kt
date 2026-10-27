@@ -377,6 +377,24 @@ class Phase11IntegrationTest {
         override suspend fun clearAllThreats() {
             records.clear()
         }
+
+        override fun observeQuarantinedThreats(): Flow<List<ThreatHistoryEntity>> =
+            flowOf(records.filter { it.isQuarantined })
+
+        override suspend fun updateQuarantineStatus(id: String, isQuarantined: Boolean) {
+            val idx = records.indexOfFirst { it.id == id }
+            if (idx >= 0) records[idx] = records[idx].copy(isQuarantined = isQuarantined)
+        }
+
+        override suspend fun updateReviewStatus(id: String, reviewStatus: String) {
+            val idx = records.indexOfFirst { it.id == id }
+            if (idx >= 0) records[idx] = records[idx].copy(reviewStatus = reviewStatus)
+        }
+
+        override suspend fun updateThreatAction(id: String, action: String) {
+            val idx = records.indexOfFirst { it.id == id }
+            if (idx >= 0) records[idx] = records[idx].copy(actionTaken = action)
+        }
     }
 
     private class FakeBackendApiService : BackendApiService {

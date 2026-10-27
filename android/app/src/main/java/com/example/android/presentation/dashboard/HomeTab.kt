@@ -595,9 +595,16 @@ fun RecentThreatItem(
             Column(modifier = Modifier.weight(1f)) {
                 Row(
                     modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceBetween
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
                 ) {
-                    Text(threat.category, fontSize = 12.sp, fontWeight = FontWeight.Bold, color = Color.White)
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Text(threat.category, fontSize = 12.sp, fontWeight = FontWeight.Bold, color = Color.White)
+                        if (threat.isQuarantined) {
+                            Spacer(modifier = Modifier.width(4.dp))
+                            Text("🛡️", fontSize = 10.sp)
+                        }
+                    }
                     Text(
                         SimpleDateFormat("hh:mm a", Locale.getDefault()).format(Date(threat.timestamp)),
                         fontSize = 10.sp,
@@ -605,8 +612,13 @@ fun RecentThreatItem(
                     )
                 }
                 Spacer(modifier = Modifier.height(2.dp))
+                val contentPreview = if (!threat.rawContent.isNullOrBlank()) {
+                    "${threat.sender}: ${threat.rawContent}"
+                } else {
+                    threat.details.ifBlank { "Flagged suspicious activity from ${threat.sender}" }
+                }
                 Text(
-                    threat.details.ifBlank { "Flagged suspicious activity from ${threat.sender}" },
+                    text = contentPreview,
                     fontSize = 11.sp,
                     color = Color(0xFF94A3B8),
                     maxLines = 1,

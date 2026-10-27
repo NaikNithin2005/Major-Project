@@ -96,18 +96,29 @@ class ProcessIncomingSmsUseCase(
             // 6. Save analysis summary to local Room database via SmsAnalysisRepository
             smsAnalysisRepository.saveAnalysis(analysisResult)
 
-            // 7. If threat detected (score >= 50 or category != SAFE), record in ThreatHistoryRepository
-            if (isSmishing || assessment.category != ThreatCategory.SAFE) {
-                val threatRecord = ThreatRecord(
-                    id = UUID.randomUUID().toString(),
-                    timestamp = rawSms.timestamp,
-                    source = "SMS",
-                    sender = parsedSms.safeSender,
-                    riskScore = assessment.riskScore,
-                    category = assessment.category.name,
-                    actionTaken = assessment.recommendedAction.actionName,
-                    details = assessment.reasons.joinToString("; ")
-                )
+            // 7. Save structured scan record in ThreatHistoryRepository
+            val isThreat = isSmishing || assessment.category != ThreatCategory.SAFE
+            val isQuarantined = isSmishing || assessment.riskScore >= 70
+
+            val threatRecord = ThreatRecord(
+                id = analysisResult.id,
+                timestamp = rawSms.timestamp,
+                source = "SMS",
+                sender = parsedSms.safeSender,
+                riskScore = assessment.riskScore,
+                category = assessment.category.name,
+                actionTaken = if (isQuarantined) "QUARANTINED" else assessment.recommendedAction.actionName,
+                details = assessment.reasons.joinToString("; "),
+                rawContent = rawSms.body,
+                extractedUrl = parsedSms.extractedUrls.firstOrNull(),
+                payloadType = "SMS",
+                severity = assessment.category.name,
+                modelVersion = "tinybert-smishing-v2",
+                isQuarantined = isQuarantined,
+                reviewStatus = "NEW",
+                contentRetentionMode = "LOCAL_SAVED"
+            )
+            if (isThreat) {
                 threatHistoryRepository.addThreat(threatRecord)
             }
 
@@ -151,7 +162,12 @@ class ProcessIncomingSmsUseCase(
                             "subdomain_count" to it.subdomainCount,
                             "has_suspicious_symbols" to it.hasSuspiciousSymbols
                         )
-                    }
+                    },
+                    sanitizedPreview = "SMS from ${parsedSms.safeSender}: ${assessment.reasons.firstOrNull() ?: "Scanned incoming SMS"}",
+                    contentRetentionMode = "LOCAL_SAVED",
+                    decodedUrl = parsedSms.extractedUrls.firstOrNull(),
+                    reviewStatus = "NEW",
+                    explanation = assessment.reasons.joinToString("; ")
                 )
                 syncRepository?.enqueueDetection(syncReq)
                 context?.let { ctx -> SyncScheduler.scheduleImmediateSync(ctx) }

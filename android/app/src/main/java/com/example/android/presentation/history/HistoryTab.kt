@@ -44,7 +44,7 @@ fun HistoryTab(
     var selectedSeverityFilter by remember { mutableStateOf("All") }
 
     val dateOptions = listOf("All", "Today", "7 Days", "30 Days")
-    val typeOptions = listOf("All", "SMS", "QR Code", "URL")
+    val typeOptions = listOf("All", "SMS", "QR Code", "URL", "🛡️ Quarantined")
     val severityOptions = listOf("All", "Critical/High", "Medium", "Low")
 
     val currentTime = System.currentTimeMillis()
@@ -57,6 +57,7 @@ fun HistoryTab(
                     threat.details.contains(searchQuery, ignoreCase = true) ||
                     threat.sender.contains(searchQuery, ignoreCase = true) ||
                     threat.category.contains(searchQuery, ignoreCase = true) ||
+                    (!threat.rawContent.isNullOrBlank() && threat.rawContent.contains(searchQuery, ignoreCase = true)) ||
                     threat.id.contains(searchQuery, ignoreCase = true)
 
             // Date filter
@@ -72,6 +73,7 @@ fun HistoryTab(
                 "SMS" -> threat.source.contains("SMS", ignoreCase = true)
                 "QR Code" -> threat.source.contains("QR", ignoreCase = true)
                 "URL" -> threat.source.contains("URL", ignoreCase = true) || threat.details.contains("http", ignoreCase = true)
+                "🛡️ Quarantined" -> threat.isQuarantined
                 else -> true
             }
 
@@ -320,34 +322,81 @@ fun HistoryItemCard(
                     Spacer(modifier = Modifier.width(10.dp))
                     Column {
                         Text(threat.category, fontSize = 13.sp, fontWeight = FontWeight.Bold, color = Color.White)
-                        Text("Source: ${threat.source} • ${threat.sender}", fontSize = 11.sp, color = Color(0xFF94A3B8))
+                        val payloadLabel = threat.payloadType?.ifBlank { threat.source } ?: threat.source
+                        Text("Source: $payloadLabel • ${threat.sender}", fontSize = 11.sp, color = Color(0xFF94A3B8))
                     }
                 }
 
-                Surface(
-                    color = severityColor.copy(alpha = 0.2f),
-                    shape = RoundedCornerShape(6.dp)
-                ) {
-                    Text(
-                        "${threat.riskScore}/100",
-                        fontSize = 11.sp,
-                        fontWeight = FontWeight.Bold,
-                        color = severityColor,
-                        modifier = Modifier.padding(horizontal = 8.dp, vertical = 3.dp)
-                    )
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    if (threat.isQuarantined) {
+                        Surface(
+                            color = Color(0xFFEF4444).copy(alpha = 0.2f),
+                            shape = RoundedCornerShape(6.dp)
+                        ) {
+                            Text(
+                                "🛡️ Quarantined",
+                                fontSize = 10.sp,
+                                fontWeight = FontWeight.Bold,
+                                color = Color(0xFFEF4444),
+                                modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
+                            )
+                        }
+                        Spacer(modifier = Modifier.width(6.dp))
+                    }
+
+                    Surface(
+                        color = severityColor.copy(alpha = 0.2f),
+                        shape = RoundedCornerShape(6.dp)
+                    ) {
+                        Text(
+                            "${threat.riskScore}/100",
+                            fontSize = 11.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = severityColor,
+                            modifier = Modifier.padding(horizontal = 8.dp, vertical = 3.dp)
+                        )
+                    }
                 }
             }
 
             Spacer(modifier = Modifier.height(10.dp))
 
-            Text(
-                text = threat.details.ifBlank { "Suspicious detection flagged by on-device intelligence." },
-                fontSize = 12.sp,
-                color = Color(0xFFCBD5E1),
-                maxLines = 2,
-                overflow = TextOverflow.Ellipsis,
-                lineHeight = 16.sp
-            )
+            // Scanned Content Preview
+            val hasRaw = !threat.rawContent.isNullOrBlank()
+            Surface(
+                color = Color(0xFF0F172A),
+                shape = RoundedCornerShape(8.dp),
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Column(modifier = Modifier.padding(10.dp)) {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Text(
+                            text = if (hasRaw) "Scanned Content Preview:" else "Analysis Summary:",
+                            fontSize = 10.sp,
+                            color = Color(0xFF64748B),
+                            fontWeight = FontWeight.Bold
+                        )
+                        Text(
+                            text = if (hasRaw) "Tap for full content" else "Content not retained",
+                            fontSize = 10.sp,
+                            color = if (hasRaw) Color(0xFF38BDF8) else Color(0xFFF59E0B)
+                        )
+                    }
+                    Spacer(modifier = Modifier.height(2.dp))
+                    Text(
+                        text = if (hasRaw) threat.rawContent!! else threat.details.ifBlank { "No content retained." },
+                        fontSize = 11.sp,
+                        color = Color(0xFFE2E8F0),
+                        maxLines = 2,
+                        overflow = TextOverflow.Ellipsis,
+                        lineHeight = 15.sp
+                    )
+                }
+            }
 
             Spacer(modifier = Modifier.height(10.dp))
 

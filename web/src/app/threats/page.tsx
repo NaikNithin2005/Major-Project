@@ -313,18 +313,22 @@ export default function UserThreatHistoryPage() {
                           </div>
                         </td>
 
-                        {/* Indicators */}
+                        {/* Indicators & Preview */}
                         <td className="py-3.5 px-4 max-w-sm">
-                          {domain ? (
-                            <div className="font-mono text-cyan-400 font-semibold truncate text-[11px]">
-                              {domain}
+                          {threat.decoded_url || domain ? (
+                            <div className="font-mono text-cyan-400 font-semibold truncate text-[11px]" title={threat.decoded_url || domain}>
+                              {threat.decoded_url || domain}
                             </div>
                           ) : (
                             <div className="text-[11px] text-slate-400 font-mono">
                               ID: {threat.id.substring(0, 10)}...
                             </div>
                           )}
-                          {topReason ? (
+                          {threat.sanitized_preview ? (
+                            <div className="text-[11px] text-slate-300 truncate mt-0.5" title={threat.sanitized_preview}>
+                              {threat.sanitized_preview}
+                            </div>
+                          ) : topReason ? (
                             <div className="text-[11px] text-slate-400 truncate mt-0.5">
                               {topReason}
                             </div>

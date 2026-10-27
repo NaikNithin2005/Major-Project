@@ -242,9 +242,11 @@ class SyncRepositoryImpl(
         }
 
         val sanitizedDesc = request.reasons?.firstOrNull() ?: "${request.eventType} threat detection event"
+        val preview = request.sanitizedPreview ?: sanitizedDesc
 
         val map = mutableMapOf<String, Any>(
             "id" to request.clientEventId,
+            "scanId" to request.clientEventId,
             "eventType" to request.eventType,
             "threatType" to threatType,
             "severity" to request.threatCategory,
@@ -252,16 +254,20 @@ class SyncRepositoryImpl(
             "riskScore" to request.riskScore,
             "confidence" to 0.95,
             "sourceType" to request.eventType,
+            "sanitizedPreview" to preview,
             "sanitizedDescription" to sanitizedDesc,
+            "contentRetentionMode" to (request.contentRetentionMode ?: "LOCAL_SAVED"),
             "detectedAt" to Timestamp(date),
             "modelVersion" to (request.modelVersions ?: mapOf("detector" to "squish-detector-v1")),
             "detectionIndicators" to (request.reasons ?: emptyList<String>()),
+            "explanation" to (request.explanation ?: request.reasons?.joinToString("; ") ?: sanitizedDesc),
             "actionTaken" to request.recommendedAction,
-            "reviewStatus" to "NEW",
+            "reviewStatus" to (request.reviewStatus ?: "NEW"),
             "createdAt" to FieldValue.serverTimestamp(),
             "userId" to userId
         )
 
+        request.decodedUrl?.let { map["decodedUrl"] = it }
         request.urlMetadata?.let { map["urlMetadata"] = it }
         request.qrMetadata?.let { map["qrMetadata"] = it }
 

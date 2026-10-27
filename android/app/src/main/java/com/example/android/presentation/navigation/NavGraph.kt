@@ -228,6 +228,7 @@ fun AegisNavGraph(
                 uiState = uiState,
                 onDeleteThreat = viewModel::deleteThreat,
                 onUpdateThreatAction = viewModel::updateThreatAction,
+                onToggleQuarantine = viewModel::toggleQuarantine,
                 onSaveThreat = viewModel::saveThreat,
                 onClearAllThreats = viewModel::clearAllThreats,
                 onSubmitFeedback = viewModel::submitFeedback,

@@ -101,7 +101,12 @@ class DashboardViewModel(
                         contextResults = mapOf("sender" to threat.sender),
                         reasons = if (threat.details.isNotBlank()) threat.details.split(";").map { it.trim() } else listOf("Detected threat pattern"),
                         urlMetadata = null,
-                        qrMetadata = null
+                        qrMetadata = null,
+                        sanitizedPreview = "${if (threat.source.contains("QR", ignoreCase = true)) "QR" else "SMS"}: ${threat.sender}",
+                        contentRetentionMode = threat.contentRetentionMode.ifBlank { "LOCAL_SAVED" },
+                        decodedUrl = threat.extractedUrl,
+                        reviewStatus = threat.reviewStatus.ifBlank { "NEW" },
+                        explanation = threat.details
                     )
                     syncRepository?.enqueueDetection(req)
                 }
@@ -157,6 +162,18 @@ class DashboardViewModel(
                 val updated = existing.copy(actionTaken = action)
                 threatHistoryRepository.updateThreat(updated)
             }
+        }
+    }
+
+    fun toggleQuarantine(id: String, isQuarantined: Boolean) {
+        viewModelScope.launch {
+            threatHistoryRepository.updateQuarantineStatus(id, isQuarantined)
+        }
+    }
+
+    fun updateReviewStatus(id: String, reviewStatus: String) {
+        viewModelScope.launch {
+            threatHistoryRepository.updateReviewStatus(id, reviewStatus)
         }
     }
 

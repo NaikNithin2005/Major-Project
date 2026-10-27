@@ -144,5 +144,29 @@ class Phase4QrPipelineTest {
             _flow.value = emptyList()
             return Result.success(Unit)
         }
+
+        override fun observeQuarantinedThreats(): Flow<List<ThreatRecord>> =
+            kotlinx.coroutines.flow.flowOf(savedThreats.filter { it.isQuarantined })
+
+        override suspend fun updateQuarantineStatus(id: String, isQuarantined: Boolean): Result<Unit> {
+            val index = savedThreats.indexOfFirst { it.id == id }
+            if (index != -1) savedThreats[index] = savedThreats[index].copy(isQuarantined = isQuarantined)
+            _flow.value = savedThreats.toList()
+            return Result.success(Unit)
+        }
+
+        override suspend fun updateReviewStatus(id: String, reviewStatus: String): Result<Unit> {
+            val index = savedThreats.indexOfFirst { it.id == id }
+            if (index != -1) savedThreats[index] = savedThreats[index].copy(reviewStatus = reviewStatus)
+            _flow.value = savedThreats.toList()
+            return Result.success(Unit)
+        }
+
+        override suspend fun updateThreatAction(id: String, action: String): Result<Unit> {
+            val index = savedThreats.indexOfFirst { it.id == id }
+            if (index != -1) savedThreats[index] = savedThreats[index].copy(actionTaken = action)
+            _flow.value = savedThreats.toList()
+            return Result.success(Unit)
+        }
     }
 }

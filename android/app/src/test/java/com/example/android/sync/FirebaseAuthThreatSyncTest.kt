@@ -381,6 +381,19 @@ class FirebaseAuthThreatSyncTest {
         override suspend fun clearAllThreats() {
             threats.clear()
         }
+        override fun observeQuarantinedThreats(): Flow<List<ThreatHistoryEntity>> = flowOf(threats.filter { it.isQuarantined })
+        override suspend fun updateQuarantineStatus(id: String, isQuarantined: Boolean) {
+            val idx = threats.indexOfFirst { it.id == id }
+            if (idx >= 0) threats[idx] = threats[idx].copy(isQuarantined = isQuarantined)
+        }
+        override suspend fun updateReviewStatus(id: String, reviewStatus: String) {
+            val idx = threats.indexOfFirst { it.id == id }
+            if (idx >= 0) threats[idx] = threats[idx].copy(reviewStatus = reviewStatus)
+        }
+        override suspend fun updateThreatAction(id: String, action: String) {
+            val idx = threats.indexOfFirst { it.id == id }
+            if (idx >= 0) threats[idx] = threats[idx].copy(actionTaken = action)
+        }
     }
 
     private class FakeBackendApiService : BackendApiService {

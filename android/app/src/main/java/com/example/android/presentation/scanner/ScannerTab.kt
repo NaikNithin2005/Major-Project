@@ -531,18 +531,36 @@ fun ScannerTab(
                 ScanResultDisplayCard(
                     result = scanResult!!,
                     onSaveThreat = {
+                        val isUrl = scanResult!!.source.contains("URL") ||
+                                scanResult!!.scannedContent.startsWith("http://", ignoreCase = true) ||
+                                scanResult!!.scannedContent.startsWith("https://", ignoreCase = true)
+                        val extractedUrl = if (isUrl) scanResult!!.scannedContent else UrlExtractor.extractUrls(scanResult!!.scannedContent).firstOrNull()
+                        val payloadType = when {
+                            scanResult!!.source.contains("QR", ignoreCase = true) -> "QR_CODE"
+                            scanResult!!.source.contains("SMS", ignoreCase = true) || scanResult!!.source.contains("MESSAGE", ignoreCase = true) -> "SMS"
+                            isUrl -> "URL"
+                            else -> "TEXT"
+                        }
                         val tr = ThreatRecord(
                             id = UUID.randomUUID().toString(),
                             timestamp = System.currentTimeMillis(),
                             source = scanResult!!.source,
-                            sender = scanResult!!.scannedContent.take(40),
+                            sender = if (payloadType == "SMS") "Manual Submission" else scanResult!!.scannedContent.take(40),
                             riskScore = scanResult!!.score,
                             category = scanResult!!.category,
                             actionTaken = if (scanResult!!.verdict == "MALICIOUS") "BLOCK" else "WARN_USER",
-                            details = scanResult!!.reasons.joinToString("; ")
+                            details = scanResult!!.reasons.joinToString("; "),
+                            rawContent = scanResult!!.scannedContent,
+                            extractedUrl = extractedUrl,
+                            payloadType = payloadType,
+                            severity = scanResult!!.severity,
+                            modelVersion = "v2.1-edge",
+                            isQuarantined = scanResult!!.verdict == "MALICIOUS",
+                            reviewStatus = "UNREVIEWED",
+                            contentRetentionMode = "LOCAL_SAVED"
                         )
                         onSaveThreatToHistory(tr)
-                        Toast.makeText(context, "Saved to History", Toast.LENGTH_SHORT).show()
+                        Toast.makeText(context, "Saved to History & Local DB", Toast.LENGTH_SHORT).show()
                     },
                     onAskAiAssistant = { onAskAiAssistant(scanResult!!.scannedContent) },
                     onCopyContent = {
@@ -664,25 +682,44 @@ fun ScanResultDisplayCard(
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                Text("Scanned Payload:", fontSize = 11.sp, fontWeight = FontWeight.Bold, color = Color(0xFF64748B))
-                IconButton(
-                    onClick = onCopyContent,
-                    modifier = Modifier.size(24.dp)
-                ) {
-                    Icon(
-                        imageVector = Icons.Default.ContentCopy,
-                        contentDescription = "Copy content",
-                        tint = Color(0xFF94A3B8),
-                        modifier = Modifier.size(14.dp)
+                Text("Original Scanned Content:", fontSize = 11.sp, fontWeight = FontWeight.Bold, color = Color(0xFF64748B))
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Text("Copy", fontSize = 11.sp, color = Color(0xFF38BDF8))
+                    IconButton(
+                        onClick = onCopyContent,
+                        modifier = Modifier.size(24.dp)
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.ContentCopy,
+                            contentDescription = "Copy content",
+                            tint = Color(0xFF38BDF8),
+                            modifier = Modifier.size(14.dp)
+                        )
+                    }
+                }
+            }
+            Spacer(modifier = Modifier.height(4.dp))
+            Surface(
+                color = Color(0xFF1E293B),
+                shape = RoundedCornerShape(8.dp),
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Column(modifier = Modifier.padding(10.dp)) {
+                    Text(
+                        text = result.scannedContent,
+                        fontSize = 12.sp,
+                        color = Color(0xFFF1F5F9),
+                        maxLines = 6,
+                        lineHeight = 16.sp
+                    )
+                    Spacer(modifier = Modifier.height(4.dp))
+                    Text(
+                        text = "Plain text rendering (links not automatically visited)",
+                        fontSize = 10.sp,
+                        color = Color(0xFF64748B)
                     )
                 }
             }
-            Text(
-                text = result.scannedContent,
-                fontSize = 12.sp,
-                color = Color(0xFFCBD5E1),
-                maxLines = 2
-            )
 
             Spacer(modifier = Modifier.height(12.dp))
 

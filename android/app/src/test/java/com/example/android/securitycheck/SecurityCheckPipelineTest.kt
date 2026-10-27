@@ -193,6 +193,27 @@ class SecurityCheckPipelineTest {
             savedThreats.clear()
             return Result.success(Unit)
         }
+
+        override fun observeQuarantinedThreats(): Flow<List<ThreatRecord>> =
+            kotlinx.coroutines.flow.flowOf(savedThreats.filter { it.isQuarantined })
+
+        override suspend fun updateQuarantineStatus(id: String, isQuarantined: Boolean): Result<Unit> {
+            val idx = savedThreats.indexOfFirst { it.id == id }
+            if (idx != -1) savedThreats[idx] = savedThreats[idx].copy(isQuarantined = isQuarantined)
+            return Result.success(Unit)
+        }
+
+        override suspend fun updateReviewStatus(id: String, reviewStatus: String): Result<Unit> {
+            val idx = savedThreats.indexOfFirst { it.id == id }
+            if (idx != -1) savedThreats[idx] = savedThreats[idx].copy(reviewStatus = reviewStatus)
+            return Result.success(Unit)
+        }
+
+        override suspend fun updateThreatAction(id: String, action: String): Result<Unit> {
+            val idx = savedThreats.indexOfFirst { it.id == id }
+            if (idx != -1) savedThreats[idx] = savedThreats[idx].copy(actionTaken = action)
+            return Result.success(Unit)
+        }
     }
 
     class FakeFeedbackRepository : FeedbackRepository {

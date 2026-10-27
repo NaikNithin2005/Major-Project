@@ -146,5 +146,29 @@ class Phase3SmsPipelineTest {
             stateFlow.value = emptyList()
             return Result.success(Unit)
         }
+
+        override fun observeQuarantinedThreats(): Flow<List<ThreatRecord>> =
+            kotlinx.coroutines.flow.flowOf(savedThreats.filter { it.isQuarantined })
+
+        override suspend fun updateQuarantineStatus(id: String, isQuarantined: Boolean): Result<Unit> {
+            val idx = savedThreats.indexOfFirst { it.id == id }
+            if (idx != -1) savedThreats[idx] = savedThreats[idx].copy(isQuarantined = isQuarantined)
+            stateFlow.value = savedThreats.toList()
+            return Result.success(Unit)
+        }
+
+        override suspend fun updateReviewStatus(id: String, reviewStatus: String): Result<Unit> {
+            val idx = savedThreats.indexOfFirst { it.id == id }
+            if (idx != -1) savedThreats[idx] = savedThreats[idx].copy(reviewStatus = reviewStatus)
+            stateFlow.value = savedThreats.toList()
+            return Result.success(Unit)
+        }
+
+        override suspend fun updateThreatAction(id: String, action: String): Result<Unit> {
+            val idx = savedThreats.indexOfFirst { it.id == id }
+            if (idx != -1) savedThreats[idx] = savedThreats[idx].copy(actionTaken = action)
+            stateFlow.value = savedThreats.toList()
+            return Result.success(Unit)
+        }
     }
 }

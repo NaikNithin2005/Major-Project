@@ -47,7 +47,22 @@ data class DetectionSyncRequest(
     val urlMetadata: Map<String, Any>? = null,
 
     @SerializedName("qr_metadata")
-    val qrMetadata: Map<String, Any>? = null
+    val qrMetadata: Map<String, Any>? = null,
+
+    @SerializedName("sanitized_preview")
+    val sanitizedPreview: String? = null,
+
+    @SerializedName("content_retention_mode")
+    val contentRetentionMode: String? = "LOCAL_SAVED",
+
+    @SerializedName("decoded_url")
+    val decodedUrl: String? = null,
+
+    @SerializedName("review_status")
+    val reviewStatus: String? = "NEW",
+
+    @SerializedName("explanation")
+    val explanation: String? = null
 )
 
 data class DetectionSyncResponse(

@@ -18,7 +18,7 @@ import com.example.android.data.local.entity.*;
         ModelVersionEntity.class,
         SyncQueueEntity.class
     },
-    version = 3,
+    version = 4,
     exportSchema = false
 )
 public abstract class AegisDatabase extends RoomDatabase {

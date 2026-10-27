@@ -18,8 +18,20 @@ interface ThreatHistoryDao {
     @Query("SELECT * FROM threat_history ORDER BY timestamp DESC")
     suspend fun getAllThreats(): List<ThreatHistoryEntity>
 
+    @Query("SELECT * FROM threat_history WHERE isQuarantined = 1 ORDER BY timestamp DESC")
+    fun observeQuarantinedThreats(): Flow<List<ThreatHistoryEntity>>
+
     @Update
     suspend fun updateThreat(threat: ThreatHistoryEntity)
+
+    @Query("UPDATE threat_history SET isQuarantined = :isQuarantined WHERE id = :id")
+    suspend fun updateQuarantineStatus(id: String, isQuarantined: Boolean)
+
+    @Query("UPDATE threat_history SET reviewStatus = :reviewStatus WHERE id = :id")
+    suspend fun updateReviewStatus(id: String, reviewStatus: String)
+
+    @Query("UPDATE threat_history SET actionTaken = :action WHERE id = :id")
+    suspend fun updateThreatAction(id: String, action: String)
 
     @Query("DELETE FROM threat_history WHERE id = :id")
     suspend fun deleteThreatById(id: String)

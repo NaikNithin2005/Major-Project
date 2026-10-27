@@ -37,6 +37,9 @@ export interface ThreatEvent {
   campaign_id: string | null;
   status: ThreatStatus | string;
   user_action?: string | null;
+  sanitized_preview?: string | null;
+  content_retention_mode?: string | null;
+  decoded_url?: string | null;
   created_at: string;
   updated_at?: string | null;
 }

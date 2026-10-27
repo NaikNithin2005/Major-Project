@@ -20,6 +20,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
@@ -31,6 +32,7 @@ import java.util.Locale
 @Composable
 fun AlertsTab(
     threats: List<ThreatRecord>,
+    onThreatClicked: ((ThreatRecord) -> Unit)? = null,
     onUpdateThreatAction: (String, String) -> Unit,
     onSubmitFeedback: (threatId: String, category: String, comment: String) -> Unit,
     onExplainWithAi: (ThreatRecord) -> Unit,
@@ -229,6 +231,7 @@ fun AlertsTab(
                 items(filteredAlerts, key = { it.id }) { threat ->
                     ThreatAlertCard(
                         threat = threat,
+                        onClick = { onThreatClicked?.invoke(threat) },
                         onMarkReviewed = {
                             onUpdateThreatAction(threat.id, "RESOLVED")
                             Toast.makeText(context, "Marked as reviewed", Toast.LENGTH_SHORT).show()
@@ -249,6 +252,7 @@ fun AlertsTab(
 @Composable
 fun ThreatAlertCard(
     threat: ThreatRecord,
+    onClick: (() -> Unit)? = null,
     onMarkReviewed: () -> Unit,
     onOpenFeedback: () -> Unit,
     onExplainWithAi: () -> Unit
@@ -288,7 +292,8 @@ fun ThreatAlertCard(
     Card(
         modifier = Modifier
             .fillMaxWidth()
-            .border(1.dp, borderColor.copy(alpha = 0.5f), RoundedCornerShape(16.dp)),
+            .border(1.dp, borderColor.copy(alpha = 0.5f), RoundedCornerShape(16.dp))
+            .clickable { onClick?.invoke() },
         colors = CardDefaults.cardColors(containerColor = Color(0xFF1E293B)),
         shape = RoundedCornerShape(16.dp)
     ) {
@@ -325,6 +330,22 @@ fun ThreatAlertCard(
                         fontWeight = FontWeight.Bold,
                         color = Color.White
                     )
+
+                    if (threat.isQuarantined) {
+                        Spacer(modifier = Modifier.width(6.dp))
+                        Surface(
+                            color = Color(0xFFEF4444).copy(alpha = 0.2f),
+                            shape = RoundedCornerShape(6.dp)
+                        ) {
+                            Text(
+                                text = "🛡️ Quarantined",
+                                fontSize = 10.sp,
+                                fontWeight = FontWeight.Bold,
+                                color = Color(0xFFEF4444),
+                                modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
+                            )
+                        }
+                    }
                 }
 
                 Text(
@@ -343,14 +364,42 @@ fun ThreatAlertCard(
                 color = Color.White
             )
 
-            Spacer(modifier = Modifier.height(4.dp))
-
-            Text(
-                text = threat.details.ifBlank { "Unverified suspicious activity detected on device." },
-                fontSize = 12.sp,
-                color = Color(0xFFCBD5E1),
-                lineHeight = 16.sp
-            )
+            // Scanned Content Preview
+            if (!threat.rawContent.isNullOrBlank()) {
+                Spacer(modifier = Modifier.height(6.dp))
+                Surface(
+                    color = Color(0xFF0F172A),
+                    shape = RoundedCornerShape(8.dp),
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Column(modifier = Modifier.padding(10.dp)) {
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Text("Scanned Content Preview:", fontSize = 10.sp, color = Color(0xFF64748B), fontWeight = FontWeight.Bold)
+                            Text("Tap to view details", fontSize = 10.sp, color = Color(0xFF38BDF8))
+                        }
+                        Spacer(modifier = Modifier.height(2.dp))
+                        Text(
+                            text = threat.rawContent,
+                            fontSize = 11.sp,
+                            color = Color(0xFFE2E8F0),
+                            maxLines = 2,
+                            overflow = TextOverflow.Ellipsis
+                        )
+                    }
+                }
+            } else {
+                Spacer(modifier = Modifier.height(4.dp))
+                Text(
+                    text = threat.details.ifBlank { "Unverified suspicious activity detected on device." },
+                    fontSize = 12.sp,
+                    color = Color(0xFFCBD5E1),
+                    lineHeight = 16.sp
+                )
+            }
 
             Spacer(modifier = Modifier.height(12.dp))
 

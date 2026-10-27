@@ -148,21 +148,34 @@ class ProcessQrCodeUseCase(
             // Persist scan result to Room database
             qrAnalysisRepository.saveAnalysis(finalResult)
 
-            // If detected as suspicious / threat (score >= 50 or category != SAFE), record in Threat History
+            // Persist structured scan record with raw payload and QR details to Threat History
+            val parsedQr = com.example.android.data.parser.QrPayloadParser.parse(trimmedPayload)
             val assessment = finalResult.assessment
+            val finalScore = assessment?.riskScore ?: finalResult.riskScore
+            val isQuarantined = finalResult.isQuishing || finalScore >= 70
+            val severityStr = assessment?.category?.name ?: if (finalScore >= 70) "HIGH" else if (finalScore >= 50) "MEDIUM" else "SAFE"
+            val actionStr = if (isQuarantined) "QUARANTINED" else (assessment?.recommendedAction?.actionName ?: "PROCEED_SAFELY")
+
+            val threatRecord = ThreatRecord(
+                id = finalResult.id,
+                timestamp = finalResult.timestamp,
+                source = "QR Code ($source)",
+                sender = if (finalResult.extractedUrl.isNotBlank()) finalResult.domain else parsedQr.displayTitle,
+                riskScore = finalScore,
+                category = severityStr,
+                actionTaken = actionStr,
+                details = assessment?.reasons?.joinToString("; ") ?: "QR scan evaluated",
+                rawContent = trimmedPayload,
+                extractedUrl = if (finalResult.extractedUrl.isNotBlank()) finalResult.extractedUrl else parsedQr.extractedUrl,
+                payloadType = parsedQr.payloadType,
+                severity = severityStr,
+                modelVersion = "xgboost-url-v2",
+                isQuarantined = isQuarantined,
+                reviewStatus = "NEW",
+                contentRetentionMode = "LOCAL_SAVED"
+            )
             if (assessment != null && (finalResult.isQuishing || assessment.category != ThreatCategory.SAFE)) {
-                threatHistoryRepository.addThreat(
-                    ThreatRecord(
-                        id = UUID.randomUUID().toString(),
-                        timestamp = finalResult.timestamp,
-                        source = "QR Code ($source)",
-                        sender = if (finalResult.extractedUrl.isNotBlank()) finalResult.domain else "QR Payload",
-                        riskScore = assessment.riskScore,
-                        category = assessment.category.name,
-                        actionTaken = assessment.recommendedAction.actionName,
-                        details = assessment.reasons.joinToString("; ")
-                    )
-                )
+                threatHistoryRepository.addThreat(threatRecord)
             }
 
             // Phase 8: Data-minimized sync queue enqueue (does NOT block local detection)
@@ -211,7 +224,12 @@ class ProcessQrCodeUseCase(
                     qrMetadata = mapOf(
                         "target_url" to finalResult.targetUrl,
                         "source" to finalResult.source
-                    )
+                    ),
+                    sanitizedPreview = "QR (${parsedQr.payloadType}): ${parsedQr.displayTitle}",
+                    contentRetentionMode = "LOCAL_SAVED",
+                    decodedUrl = finalResult.extractedUrl.ifBlank { null },
+                    reviewStatus = "NEW",
+                    explanation = assessment?.reasons?.joinToString("; ") ?: "Decoded QR scan"
                 )
                 syncRepository?.enqueueDetection(syncReq)
                 context?.let { ctx -> SyncScheduler.scheduleImmediateSync(ctx) }

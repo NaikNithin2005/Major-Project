@@ -46,6 +46,37 @@ class Phase2RepositoryTest {
             list.clear()
             return Result.success(Unit)
         }
+
+        override fun observeQuarantinedThreats(): kotlinx.coroutines.flow.Flow<List<ThreatRecord>> {
+            return kotlinx.coroutines.flow.flowOf(list.filter { it.isQuarantined })
+        }
+
+        override suspend fun updateQuarantineStatus(id: String, isQuarantined: Boolean): Result<Unit> {
+            val index = list.indexOfFirst { it.id == id }
+            if (index != -1) {
+                list[index] = list[index].copy(isQuarantined = isQuarantined)
+                return Result.success(Unit)
+            }
+            return Result.failure(IllegalArgumentException("Record not found"))
+        }
+
+        override suspend fun updateReviewStatus(id: String, reviewStatus: String): Result<Unit> {
+            val index = list.indexOfFirst { it.id == id }
+            if (index != -1) {
+                list[index] = list[index].copy(reviewStatus = reviewStatus)
+                return Result.success(Unit)
+            }
+            return Result.failure(IllegalArgumentException("Record not found"))
+        }
+
+        override suspend fun updateThreatAction(id: String, action: String): Result<Unit> {
+            val index = list.indexOfFirst { it.id == id }
+            if (index != -1) {
+                list[index] = list[index].copy(actionTaken = action)
+                return Result.success(Unit)
+            }
+            return Result.failure(IllegalArgumentException("Record not found"))
+        }
     }
 
     @Test
