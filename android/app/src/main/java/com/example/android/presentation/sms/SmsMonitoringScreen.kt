@@ -66,7 +66,7 @@ fun SmsMonitoringScreen(
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("SMS Smishing Monitor", fontWeight = FontWeight.Bold) },
+                title = { Text("Message Safety Check", fontWeight = FontWeight.Bold) },
                 navigationIcon = {
                     IconButton(onClick = onNavigateBack) {
                         Icon(Icons.Default.ArrowBack, contentDescription = "Back")
@@ -150,7 +150,7 @@ fun SmsMonitoringScreen(
                                 ) {
                                     Icon(Icons.Default.Security, contentDescription = null)
                                     Spacer(modifier = Modifier.width(8.dp))
-                                    Text("Grant SMS Permission")
+                                    Text("Allow Message Checking")
                                 }
                             }
                         }
@@ -178,12 +178,12 @@ fun SmsMonitoringScreen(
                         ) {
                             Column(modifier = Modifier.weight(1f)) {
                                 Text(
-                                    text = if (uiState.isProtectionEnabled && uiState.isPermissionGranted) "SMS Shield Active" else "SMS Shield Disabled",
+                                    text = if (uiState.isProtectionEnabled && uiState.isPermissionGranted) "Automatic Message Checking Active" else "Automatic Message Checking Disabled",
                                     style = MaterialTheme.typography.titleMedium,
                                     fontWeight = FontWeight.Bold
                                 )
                                 Text(
-                                    text = if (uiState.isPermissionGranted) "Passive background smishing pipeline running" else "Permissions missing for background monitoring",
+                                    text = if (uiState.isPermissionGranted) "Automatically checks incoming text messages for scams on this device" else "Permission required for automatic message checking",
                                     style = MaterialTheme.typography.bodySmall,
                                     color = MaterialTheme.colorScheme.onSurfaceVariant
                                 )
@@ -215,7 +215,7 @@ fun SmsMonitoringScreen(
                         verticalAlignment = Alignment.CenterVertically
                     ) {
                         Text(
-                            text = "Recent SMS Analyses",
+                            text = "Recent Messages Checked",
                             style = MaterialTheme.typography.titleLarge,
                             fontWeight = FontWeight.Bold
                         )

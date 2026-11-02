@@ -21,13 +21,13 @@ interface SidebarProps {
 }
 
 const navItems = [
-  { name: 'Overview', href: '/', icon: LayoutDashboard },
-  { name: 'Threat Monitoring', href: '/threats', icon: ShieldAlert },
-  { name: 'Analytics', href: '/analytics', icon: BarChart3 },
-  { name: 'Users', href: '/users', icon: Users },
-  { name: 'AI Models', href: '/models', icon: Cpu },
-  { name: 'Feedback', href: '/feedback', icon: MessageSquareQuote },
-  { name: 'Audit Logs', href: '/audit-logs', icon: FileText },
+  { name: 'Safety Overview', href: '/', icon: LayoutDashboard },
+  { name: 'Messages & QR History', href: '/threats', icon: ShieldAlert },
+  { name: 'Protection Analytics', href: '/analytics', icon: BarChart3 },
+  { name: 'Users & Devices', href: '/users', icon: Users },
+  { name: 'System Diagnostics', href: '/models', icon: Cpu },
+  { name: 'User Feedback', href: '/feedback', icon: MessageSquareQuote },
+  { name: 'Activity Logs', href: '/audit-logs', icon: FileText },
 ];
 
 export function Sidebar({ isOpen, onClose }: SidebarProps) {

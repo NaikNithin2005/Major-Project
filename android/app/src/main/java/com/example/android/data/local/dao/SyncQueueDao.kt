@@ -61,6 +61,9 @@ interface SyncQueueDao {
     @Query("UPDATE sync_queue SET status = 'PENDING', nextAttemptAt = 0 WHERE status = 'FAILED'")
     suspend fun resetFailedItems(): Int
 
+    @Query("UPDATE sync_queue SET status = 'PENDING', nextAttemptAt = 0 WHERE status = 'FAILED' OR status = 'PENDING'")
+    suspend fun resetAllPendingForImmediateSync(): Int
+
     @Query("DELETE FROM sync_queue WHERE status = 'SYNCED' AND syncedAt < :cutoffTimestamp")
     suspend fun purgeOldSynced(cutoffTimestamp: Long): Int
 }

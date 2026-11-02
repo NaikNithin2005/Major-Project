@@ -11,6 +11,9 @@ class AegisApplication : Application() {
         super.onCreate()
         container = AppContainer(this)
         
+        // Initialize notification channels for real-time security alerts
+        com.example.android.util.NotificationHelper.initNotificationChannels(this)
+
         // Phase 8: Schedule WorkManager background periodic & startup sync
         SyncScheduler.schedulePeriodicSync(this)
         SyncScheduler.scheduleImmediateSync(this)

@@ -1,3 +1,4 @@
 <resources>
     <string name="app_name">Squish Shield</string>
+    <string name="tile_squish_protection_label">Squish Protection</string>
 </resources>

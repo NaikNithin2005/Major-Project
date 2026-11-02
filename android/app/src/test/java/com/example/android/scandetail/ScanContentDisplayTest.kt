@@ -62,8 +62,28 @@ class ScanContentDisplayTest {
             storage.remove(id)
         }
 
-        override suspend fun clearAllThreats() {
+            override suspend fun insertThreats(threats: List<com.example.android.data.local.entity.ThreatHistoryEntity>) { threats.forEach { insertThreat(it) } }
+    override fun observeThreatsByUserId(userId: String?): kotlinx.coroutines.flow.Flow<List<com.example.android.data.local.entity.ThreatHistoryEntity>> = observeAllThreats()
+    override suspend fun deleteThreatsByUserId(userId: String) {}
+
+    override suspend fun clearAllThreats() {
             storage.clear()
+        }
+
+        override suspend fun getPendingThreats(userId: String?): List<ThreatHistoryEntity> {
+            return storage.values.filter { it.syncStatus == "PENDING" && (userId == null || it.userId == null || it.userId == userId) }
+        }
+
+        override suspend fun updateSyncStatus(id: String, syncStatus: String) {
+            storage[id]?.let {
+                storage[id] = it.copy(syncStatus = syncStatus, retryCount = it.retryCount + 1)
+            }
+        }
+
+        override suspend fun updatePendingOperation(id: String, pendingOperation: String) {
+            storage[id]?.let {
+                storage[id] = it.copy(pendingOperation = pendingOperation)
+            }
         }
     }
 

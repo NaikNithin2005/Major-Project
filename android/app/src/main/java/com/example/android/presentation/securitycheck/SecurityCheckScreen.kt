@@ -114,7 +114,7 @@ fun SecurityCheckScreen(
                         )
                         Spacer(modifier = Modifier.height(8.dp))
                         Text(
-                            text = "Running On-Device XGBoost ML & Isolation Forest Anomaly Detection",
+                            text = "Checking Website with On-Device Scam Detection Engine",
                             fontSize = 12.sp,
                             color = Color(0xFF94A3B8),
                             textAlign = TextAlign.Center
@@ -166,7 +166,7 @@ fun SecurityCheckScreen(
 
                     val (verdictLabel, verdictColor, verdictBg, icon) = when (result.classification) {
                         UrlClassification.MALICIOUS_INDICATORS_DETECTED -> Quad(
-                            "MALICIOUS INDICATORS DETECTED",
+                            "DANGEROUS SCAM LINK DETECTED",
                             Color(0xFFEF4444),
                             Color(0xFFEF4444).copy(alpha = 0.15f),
                             Icons.Default.Dangerous
@@ -646,7 +646,7 @@ private fun FalsePositiveDialog(
 
                 val options = listOf(
                     "FALSE_POSITIVE" to "This URL is benign (False Positive)",
-                    "CONFIRMED_THREAT" to "Correctly detected malicious threat",
+                    "CONFIRMED_THREAT" to "Correctly detected dangerous scam",
                     "MISSED_THREAT" to "Threat severity was underestimated"
                 )
 

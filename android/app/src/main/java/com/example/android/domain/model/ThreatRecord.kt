@@ -16,5 +16,9 @@ data class ThreatRecord(
     val modelVersion: String? = null,
     val isQuarantined: Boolean = false,
     val reviewStatus: String = "NEW",
-    val contentRetentionMode: String = "LOCAL_SAVED"
+    val contentRetentionMode: String = "LOCAL_SAVED",
+    val pendingOperation: String = "NONE",
+    val syncStatus: String = "SYNCED",
+    val retryCount: Int = 0,
+    val userId: String? = null
 )

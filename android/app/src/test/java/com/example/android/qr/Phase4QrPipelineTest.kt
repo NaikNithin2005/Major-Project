@@ -44,7 +44,8 @@ class Phase4QrPipelineTest {
         assertEquals("google.com", analysis?.domain)
         assertFalse(analysis?.isQuishing == true)
         assertEquals(1, mockQrRepository.savedAnalyses.size)
-        assertEquals(0, mockThreatRepository.savedThreats.size)
+        assertEquals(1, mockThreatRepository.savedThreats.size)
+        assertEquals("SAFE", mockThreatRepository.savedThreats[0].category)
     }
 
     @Test
@@ -139,7 +140,11 @@ class Phase4QrPipelineTest {
             return Result.success(Unit)
         }
 
-        override suspend fun clearAllThreats(): Result<Unit> {
+            override suspend fun addThreats(threats: List<com.example.android.domain.model.ThreatRecord>): Result<Unit> = Result.success(Unit)
+    override fun observeThreatsByUserId(userId: String?): kotlinx.coroutines.flow.Flow<List<com.example.android.domain.model.ThreatRecord>> = observeAllThreats()
+    override suspend fun deleteThreatsByUserId(userId: String): Result<Unit> = Result.success(Unit)
+
+    override suspend fun clearAllThreats(): Result<Unit> {
             savedThreats.clear()
             _flow.value = emptyList()
             return Result.success(Unit)

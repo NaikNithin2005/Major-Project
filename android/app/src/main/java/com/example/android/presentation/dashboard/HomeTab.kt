@@ -30,6 +30,7 @@ import com.example.android.data.tips.SecurityTip
 import com.example.android.data.tips.SecurityTipsProvider
 import com.example.android.domain.model.ThreatRecord
 import com.example.android.domain.model.User
+import com.example.android.util.PermissionUtils
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
@@ -41,36 +42,20 @@ fun HomeTab(
     onNavigateToTab: (Int) -> Unit,
     onOpenEducation: () -> Unit,
     onThreatClicked: (ThreatRecord) -> Unit,
-    onTriggerManualSync: () -> Unit
+    onTriggerManualSync: () -> Unit,
+    onOpenProtectionSetup: (() -> Unit)? = null,
+    onOpenLiveCameraQr: (() -> Unit)? = null,
+    onNavigateToHistoryWithFilter: ((type: String, severity: String) -> Unit)? = null
 ) {
     val context = LocalContext.current
     var expandedTip by remember { mutableStateOf<SecurityTip?>(null) }
-
     val todayTip = remember { SecurityTipsProvider.getTodayTip() }
 
-    // Real-time Permission / Protection status check
     val hasSmsPermission = ContextCompat.checkSelfPermission(context, Manifest.permission.RECEIVE_SMS) == PackageManager.PERMISSION_GRANTED
     val hasCameraPermission = ContextCompat.checkSelfPermission(context, Manifest.permission.CAMERA) == PackageManager.PERMISSION_GRANTED
     val hasNotificationPermission = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
         ContextCompat.checkSelfPermission(context, Manifest.permission.POST_NOTIFICATIONS) == PackageManager.PERMISSION_GRANTED
     } else true
-
-    // Deterministic Security Scoring:
-    // Base 100, deduct -15 per unresolved threat, -15 if SMS disabled, -10 if Notifications disabled
-    val unresolvedThreats = uiState.threatHistory.filter { it.actionTaken != "RESOLVED" && it.actionTaken != "FALSE_POSITIVE" }
-    val calculatedScore = remember(unresolvedThreats.size, hasSmsPermission, hasNotificationPermission) {
-        var score = 100
-        score -= (unresolvedThreats.size * 15)
-        if (!hasSmsPermission) score -= 15
-        if (!hasNotificationPermission) score -= 10
-        score.coerceIn(15, 100)
-    }
-
-    val (scoreLabel, scoreColor) = when {
-        calculatedScore >= 80 -> "Protected" to Color(0xFF34D399)
-        calculatedScore >= 50 -> "Attention Needed" to Color(0xFFFBBF24)
-        else -> "High Risk" to Color(0xFFF87171)
-    }
 
     val greetingName = when {
         currentUser?.isGuest == true -> "Guest User"
@@ -78,6 +63,8 @@ fun HomeTab(
         !currentUser?.email.isNullOrBlank() -> currentUser?.email!!.substringBefore("@")
         else -> "User"
     }
+
+    val timeFormatter = remember { SimpleDateFormat("dd MMM, HH:mm", Locale.getDefault()) }
 
     if (expandedTip != null) {
         AlertDialog(
@@ -106,9 +93,9 @@ fun HomeTab(
             .padding(horizontal = 16.dp),
         verticalArrangement = Arrangement.spacedBy(16.dp)
     ) {
+        // Header: User Greeting & Cloud Sync Status
         item {
             Spacer(modifier = Modifier.height(8.dp))
-            // Header User Greeting & Status
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween,
@@ -128,29 +115,42 @@ fun HomeTab(
                     )
                 }
 
-                // Cloud Sync Indicator
                 Surface(
-                    color = if (uiState.pendingSyncCount == 0) Color(0xFF0EA5E9).copy(alpha = 0.18f) else Color(0xFFF59E0B).copy(alpha = 0.22f),
+                    color = if (uiState.isSyncing) Color(0xFF6366F1).copy(alpha = 0.22f)
+                            else if (uiState.pendingSyncCount == 0) Color(0xFF0EA5E9).copy(alpha = 0.18f) 
+                            else Color(0xFFF59E0B).copy(alpha = 0.22f),
                     shape = RoundedCornerShape(20.dp),
                     modifier = Modifier
                         .clip(RoundedCornerShape(20.dp))
-                        .clickable { onTriggerManualSync() }
+                        .clickable(enabled = !uiState.isSyncing) { onTriggerManualSync() }
                 ) {
                     Row(
                         modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp),
                         verticalAlignment = Alignment.CenterVertically
                     ) {
-                        Icon(
-                            imageVector = if (uiState.pendingSyncCount == 0) Icons.Default.CloudDone else Icons.Default.Sync,
-                            contentDescription = "Sync",
-                            tint = if (uiState.pendingSyncCount == 0) Color(0xFF38BDF8) else Color(0xFFFBBF24),
-                            modifier = Modifier.size(14.dp)
-                        )
+                        if (uiState.isSyncing) {
+                            CircularProgressIndicator(
+                                modifier = Modifier.size(12.dp),
+                                strokeWidth = 2.dp,
+                                color = Color(0xFF818CF8)
+                            )
+                        } else {
+                            Icon(
+                                imageVector = if (uiState.pendingSyncCount == 0) Icons.Default.CloudDone else Icons.Default.Sync,
+                                contentDescription = "Sync",
+                                tint = if (uiState.pendingSyncCount == 0) Color(0xFF38BDF8) else Color(0xFFFBBF24),
+                                modifier = Modifier.size(14.dp)
+                            )
+                        }
                         Spacer(modifier = Modifier.width(5.dp))
                         Text(
-                            text = if (uiState.pendingSyncCount == 0) "Synced" else "${uiState.pendingSyncCount} pending",
+                            text = if (uiState.isSyncing) "Syncing..." 
+                                   else if (uiState.pendingSyncCount == 0) "Synced" 
+                                   else "${uiState.pendingSyncCount} pending",
                             fontSize = 11.sp,
-                            color = if (uiState.pendingSyncCount == 0) Color(0xFF38BDF8) else Color(0xFFFBBF24),
+                            color = if (uiState.isSyncing) Color(0xFF818CF8) 
+                                   else if (uiState.pendingSyncCount == 0) Color(0xFF38BDF8) 
+                                   else Color(0xFFFBBF24),
                             fontWeight = FontWeight.Medium
                         )
                     }
@@ -158,219 +158,393 @@ fun HomeTab(
             }
         }
 
-        // Section A: Prominent Security Score Card
+        // Section 1: Primary SMS Message Statistics (4 Real Stats)
         item {
-            Card(
-                modifier = Modifier.fillMaxWidth(),
-                colors = CardDefaults.cardColors(containerColor = Color(0xFF1E293B)),
-                shape = RoundedCornerShape(20.dp)
-            ) {
-                Column(modifier = Modifier.padding(20.dp)) {
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.SpaceBetween,
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Column {
+            Column(modifier = Modifier.fillMaxWidth()) {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Icon(Icons.Default.MailOutline, contentDescription = null, tint = Color(0xFF38BDF8), modifier = Modifier.size(18.dp))
+                        Spacer(modifier = Modifier.width(6.dp))
+                        Text(
+                            text = "Message Safety Activity",
+                            fontSize = 15.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = Color.White
+                        )
+                    }
+                    Text(
+                        text = if (hasSmsPermission) "Auto Checking Active" else "Manual Checking",
+                        fontSize = 11.sp,
+                        fontWeight = FontWeight.Medium,
+                        color = if (hasSmsPermission) Color(0xFF34D399) else Color(0xFFFBBF24)
+                    )
+                }
+                Spacer(modifier = Modifier.height(10.dp))
+
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    StatCard(
+                        title = "Total Scanned",
+                        count = uiState.smsScannedCount,
+                        countColor = Color.White,
+                        icon = Icons.Default.Inbox,
+                        iconTint = Color(0xFF38BDF8),
+                        modifier = Modifier.weight(1f),
+                        onClick = { onNavigateToHistoryWithFilter?.invoke("Messages", "All") ?: onNavigateToTab(1) }
+                    )
+                    StatCard(
+                        title = "Looks Safe",
+                        count = uiState.smsSafeCount,
+                        countColor = Color(0xFF34D399),
+                        icon = Icons.Default.CheckCircle,
+                        iconTint = Color(0xFF34D399),
+                        modifier = Modifier.weight(1f),
+                        onClick = { onNavigateToHistoryWithFilter?.invoke("Messages", "Looks Safe") ?: onNavigateToTab(1) }
+                    )
+                }
+                Spacer(modifier = Modifier.height(8.dp))
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    StatCard(
+                        title = "Needs Attention",
+                        count = uiState.smsAttentionCount,
+                        countColor = Color(0xFFFBBF24),
+                        icon = Icons.Default.WarningAmber,
+                        iconTint = Color(0xFFFBBF24),
+                        modifier = Modifier.weight(1f),
+                        onClick = { onNavigateToHistoryWithFilter?.invoke("Messages", "Needs Attention") ?: onNavigateToTab(1) }
+                    )
+                    StatCard(
+                        title = "Dangerous",
+                        count = uiState.smsDangerousCount,
+                        countColor = Color(0xFFF87171),
+                        icon = Icons.Default.Dangerous,
+                        iconTint = Color(0xFFF87171),
+                        modifier = Modifier.weight(1f),
+                        onClick = { onNavigateToHistoryWithFilter?.invoke("Messages", "Dangerous") ?: onNavigateToTab(1) }
+                    )
+                }
+            }
+        }
+
+        // Section 2: Separate QR Code Activity (4 Real Stats)
+        item {
+            Column(modifier = Modifier.fillMaxWidth()) {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Icon(Icons.Default.QrCodeScanner, contentDescription = null, tint = Color(0xFFA78BFA), modifier = Modifier.size(18.dp))
+                        Spacer(modifier = Modifier.width(6.dp))
+                        Text(
+                            text = "QR Code Safety Activity",
+                            fontSize = 15.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = Color.White
+                        )
+                    }
+                    Text(
+                        text = if (hasCameraPermission) "Camera Ready" else "Permission Needed",
+                        fontSize = 11.sp,
+                        fontWeight = FontWeight.Medium,
+                        color = if (hasCameraPermission) Color(0xFF34D399) else Color(0xFFFBBF24)
+                    )
+                }
+                Spacer(modifier = Modifier.height(10.dp))
+
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    StatCard(
+                        title = "Total Scanned",
+                        count = uiState.qrScannedCount,
+                        countColor = Color.White,
+                        icon = Icons.Default.QrCode,
+                        iconTint = Color(0xFFA78BFA),
+                        modifier = Modifier.weight(1f),
+                        onClick = { onNavigateToHistoryWithFilter?.invoke("QR Codes", "All") ?: onNavigateToTab(1) }
+                    )
+                    StatCard(
+                        title = "Looks Safe",
+                        count = uiState.qrSafeCount,
+                        countColor = Color(0xFF34D399),
+                        icon = Icons.Default.CheckCircle,
+                        iconTint = Color(0xFF34D399),
+                        modifier = Modifier.weight(1f),
+                        onClick = { onNavigateToHistoryWithFilter?.invoke("QR Codes", "Looks Safe") ?: onNavigateToTab(1) }
+                    )
+                }
+                Spacer(modifier = Modifier.height(8.dp))
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    StatCard(
+                        title = "Needs Attention",
+                        count = uiState.qrAttentionCount,
+                        countColor = Color(0xFFFBBF24),
+                        icon = Icons.Default.WarningAmber,
+                        iconTint = Color(0xFFFBBF24),
+                        modifier = Modifier.weight(1f),
+                        onClick = { onNavigateToHistoryWithFilter?.invoke("QR Codes", "Needs Attention") ?: onNavigateToTab(1) }
+                    )
+                    StatCard(
+                        title = "Dangerous",
+                        count = uiState.qrDangerousCount,
+                        countColor = Color(0xFFF87171),
+                        icon = Icons.Default.Dangerous,
+                        iconTint = Color(0xFFF87171),
+                        modifier = Modifier.weight(1f),
+                        onClick = { onNavigateToHistoryWithFilter?.invoke("QR Codes", "Dangerous") ?: onNavigateToTab(1) }
+                    )
+                }
+            }
+        }
+
+        // Section 3: Important Safety Alerts (if any)
+        if (uiState.safetyAlerts.isNotEmpty()) {
+            item {
+                Card(
+                    modifier = Modifier.fillMaxWidth(),
+                    colors = CardDefaults.cardColors(containerColor = Color(0xFF2D1517)),
+                    shape = RoundedCornerShape(16.dp)
+                ) {
+                    Column(modifier = Modifier.padding(16.dp)) {
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
                             Row(verticalAlignment = Alignment.CenterVertically) {
                                 Box(
                                     modifier = Modifier
-                                        .size(8.dp)
-                                        .background(scoreColor, CircleShape)
+                                        .size(10.dp)
+                                        .background(Color(0xFFF87171), CircleShape)
                                 )
-                                Spacer(modifier = Modifier.width(6.dp))
+                                Spacer(modifier = Modifier.width(8.dp))
                                 Text(
-                                    text = scoreLabel.uppercase(),
-                                    fontSize = 12.sp,
+                                    text = "Important Safety Alerts (${uiState.safetyAlerts.size})",
+                                    fontSize = 14.sp,
                                     fontWeight = FontWeight.Bold,
-                                    color = scoreColor
+                                    color = Color(0xFFFCA5A5)
                                 )
                             }
-                            Spacer(modifier = Modifier.height(6.dp))
                             Text(
-                                text = "Device Security Score",
-                                fontSize = 14.sp,
-                                color = Color(0xFF94A3B8)
+                                text = "View All",
+                                fontSize = 12.sp,
+                                fontWeight = FontWeight.SemiBold,
+                                color = Color(0xFF38BDF8),
+                                modifier = Modifier.clickable { onNavigateToTab(2) }
                             )
                         }
-
-                        // Big Score Ring Display
-                        Surface(
-                            shape = CircleShape,
-                            color = scoreColor.copy(alpha = 0.15f),
-                            modifier = Modifier.size(68.dp)
+                        Spacer(modifier = Modifier.height(10.dp))
+                        val topAlert = uiState.safetyAlerts.first()
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .clip(RoundedCornerShape(10.dp))
+                                .background(Color(0xFF3F191B))
+                                .clickable { onThreatClicked(topAlert) }
+                                .padding(12.dp),
+                            verticalAlignment = Alignment.CenterVertically
                         ) {
-                            Box(contentAlignment = Alignment.Center) {
+                            Icon(
+                                imageVector = if (topAlert.source.contains("QR", ignoreCase = true)) Icons.Default.QrCode else Icons.Default.Sms,
+                                contentDescription = null,
+                                tint = Color(0xFFF87171),
+                                modifier = Modifier.size(20.dp)
+                            )
+                            Spacer(modifier = Modifier.width(10.dp))
+                            Column(modifier = Modifier.weight(1f)) {
                                 Text(
-                                    text = "$calculatedScore",
-                                    fontSize = 24.sp,
+                                    text = topAlert.sender.ifBlank { "Suspicious Alert" },
+                                    fontSize = 13.sp,
                                     fontWeight = FontWeight.Bold,
-                                    color = scoreColor
+                                    color = Color.White
+                                )
+                                Text(
+                                    text = topAlert.details.ifBlank { "Dangerous indicators detected" },
+                                    fontSize = 11.sp,
+                                    color = Color(0xFFE2E8F0),
+                                    maxLines = 1,
+                                    overflow = TextOverflow.Ellipsis
                                 )
                             }
-                        }
-                    }
-
-                    Spacer(modifier = Modifier.height(14.dp))
-
-                    HorizontalDivider(color = Color(0xFF334155))
-
-                    Spacer(modifier = Modifier.height(12.dp))
-
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.SpaceBetween
-                    ) {
-                        Column {
-                            Text("Unresolved Threats", fontSize = 11.sp, color = Color(0xFF64748B))
-                            Text("${unresolvedThreats.size}", fontSize = 14.sp, fontWeight = FontWeight.Bold, color = if (unresolvedThreats.isEmpty()) Color(0xFF34D399) else Color(0xFFF87171))
-                        }
-                        Column {
-                            Text("Total Scans", fontSize = 11.sp, color = Color(0xFF64748B))
-                            Text("${uiState.smsScannedCount + uiState.qrScannedCount}", fontSize = 14.sp, fontWeight = FontWeight.Bold, color = Color.White)
-                        }
-                        Column {
-                            Text("Protection Engine", fontSize = 11.sp, color = Color(0xFF64748B))
-                            Text(if (hasSmsPermission) "Real-Time Active" else "Partial", fontSize = 14.sp, fontWeight = FontWeight.Bold, color = Color(0xFF38BDF8))
+                            Icon(Icons.Default.ChevronRight, contentDescription = null, tint = Color(0xFFFCA5A5))
                         }
                     }
                 }
             }
         }
 
-        // Section B: Real-Time Protection Indicators
+        // Section 4: Quick Action Buttons (4 Primary Actions)
         item {
-            Card(
-                modifier = Modifier.fillMaxWidth(),
-                colors = CardDefaults.cardColors(containerColor = Color(0xFF1E293B)),
-                shape = RoundedCornerShape(16.dp)
-            ) {
-                Column(modifier = Modifier.padding(16.dp)) {
+            Column(modifier = Modifier.fillMaxWidth()) {
+                Text(
+                    text = "Quick Actions",
+                    fontSize = 15.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = Color.White
+                )
+                Spacer(modifier = Modifier.height(10.dp))
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    Button(
+                        onClick = { onNavigateToTab(2) },
+                        modifier = Modifier.weight(1f).height(46.dp),
+                        shape = RoundedCornerShape(12.dp),
+                        colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF0284C7))
+                    ) {
+                        Icon(Icons.Default.EditNote, contentDescription = null, modifier = Modifier.size(16.dp))
+                        Spacer(modifier = Modifier.width(6.dp))
+                        Text("Check SMS", fontSize = 12.sp, fontWeight = FontWeight.SemiBold)
+                    }
+
+                    Button(
+                        onClick = { if (onOpenLiveCameraQr != null) onOpenLiveCameraQr() else onNavigateToTab(2) },
+                        modifier = Modifier.weight(1f).height(46.dp),
+                        shape = RoundedCornerShape(12.dp),
+                        colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF0EA5E9))
+                    ) {
+                        Icon(Icons.Default.QrCodeScanner, contentDescription = null, modifier = Modifier.size(16.dp))
+                        Spacer(modifier = Modifier.width(6.dp))
+                        Text("Scan QR", fontSize = 12.sp, fontWeight = FontWeight.SemiBold)
+                    }
+                }
+                Spacer(modifier = Modifier.height(8.dp))
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    OutlinedButton(
+                        onClick = { onNavigateToTab(3) },
+                        modifier = Modifier.weight(1f).height(46.dp),
+                        shape = RoundedCornerShape(12.dp),
+                        colors = ButtonDefaults.outlinedButtonColors(contentColor = Color(0xFFFBBF24)),
+                        border = androidx.compose.foundation.BorderStroke(1.dp, Color(0xFFF59E0B).copy(alpha = 0.4f))
+                    ) {
+                        Icon(Icons.Default.Notifications, contentDescription = null, modifier = Modifier.size(16.dp))
+                        Spacer(modifier = Modifier.width(6.dp))
+                        Text("Alerts (${uiState.safetyAlerts.size})", fontSize = 12.sp, fontWeight = FontWeight.SemiBold)
+                    }
+
+                    OutlinedButton(
+                        onClick = { onOpenEducation() },
+                        modifier = Modifier.weight(1f).height(46.dp),
+                        shape = RoundedCornerShape(12.dp),
+                        colors = ButtonDefaults.outlinedButtonColors(contentColor = Color(0xFF38BDF8)),
+                        border = androidx.compose.foundation.BorderStroke(1.dp, Color(0xFF0284C7).copy(alpha = 0.4f))
+                    ) {
+                        Icon(Icons.Default.School, contentDescription = null, modifier = Modifier.size(16.dp))
+                        Spacer(modifier = Modifier.width(6.dp))
+                        Text("Academy", fontSize = 12.sp, fontWeight = FontWeight.SemiBold)
+                    }
+                }
+            }
+        }
+
+        // Section 5: Recently Checked Messages
+        item {
+            Column(modifier = Modifier.fillMaxWidth()) {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
                     Text(
-                        text = "Protection Service Health",
-                        fontSize = 13.sp,
+                        text = "Recently Checked Messages",
+                        fontSize = 15.sp,
                         fontWeight = FontWeight.Bold,
                         color = Color.White
                     )
-                    Spacer(modifier = Modifier.height(12.dp))
+                    Text(
+                        text = "View All",
+                        fontSize = 12.sp,
+                        fontWeight = FontWeight.SemiBold,
+                        color = Color(0xFF38BDF8),
+                        modifier = Modifier.clickable { onNavigateToHistoryWithFilter?.invoke("Messages", "All") ?: onNavigateToTab(1) }
+                    )
+                }
+                Spacer(modifier = Modifier.height(10.dp))
 
-                    Row(
+                if (uiState.recentMessages.isEmpty()) {
+                    Card(
                         modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.SpaceBetween
+                        colors = CardDefaults.cardColors(containerColor = Color(0xFF1E293B)),
+                        shape = RoundedCornerShape(14.dp)
                     ) {
-                        ProtectionHealthItem(
-                            label = "SMS Shield",
-                            isActive = hasSmsPermission,
-                            icon = Icons.Default.Sms,
-                            onClick = { onNavigateToTab(4) }
-                        )
-                        ProtectionHealthItem(
-                            label = "QR / Camera",
-                            isActive = hasCameraPermission,
-                            icon = Icons.Default.QrCodeScanner,
-                            onClick = { onNavigateToTab(2) }
-                        )
-                        ProtectionHealthItem(
-                            label = "Notifications",
-                            isActive = hasNotificationPermission,
-                            icon = Icons.Default.NotificationsActive,
-                            onClick = { onNavigateToTab(4) }
-                        )
-                        ProtectionHealthItem(
-                            label = "On-Device AI",
-                            isActive = true,
-                            icon = Icons.Default.Memory,
-                            onClick = { onNavigateToTab(4) }
-                        )
+                        Box(modifier = Modifier.fillMaxWidth().padding(24.dp), contentAlignment = Alignment.Center) {
+                            Text("No messages checked yet", fontSize = 12.sp, color = Color(0xFF64748B))
+                        }
+                    }
+                } else {
+                    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                        uiState.recentMessages.take(4).forEach { item ->
+                            ActivityRecordRow(item = item, timeFormatter = timeFormatter, onClick = { onThreatClicked(item) })
+                        }
                     }
                 }
             }
         }
 
-        // Section C: Today's Threat Statistics
+        // Section 6: Recently Scanned QR Codes
         item {
-            Text(
-                text = "Threat Overview",
-                fontSize = 14.sp,
-                fontWeight = FontWeight.Bold,
-                color = Color.White
-            )
-            Spacer(modifier = Modifier.height(8.dp))
+            Column(modifier = Modifier.fillMaxWidth()) {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text(
+                        text = "Recently Scanned QR Codes",
+                        fontSize = 15.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = Color.White
+                    )
+                    Text(
+                        text = "View All",
+                        fontSize = 12.sp,
+                        fontWeight = FontWeight.SemiBold,
+                        color = Color(0xFF38BDF8),
+                        modifier = Modifier.clickable { onNavigateToHistoryWithFilter?.invoke("QR Codes", "All") ?: onNavigateToTab(1) }
+                    )
+                }
+                Spacer(modifier = Modifier.height(10.dp))
 
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(10.dp)
-            ) {
-                ThreatStatCard(
-                    title = "Smishing Blocked",
-                    count = uiState.threatHistory.count { it.source.contains("SMS", ignoreCase = true) },
-                    icon = Icons.Default.SmsFailed,
-                    accentColor = Color(0xFFEF4444),
-                    modifier = Modifier.weight(1f)
-                )
-                ThreatStatCard(
-                    title = "Quishing Scanned",
-                    count = uiState.qrScannedCount,
-                    icon = Icons.Default.QrCode,
-                    accentColor = Color(0xFF0EA5E9),
-                    modifier = Modifier.weight(1f)
-                )
-                ThreatStatCard(
-                    title = "Suspicious Links",
-                    count = uiState.threatHistory.count { it.details.contains("URL", ignoreCase = true) || it.details.contains("http", ignoreCase = true) },
-                    icon = Icons.Default.LinkOff,
-                    accentColor = Color(0xFFF59E0B),
-                    modifier = Modifier.weight(1f)
-                )
+                if (uiState.recentQrScans.isEmpty()) {
+                    Card(
+                        modifier = Modifier.fillMaxWidth(),
+                        colors = CardDefaults.cardColors(containerColor = Color(0xFF1E293B)),
+                        shape = RoundedCornerShape(14.dp)
+                    ) {
+                        Box(modifier = Modifier.fillMaxWidth().padding(24.dp), contentAlignment = Alignment.Center) {
+                            Text("No QR codes scanned yet", fontSize = 12.sp, color = Color(0xFF64748B))
+                        }
+                    }
+                } else {
+                    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                        uiState.recentQrScans.take(4).forEach { item ->
+                            ActivityRecordRow(item = item, timeFormatter = timeFormatter, onClick = { onThreatClicked(item) })
+                        }
+                    }
+                }
             }
         }
 
-        // Section E: Quick Actions
-        item {
-            Text(
-                text = "Quick Actions",
-                fontSize = 14.sp,
-                fontWeight = FontWeight.Bold,
-                color = Color.White
-            )
-            Spacer(modifier = Modifier.height(8.dp))
-
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(8.dp)
-            ) {
-                QuickActionButton(
-                    icon = Icons.Default.Message,
-                    label = "Scan Message",
-                    color = Color(0xFF0EA5E9),
-                    modifier = Modifier.weight(1f),
-                    onClick = { onNavigateToTab(2) }
-                )
-                QuickActionButton(
-                    icon = Icons.Default.QrCodeScanner,
-                    label = "Scan QR",
-                    color = Color(0xFF8B5CF6),
-                    modifier = Modifier.weight(1f),
-                    onClick = { onNavigateToTab(2) }
-                )
-                QuickActionButton(
-                    icon = Icons.Default.Warning,
-                    label = "Alerts",
-                    color = Color(0xFFEF4444),
-                    modifier = Modifier.weight(1f),
-                    onClick = { onNavigateToTab(3) }
-                )
-                QuickActionButton(
-                    icon = Icons.Default.School,
-                    label = "Academy",
-                    color = Color(0xFF10B981),
-                    modifier = Modifier.weight(1f),
-                    onClick = onOpenEducation
-                )
-            }
-        }
-
-        // Section F: Daily Security Tip Card
+        // Section 7: Security Tip of the Day
         item {
             Card(
                 modifier = Modifier
@@ -379,188 +553,79 @@ fun HomeTab(
                 colors = CardDefaults.cardColors(containerColor = Color(0xFF1E293B)),
                 shape = RoundedCornerShape(16.dp)
             ) {
-                Column(modifier = Modifier.padding(16.dp)) {
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.SpaceBetween,
-                        verticalAlignment = Alignment.CenterVertically
+                Row(
+                    modifier = Modifier.padding(14.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Box(
+                        modifier = Modifier
+                            .size(36.dp)
+                            .background(Color(0xFF38BDF8).copy(alpha = 0.15f), CircleShape),
+                        contentAlignment = Alignment.Center
                     ) {
-                        Row(verticalAlignment = Alignment.CenterVertically) {
-                            Icon(Icons.Default.Lightbulb, contentDescription = null, tint = Color(0xFFFBBF24), modifier = Modifier.size(18.dp))
-                            Spacer(modifier = Modifier.width(6.dp))
-                            Text("Daily Security Tip", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = Color(0xFFFBBF24))
-                        }
-                        Text("Tap to read", fontSize = 11.sp, color = Color(0xFF38BDF8))
+                        Icon(Icons.Default.Lightbulb, contentDescription = null, tint = Color(0xFF38BDF8), modifier = Modifier.size(18.dp))
                     }
-                    Spacer(modifier = Modifier.height(6.dp))
-                    Text(todayTip.title, fontSize = 14.sp, fontWeight = FontWeight.Bold, color = Color.White)
-                    Spacer(modifier = Modifier.height(4.dp))
-                    Text(todayTip.summary, fontSize = 12.sp, color = Color(0xFF94A3B8), maxLines = 2)
+                    Spacer(modifier = Modifier.width(12.dp))
+                    Column(modifier = Modifier.weight(1f)) {
+                        Text("Safety Tip: " + todayTip.title, fontSize = 13.sp, fontWeight = FontWeight.Bold, color = Color.White)
+                        Text(todayTip.details, fontSize = 11.sp, color = Color(0xFF94A3B8), maxLines = 1, overflow = TextOverflow.Ellipsis)
+                    }
+                    Icon(Icons.Default.ChevronRight, contentDescription = null, tint = Color(0xFF64748B))
                 }
             }
+            Spacer(modifier = Modifier.height(16.dp))
         }
+    }
+}
 
-        // Section D: Recent Security Activity
-        item {
+@Composable
+fun StatCard(
+    title: String,
+    count: Int,
+    countColor: Color,
+    icon: ImageVector,
+    iconTint: Color,
+    modifier: Modifier = Modifier,
+    onClick: () -> Unit
+) {
+    Card(
+        modifier = modifier.clickable { onClick() },
+        colors = CardDefaults.cardColors(containerColor = Color(0xFF1E293B)),
+        shape = RoundedCornerShape(14.dp)
+    ) {
+        Column(modifier = Modifier.padding(12.dp)) {
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                Text(
-                    text = "Recent Security Activity",
-                    fontSize = 14.sp,
-                    fontWeight = FontWeight.Bold,
-                    color = Color.White
-                )
-                TextButton(onClick = { onNavigateToTab(1) }) {
-                    Text("View All", fontSize = 12.sp, color = Color(0xFF38BDF8))
-                }
-            }
-        }
-
-        if (uiState.threatHistory.isEmpty()) {
-            item {
-                Card(
-                    modifier = Modifier.fillMaxWidth(),
-                    colors = CardDefaults.cardColors(containerColor = Color(0xFF1E293B)),
-                    shape = RoundedCornerShape(12.dp)
-                ) {
-                    Box(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(24.dp),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                            Icon(Icons.Default.Shield, contentDescription = null, tint = Color(0xFF34D399), modifier = Modifier.size(36.dp))
-                            Spacer(modifier = Modifier.height(8.dp))
-                            Text("No threats detected yet", fontSize = 14.sp, fontWeight = FontWeight.Bold, color = Color.White)
-                            Text("Your device is monitoring incoming SMS and scanned QR codes.", fontSize = 12.sp, color = Color(0xFF94A3B8), textAlign = androidx.compose.ui.text.style.TextAlign.Center)
-                        }
-                    }
-                }
-            }
-        } else {
-            items(uiState.threatHistory.take(5)) { threat ->
-                RecentThreatItem(
-                    threat = threat,
-                    onClick = { onThreatClicked(threat) }
-                )
-            }
-        }
-
-        item {
-            Spacer(modifier = Modifier.height(32.dp))
-        }
-    }
-}
-
-@Composable
-fun ProtectionHealthItem(
-    label: String,
-    isActive: Boolean,
-    icon: ImageVector,
-    onClick: () -> Unit
-) {
-    Column(
-        horizontalAlignment = Alignment.CenterHorizontally,
-        modifier = Modifier.clickable { onClick() }
-    ) {
-        Box(
-            modifier = Modifier
-                .size(40.dp)
-                .background(
-                    if (isActive) Color(0xFF10B981).copy(alpha = 0.2f) else Color(0xFFEF4444).copy(alpha = 0.2f),
-                    CircleShape
-                ),
-            contentAlignment = Alignment.Center
-        ) {
-            Icon(
-                imageVector = icon,
-                contentDescription = label,
-                tint = if (isActive) Color(0xFF34D399) else Color(0xFFF87171),
-                modifier = Modifier.size(20.dp)
-            )
-        }
-        Spacer(modifier = Modifier.height(4.dp))
-        Text(label, fontSize = 10.sp, color = Color(0xFF94A3B8))
-        Text(
-            if (isActive) "Active" else "Action",
-            fontSize = 9.sp,
-            fontWeight = FontWeight.Bold,
-            color = if (isActive) Color(0xFF34D399) else Color(0xFFF87171)
-        )
-    }
-}
-
-@Composable
-fun ThreatStatCard(
-    title: String,
-    count: Int,
-    icon: ImageVector,
-    accentColor: Color,
-    modifier: Modifier = Modifier
-) {
-    Card(
-        modifier = modifier,
-        colors = CardDefaults.cardColors(containerColor = Color(0xFF1E293B)),
-        shape = RoundedCornerShape(12.dp)
-    ) {
-        Column(modifier = Modifier.padding(12.dp)) {
-            Icon(imageVector = icon, contentDescription = null, tint = accentColor, modifier = Modifier.size(18.dp))
-            Spacer(modifier = Modifier.height(8.dp))
-            Text("$count", fontSize = 18.sp, fontWeight = FontWeight.Bold, color = Color.White)
-            Text(title, fontSize = 10.sp, color = Color(0xFF94A3B8), maxLines = 1, overflow = TextOverflow.Ellipsis)
-        }
-    }
-}
-
-@Composable
-fun QuickActionButton(
-    icon: ImageVector,
-    label: String,
-    color: Color,
-    modifier: Modifier = Modifier,
-    onClick: () -> Unit
-) {
-    Surface(
-        modifier = modifier
-            .clip(RoundedCornerShape(12.dp))
-            .clickable { onClick() },
-        color = Color(0xFF1E293B),
-        shape = RoundedCornerShape(12.dp)
-    ) {
-        Column(
-            modifier = Modifier.padding(vertical = 12.dp, horizontal = 4.dp),
-            horizontalAlignment = Alignment.CenterHorizontally
-        ) {
-            Box(
-                modifier = Modifier
-                    .size(36.dp)
-                    .background(color.copy(alpha = 0.2f), CircleShape),
-                contentAlignment = Alignment.Center
-            ) {
-                Icon(icon, contentDescription = label, tint = color, modifier = Modifier.size(18.dp))
+                Text(title, fontSize = 11.sp, color = Color(0xFF94A3B8), maxLines = 1, overflow = TextOverflow.Ellipsis)
+                Icon(icon, contentDescription = null, tint = iconTint, modifier = Modifier.size(14.dp))
             }
             Spacer(modifier = Modifier.height(6.dp))
-            Text(label, fontSize = 10.sp, fontWeight = FontWeight.Medium, color = Color.White, textAlign = androidx.compose.ui.text.style.TextAlign.Center)
+            Text(
+                text = "$count",
+                fontSize = 20.sp,
+                fontWeight = FontWeight.Bold,
+                color = countColor
+            )
         }
     }
 }
 
 @Composable
-fun RecentThreatItem(
-    threat: ThreatRecord,
+fun ActivityRecordRow(
+    item: ThreatRecord,
+    timeFormatter: SimpleDateFormat,
     onClick: () -> Unit
 ) {
-    val isCritical = threat.riskScore >= 70
-    val isSuspicious = threat.riskScore in 40..69
+    val isDangerous = item.riskScore >= 70 || item.category.contains("HIGH", ignoreCase = true) || item.category.contains("SMISHING", ignoreCase = true) || item.category.contains("QUISHING", ignoreCase = true)
+    val isAttention = !isDangerous && (item.riskScore >= 40 || item.category.contains("MEDIUM", ignoreCase = true) || item.category.contains("SUSPICIOUS", ignoreCase = true) || item.category.contains("SPAM", ignoreCase = true))
 
-    val badgeColor = when {
-        isCritical -> Color(0xFFEF4444)
-        isSuspicious -> Color(0xFFF59E0B)
-        else -> Color(0xFF10B981)
+    val (badgeText, badgeColor, badgeBg) = when {
+        isDangerous -> Triple("Dangerous", Color(0xFFF87171), Color(0xFFF87171).copy(alpha = 0.15f))
+        isAttention -> Triple("Needs Attention", Color(0xFFFBBF24), Color(0xFFFBBF24).copy(alpha = 0.15f))
+        else -> Triple("Looks Safe", Color(0xFF34D399), Color(0xFF34D399).copy(alpha = 0.15f))
     }
 
     Card(
@@ -571,74 +636,64 @@ fun RecentThreatItem(
         shape = RoundedCornerShape(12.dp)
     ) {
         Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(12.dp),
+            modifier = Modifier.padding(12.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            Box(
-                modifier = Modifier
-                    .size(36.dp)
-                    .background(badgeColor.copy(alpha = 0.2f), CircleShape),
-                contentAlignment = Alignment.Center
-            ) {
-                Icon(
-                    imageVector = if (threat.source.contains("QR", ignoreCase = true)) Icons.Default.QrCode else Icons.Default.Sms,
-                    contentDescription = null,
-                    tint = badgeColor,
-                    modifier = Modifier.size(18.dp)
-                )
-            }
-
-            Spacer(modifier = Modifier.width(12.dp))
-
+            Icon(
+                imageVector = if (item.source.contains("QR", ignoreCase = true)) Icons.Default.QrCode else Icons.Default.MailOutline,
+                contentDescription = null,
+                tint = if (item.source.contains("QR", ignoreCase = true)) Color(0xFFA78BFA) else Color(0xFF38BDF8),
+                modifier = Modifier.size(18.dp)
+            )
+            Spacer(modifier = Modifier.width(10.dp))
             Column(modifier = Modifier.weight(1f)) {
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.SpaceBetween,
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        Text(threat.category, fontSize = 12.sp, fontWeight = FontWeight.Bold, color = Color.White)
-                        if (threat.isQuarantined) {
-                            Spacer(modifier = Modifier.width(4.dp))
-                            Text("🛡️", fontSize = 10.sp)
-                        }
-                    }
                     Text(
-                        SimpleDateFormat("hh:mm a", Locale.getDefault()).format(Date(threat.timestamp)),
+                        text = item.sender.ifBlank { if (item.source.contains("QR", ignoreCase = true)) "QR Code" else "Unknown Sender" },
+                        fontSize = 13.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = Color.White,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis
+                    )
+                    Surface(
+                        color = badgeBg,
+                        shape = RoundedCornerShape(6.dp)
+                    ) {
+                        Text(
+                            text = badgeText,
+                            fontSize = 10.sp,
+                            fontWeight = FontWeight.SemiBold,
+                            color = badgeColor,
+                            modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
+                        )
+                    }
+                }
+                Spacer(modifier = Modifier.height(3.dp))
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text(
+                        text = item.rawContent?.take(60) ?: item.details.take(60),
+                        fontSize = 11.sp,
+                        color = Color(0xFF94A3B8),
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
+                        modifier = Modifier.weight(1f)
+                    )
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Text(
+                        text = timeFormatter.format(Date(item.timestamp)),
                         fontSize = 10.sp,
                         color = Color(0xFF64748B)
                     )
                 }
-                Spacer(modifier = Modifier.height(2.dp))
-                val contentPreview = if (!threat.rawContent.isNullOrBlank()) {
-                    "${threat.sender}: ${threat.rawContent}"
-                } else {
-                    threat.details.ifBlank { "Flagged suspicious activity from ${threat.sender}" }
-                }
-                Text(
-                    text = contentPreview,
-                    fontSize = 11.sp,
-                    color = Color(0xFF94A3B8),
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis
-                )
-            }
-
-            Spacer(modifier = Modifier.width(8.dp))
-
-            Surface(
-                color = badgeColor.copy(alpha = 0.2f),
-                shape = RoundedCornerShape(6.dp)
-            ) {
-                Text(
-                    "${threat.riskScore}",
-                    fontSize = 11.sp,
-                    fontWeight = FontWeight.Bold,
-                    color = badgeColor,
-                    modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
-                )
             }
         }
     }

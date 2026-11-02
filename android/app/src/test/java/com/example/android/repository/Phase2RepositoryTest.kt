@@ -42,7 +42,11 @@ class Phase2RepositoryTest {
             return Result.success(Unit)
         }
 
-        override suspend fun clearAllThreats(): Result<Unit> {
+            override suspend fun addThreats(threats: List<com.example.android.domain.model.ThreatRecord>): Result<Unit> = Result.success(Unit)
+    override fun observeThreatsByUserId(userId: String?): kotlinx.coroutines.flow.Flow<List<com.example.android.domain.model.ThreatRecord>> = observeAllThreats()
+    override suspend fun deleteThreatsByUserId(userId: String): Result<Unit> = Result.success(Unit)
+
+    override suspend fun clearAllThreats(): Result<Unit> {
             list.clear()
             return Result.success(Unit)
         }

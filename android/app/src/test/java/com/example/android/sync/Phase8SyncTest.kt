@@ -302,6 +302,17 @@ class Phase8SyncTest {
             return count
         }
 
+        override suspend fun resetAllPendingForImmediateSync(): Int {
+            var count = 0
+            items.forEachIndexed { idx, entity ->
+                if (entity.status == "FAILED" || entity.status == "PENDING") {
+                    items[idx] = entity.copy(status = "PENDING", nextAttemptAt = 0L)
+                    count++
+                }
+            }
+            return count
+        }
+
         override suspend fun purgeOldSynced(cutoffTimestamp: Long): Int {
             val before = items.size
             items.removeAll { it.status == "SYNCED" && (it.syncedAt ?: 0L) < cutoffTimestamp }

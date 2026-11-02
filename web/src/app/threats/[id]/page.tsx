@@ -29,6 +29,7 @@ import {
   Share2,
 } from 'lucide-react';
 import { useAuth } from '@/context/AuthContext';
+import { sessionManager } from '@/services/sessionManager';
 import {
   getUserThreatById,
   takeUserThreatAction,
@@ -48,27 +49,50 @@ export default function ThreatDetailPage() {
   const [isUpdatingAction, setIsUpdatingAction] = useState<boolean>(false);
   const [actionMessage, setActionMessage] = useState<string | null>(null);
 
+  // Clear component state on session reset / logout
+  useEffect(() => {
+    const deregister = sessionManager.registerResetHandler(() => {
+      setThreat(null);
+      setError(null);
+      setActionMessage(null);
+      setIsLoading(false);
+    });
+    return () => deregister();
+  }, []);
+
   const fetchThreat = useCallback(async () => {
+    const currentUid = user?.firebase_uid;
+    if (!currentUid) {
+      setThreat(null);
+      setIsLoading(false);
+      return;
+    }
+
+    const currentGeneration = sessionManager.getGeneration();
     setIsLoading(true);
     setError(null);
     try {
       // 1. First attempt to load direct from user's isolated Firestore collection
-      if (user?.firebase_uid) {
-        const firestoreRecord = await getUserThreatById(user.firebase_uid, threatId);
-        if (firestoreRecord) {
-          setThreat(firestoreRecord);
-          setIsLoading(false);
-          return;
-        }
+      const firestoreRecord = await getUserThreatById(currentUid, threatId);
+      if (!sessionManager.isValidSession(currentGeneration, currentUid)) return;
+      if (firestoreRecord) {
+        setThreat(firestoreRecord);
+        setIsLoading(false);
+        return;
       }
 
       // 2. Fallback to API if not yet synced in client or legacy record
       const data = await api.userThreats.get(threatId);
+      if (!sessionManager.isValidSession(currentGeneration, currentUid)) return;
       setThreat(data);
     } catch (err: any) {
-      setError(err.message || 'Unable to retrieve threat report.');
+      if (sessionManager.isValidSession(currentGeneration, currentUid)) {
+        setError(err.message || 'Unable to retrieve threat report.');
+      }
     } finally {
-      setIsLoading(false);
+      if (sessionManager.isValidSession(currentGeneration, currentUid)) {
+        setIsLoading(false);
+      }
     }
   }, [threatId, user?.firebase_uid]);
 

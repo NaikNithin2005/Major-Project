@@ -1,0 +1,90 @@
+{
+  "title": "Squish Multi-Model Benchmark Comparison",
+  "models": {
+    "TinyBERT": {
+      "model_name": "TinyBERT Smishing Classifier v2",
+      "format": "ONNX",
+      "parameters": 14500000,
+      "model_size_mb": 53.89,
+      "test_samples": 1959,
+      "metrics": {
+        "accuracy": 0.9005,
+        "precision": 0.8613,
+        "recall": 0.9317,
+        "f1_score": 0.8951,
+        "roc_auc": 0.9611,
+        "pr_auc": 0.9464,
+        "false_positive_rate": 0.1257,
+        "false_negative_rate": 0.0683,
+        "confusion_matrix": {
+          "true_negatives": 932,
+          "false_positives": 134,
+          "false_negatives": 61,
+          "true_positives": 832
+        }
+      },
+      "latency_ms": {
+        "mean": 6.01,
+        "median": 5.75,
+        "p95": 7.84,
+        "p99": 13.15
+      }
+    },
+    "XGBoost": {
+      "model_name": "XGBoost URL Classifier v2",
+      "format": "ONNX",
+      "features_count": 16,
+      "model_size_mb": 0.72,
+      "test_samples": 67527,
+      "metrics": {
+        "accuracy": 0.9937,
+        "precision": 0.9959,
+        "recall": 0.977,
+        "f1_score": 0.9863,
+        "roc_auc": 0.9973,
+        "pr_auc": 0.9955,
+        "false_positive_rate": 0.0012,
+        "false_negative_rate": 0.023,
+        "confusion_matrix": {
+          "true_negatives": 51798,
+          "false_positives": 63,
+          "false_negatives": 361,
+          "true_positives": 15305
+        }
+      },
+      "latency_ms": {
+        "mean": 0.026,
+        "median": 0.02,
+        "p95": 0.026,
+        "p99": 0.1
+      }
+    },
+    "Isolation Forest": {
+      "model_name": "Isolation Forest Zero-Day Detector v1",
+      "format": "ONNX",
+      "features_count": 16,
+      "model_size_mb": 0.65,
+      "test_samples": 10000,
+      "metrics": {
+        "accuracy": 0.235,
+        "precision": 1.0,
+        "recall": 0.235,
+        "f1_score": 0.3806,
+        "false_positive_rate": 0.0,
+        "false_negative_rate": 0.765,
+        "confusion_matrix": {
+          "true_negatives": 0,
+          "false_positives": 0,
+          "false_negatives": 7650,
+          "true_positives": 2350
+        }
+      },
+      "latency_ms": {
+        "mean": 1.715,
+        "median": 1.597,
+        "p95": 2.154,
+        "p99": 2.699
+      }
+    }
+  }
+}

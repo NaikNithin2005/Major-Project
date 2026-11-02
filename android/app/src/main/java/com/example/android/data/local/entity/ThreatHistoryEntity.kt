@@ -20,5 +20,21 @@ data class ThreatHistoryEntity(
     val modelVersion: String? = null,            // e.g. "tinybert-smishing-v2", "xgboost-url-v2"
     val isQuarantined: Boolean = false,          // Quarantine status
     val reviewStatus: String = "NEW",            // "NEW", "REVIEWED", "RESOLVED", "BLOCKED"
-    val contentRetentionMode: String = "LOCAL_SAVED" // "LOCAL_SAVED", "SESSION_ONLY", "NOT_RETAINED"
-)
+    val contentRetentionMode: String = "LOCAL_SAVED", // "LOCAL_SAVED", "SESSION_ONLY", "NOT_RETAINED"
+    val pendingOperation: String = OP_NONE,      // "NONE", "REMOTE_REPUTATION_CHECK", "TELEMETRY_SYNC"
+    val syncStatus: String = STATUS_SYNCED,      // "PENDING", "SYNCING", "SYNCED", "FAILED"
+    val retryCount: Int = 0,                     // Retry counter for background sync
+    val userId: String? = null                   // Authenticated account scope for cloud synchronization
+) {
+    companion object {
+        const val OP_NONE = "NONE"
+        const val OP_REMOTE_REPUTATION_CHECK = "REMOTE_REPUTATION_CHECK"
+        const val OP_TELEMETRY_SYNC = "TELEMETRY_SYNC"
+
+        const val STATUS_PENDING = "PENDING"
+        const val STATUS_SYNCING = "SYNCING"
+        const val STATUS_SYNCED = "SYNCED"
+        const val STATUS_FAILED = "FAILED"
+    }
+}
+

@@ -79,6 +79,11 @@ fun AegisNavGraph(
 
             SplashScreen(
                 authState = authState,
+                onNavigateToPermissions = {
+                    navController.navigate(Screen.Permissions.route) {
+                        popUpTo(Screen.Splash.route) { inclusive = true }
+                    }
+                },
                 onNavigateToOnboarding = {
                     navController.navigate(Screen.Onboarding.route) {
                         popUpTo(Screen.Splash.route) { inclusive = true }
@@ -99,6 +104,44 @@ fun AegisNavGraph(
                             val checkRoute = Screen.SecurityCheck.createRoute(target, initialDeepLink.source)
                             navController.navigate(checkRoute)
                             onDeepLinkConsumed()
+                        }
+                    }
+                }
+            )
+        }
+
+        // Permissions Request Screen (shown before opening the app if permissions not granted)
+        composable(Screen.Permissions.route) {
+            val splashViewModel: SplashViewModel = viewModel(
+                factory = AppViewModelFactory { SplashViewModel(container.getAuthStateUseCase) }
+            )
+            val authState by splashViewModel.authState.collectAsState()
+
+            com.example.android.presentation.permission.PermissionScreen(
+                onPermissionsGranted = {
+                    when (authState) {
+                        is AuthState.Authenticated -> {
+                            navController.navigate(Screen.Main.route) {
+                                popUpTo(Screen.Permissions.route) { inclusive = true }
+                            }
+                            if (initialDeepLink != null) {
+                                val target = initialDeepLink.normalizedUrl.ifBlank { initialDeepLink.rawInput }
+                                if (target.isNotBlank()) {
+                                    val checkRoute = Screen.SecurityCheck.createRoute(target, initialDeepLink.source)
+                                    navController.navigate(checkRoute)
+                                    onDeepLinkConsumed()
+                                }
+                            }
+                        }
+                        is AuthState.Unauthenticated, is AuthState.Error -> {
+                            navController.navigate(Screen.Onboarding.route) {
+                                popUpTo(Screen.Permissions.route) { inclusive = true }
+                            }
+                        }
+                        else -> {
+                            navController.navigate(Screen.Login.route) {
+                                popUpTo(Screen.Permissions.route) { inclusive = true }
+                            }
                         }
                     }
                 }
@@ -208,7 +251,10 @@ fun AegisNavGraph(
                         container.addThreatRecordUseCase,
                         container.deleteThreatRecordUseCase,
                         container.syncRepository,
-                        container.submitFeedbackUseCase
+                        container.submitFeedbackUseCase,
+                        container.trustedSenderRepository,
+                        container.feedbackRepository,
+                        container.settingsRepository
                     )
                 }
             )
@@ -221,6 +267,8 @@ fun AegisNavGraph(
             )
             val authState by viewModel.authState.collectAsState()
             val uiState by viewModel.uiState.collectAsState()
+            val trustedSenders by viewModel.trustedSenders.collectAsState()
+            val systemSettings by viewModel.systemSettings.collectAsState()
             val currentUser = (authState as? AuthState.Authenticated)?.user
 
             DashboardScreen(
@@ -231,7 +279,12 @@ fun AegisNavGraph(
                 onToggleQuarantine = viewModel::toggleQuarantine,
                 onSaveThreat = viewModel::saveThreat,
                 onClearAllThreats = viewModel::clearAllThreats,
-                onSubmitFeedback = viewModel::submitFeedback,
+                onSubmitFeedback = { tId, cat, comm -> viewModel.submitFeedback(tId, cat, comm) },
+                trustedSenders = trustedSenders,
+                onToggleTrustSender = viewModel::toggleTrustSender,
+                onSubmitDetailedFeedback = { tId, cat, comm, sender, orig, corr ->
+                    viewModel.submitFeedback(tId, cat, comm, sender, orig, corr)
+                },
                 onTriggerManualSync = { viewModel.triggerManualSync(context) },
                 onOpenEducation = {
                     navController.navigate(Screen.Education.route)
@@ -251,12 +304,28 @@ fun AegisNavGraph(
                 onOpenSecurityCheck = { url, source ->
                     navController.navigate(Screen.SecurityCheck.createRoute(url, source))
                 },
+                onOpenProtectionSetup = {
+                    navController.navigate(Screen.Permissions.route)
+                },
                 smishingClassifier = container.smishingClassifier,
                 urlClassifier = container.urlClassifier,
                 ruleEngine = container.ruleEngine,
                 explainableAiEngine = container.explainableAiEngine,
                 processQrCodeUseCase = container.processQrCodeUseCase,
-                aiViewModel = aiViewModel
+                aiViewModel = aiViewModel,
+                systemSettings = systemSettings,
+                onToggleSmsProtection = viewModel::toggleSmsProtection,
+                onToggleQrProtection = viewModel::toggleQrProtection,
+                onToggleUrlAnalysis = viewModel::toggleUrlAnalysis,
+                onToggleHaptics = { viewModel.toggleHaptics(context, it) },
+                onToggleNotifyHighSeverity = viewModel::toggleNotifyHighSeverity,
+                onToggleNotifyMediumSeverity = viewModel::toggleNotifyMediumSeverity,
+                onToggleNotifyDailyTips = viewModel::toggleNotifyDailyTips,
+                onToggleShowNotificationPreviews = viewModel::toggleShowNotificationPreviews,
+                onToggleAiModelEnabled = viewModel::toggleAiModelEnabled,
+                onToggleOptInAiLearning = viewModel::toggleOptInAiLearning,
+                onToggleCloudSync = viewModel::toggleCloudSync,
+                onRestoreCloudHistory = { viewModel.restoreCloudHistory(context) }
             )
         }
 

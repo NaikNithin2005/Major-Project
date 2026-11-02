@@ -16,7 +16,20 @@ class Phase2SettingsTest {
 
         override fun observeSettings(): Flow<SystemSettings> = state
 
-        override suspend fun setSmsProtection(enabled: Boolean): Result<Unit> {
+            override suspend fun getSettings(): com.example.android.domain.model.SystemSettings = com.example.android.domain.model.SystemSettings()
+    override suspend fun setUrlAnalysis(enabled: Boolean): Result<Unit> = Result.success(Unit)
+    override suspend fun setHaptics(enabled: Boolean): Result<Unit> = Result.success(Unit)
+    override suspend fun setNotifyHighSeverity(enabled: Boolean): Result<Unit> = Result.success(Unit)
+    override suspend fun setNotifyMediumSeverity(enabled: Boolean): Result<Unit> = Result.success(Unit)
+    override suspend fun setNotifyDailyTips(enabled: Boolean): Result<Unit> = Result.success(Unit)
+    override suspend fun setShowNotificationPreviews(enabled: Boolean): Result<Unit> = Result.success(Unit)
+    override suspend fun setAiModelEnabled(enabled: Boolean): Result<Unit> = Result.success(Unit)
+    override suspend fun setOptInAiLearning(enabled: Boolean): Result<Unit> = Result.success(Unit)
+    override suspend fun setCloudSyncEnabled(enabled: Boolean): Result<Unit> = Result.success(Unit)
+    override suspend fun setDarkTheme(enabled: Boolean): Result<Unit> = Result.success(Unit)
+    override suspend fun syncSettingsWithCloud(userId: String): Result<Unit> = Result.success(Unit)
+
+    override suspend fun setSmsProtection(enabled: Boolean): Result<Unit> {
             state.value = state.value.copy(realtimeSmsProtection = enabled)
             return Result.success(Unit)
         }

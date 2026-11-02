@@ -39,6 +39,7 @@ import com.example.android.domain.rules.RuleEngine
 import com.example.android.domain.usecase.ProcessQrCodeUseCase
 import com.example.android.domain.xai.ExplainableAiEngine
 import com.example.android.sync.SyncScheduler
+import com.example.android.util.HapticFeedbackHelper
 import kotlinx.coroutines.launch
 import java.util.UUID
 
@@ -91,13 +92,13 @@ fun ScannerTab(
                         val qrRes = processQrCodeUseCase(rawDecoded, source = "GALLERY").getOrNull()
                         val score = qrRes?.riskScore ?: 0
                         val isMalicious = qrRes?.isQuishing == true
-                        val verdict = if (isMalicious) "MALICIOUS" else if (score >= 40) "SUSPICIOUS" else "SAFE"
+                        val verdict = if (isMalicious) "Dangerous" else if (score >= 40) "Needs Attention" else "Looks Safe"
                         scanResult = ManualScanResult(
                             verdict = verdict,
                             severity = if (isMalicious) "HIGH" else if (score >= 40) "MEDIUM" else "SAFE",
                             score = score,
                             confidence = qrRes?.confidence ?: 0.9f,
-                            category = "QR Code / Quishing",
+                            category = "QR Code Check",
                             reasons = listOf(
                                 "Decoded Payload: ${qrRes?.extractedUrl ?: rawDecoded}",
                                 "Domain: ${qrRes?.domain?.ifBlank { "Text / Data payload" } ?: "Text / Data payload"}"
@@ -110,6 +111,7 @@ fun ScannerTab(
                             scannedContent = qrRes?.extractedUrl ?: rawDecoded,
                             source = "QR_GALLERY"
                         )
+                        HapticFeedbackHelper.performScanResultHaptic(context, score, isMalicious, qrRes?.id ?: rawDecoded)
                     } else {
                         Toast.makeText(context, "No valid QR code found in selected image", Toast.LENGTH_SHORT).show()
                     }
@@ -131,13 +133,13 @@ fun ScannerTab(
         item {
             Spacer(modifier = Modifier.height(8.dp))
             Text(
-                text = "Manual Security Scanner",
+                text = "Check Messages, Links & QR Codes",
                 fontSize = 20.sp,
                 fontWeight = FontWeight.Bold,
                 color = Color.White
             )
             Text(
-                text = "Analyze messages, URLs, and QR codes before opening them",
+                text = "Check messages, links, and QR codes for scams before opening them",
                 fontSize = 12.sp,
                 color = Color(0xFF94A3B8)
             )
@@ -277,11 +279,11 @@ fun ScannerTab(
                                             val isHigh = score >= 70
                                             val isMed = score in 40..69
                                             scanResult = ManualScanResult(
-                                                verdict = if (isHigh) "MALICIOUS" else if (isMed) "SUSPICIOUS" else "SAFE",
+                                                verdict = if (isHigh) "Dangerous" else if (isMed) "Needs Attention" else "Looks Safe",
                                                 severity = if (isHigh) "CRITICAL" else if (isMed) "MEDIUM" else "SAFE",
                                                 score = score,
                                                 confidence = smishingProb,
-                                                category = "Smishing Detection",
+                                                category = "Message Scam Check",
                                                 reasons = xaiReasons.map { "${it.title}: ${it.description}" },
                                                 recommendedActions = if (isHigh) {
                                                     listOf("Do not click links or reply", "Delete message immediately", "Block the sender")
@@ -291,6 +293,7 @@ fun ScannerTab(
                                                 scannedContent = messageInput,
                                                 source = "MANUAL_SMS"
                                             )
+                                            HapticFeedbackHelper.performScanResultHaptic(context, score, isHigh, messageInput)
                                         } finally {
                                             isAnalyzing = false
                                         }
@@ -305,11 +308,11 @@ fun ScannerTab(
                             if (isAnalyzing) {
                                 CircularProgressIndicator(modifier = Modifier.size(16.dp), color = Color.White, strokeWidth = 2.dp)
                                 Spacer(modifier = Modifier.width(8.dp))
-                                Text("Analyzing with TinyBERT AI...")
+                                Text("Checking Message for Scams...")
                             } else {
                                 Icon(Icons.Default.Security, contentDescription = null, modifier = Modifier.size(16.dp))
                                 Spacer(modifier = Modifier.width(8.dp))
-                                Text("Analyze Message with On-Device AI", fontWeight = FontWeight.Bold, fontSize = 13.sp)
+                                Text("Check Message for Scams", fontWeight = FontWeight.Bold, fontSize = 13.sp)
                             }
                         }
                     }
@@ -419,7 +422,7 @@ fun ScannerTab(
                                             val isHigh = score >= 70
                                             val isMed = score in 40..69
                                             scanResult = ManualScanResult(
-                                                verdict = if (isHigh) "MALICIOUS" else if (isMed) "SUSPICIOUS" else "SAFE",
+                                                verdict = if (isHigh) "Dangerous" else if (isMed) "Needs Attention" else "Looks Safe",
                                                 severity = if (isHigh) "CRITICAL" else if (isMed) "MEDIUM" else "SAFE",
                                                 score = score,
                                                 confidence = urlProb,
@@ -433,6 +436,7 @@ fun ScannerTab(
                                                 scannedContent = normalized,
                                                 source = "MANUAL_URL"
                                             )
+                                            HapticFeedbackHelper.performScanResultHaptic(context, score, isHigh, normalized)
                                         } finally {
                                             isAnalyzing = false
                                         }
@@ -486,7 +490,7 @@ fun ScannerTab(
 
                         Text("Scan or Import QR Code", fontSize = 15.sp, fontWeight = FontWeight.Bold, color = Color.White)
                         Text(
-                            "Squish analyzes the encoded URL using XGBoost and rule engines without auto-opening it.",
+                            "Squish checks the website address stored in this QR code for scam indicators before opening it.",
                             fontSize = 12.sp,
                             color = Color(0xFF94A3B8),
                             textAlign = androidx.compose.ui.text.style.TextAlign.Center
@@ -548,7 +552,7 @@ fun ScannerTab(
                             sender = if (payloadType == "SMS") "Manual Submission" else scanResult!!.scannedContent.take(40),
                             riskScore = scanResult!!.score,
                             category = scanResult!!.category,
-                            actionTaken = if (scanResult!!.verdict == "MALICIOUS") "BLOCK" else "WARN_USER",
+                            actionTaken = if (scanResult!!.verdict == "Dangerous") "BLOCKED" else if (scanResult!!.verdict == "Needs Attention") "WARNED" else "PROCEED_SAFELY",
                             details = scanResult!!.reasons.joinToString("; "),
                             rawContent = scanResult!!.scannedContent,
                             extractedUrl = extractedUrl,

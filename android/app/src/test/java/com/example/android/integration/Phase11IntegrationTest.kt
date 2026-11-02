@@ -343,6 +343,17 @@ class Phase11IntegrationTest {
             return count
         }
 
+        override suspend fun resetAllPendingForImmediateSync(): Int {
+            var count = 0
+            items.forEachIndexed { idx, entity ->
+                if (entity.status == SyncQueueEntity.STATUS_FAILED || entity.status == SyncQueueEntity.STATUS_PENDING) {
+                    items[idx] = entity.copy(status = SyncQueueEntity.STATUS_PENDING, nextAttemptAt = 0L)
+                    count++
+                }
+            }
+            return count
+        }
+
         override suspend fun purgeOldSynced(cutoffTimestamp: Long): Int {
             val before = items.size
             items.removeAll { it.status == SyncQueueEntity.STATUS_SYNCED && (it.syncedAt ?: 0L) < cutoffTimestamp }
@@ -374,7 +385,11 @@ class Phase11IntegrationTest {
             records.removeAll { it.id == id }
         }
 
-        override suspend fun clearAllThreats() {
+            override suspend fun insertThreats(threats: List<com.example.android.data.local.entity.ThreatHistoryEntity>) { threats.forEach { insertThreat(it) } }
+    override fun observeThreatsByUserId(userId: String?): kotlinx.coroutines.flow.Flow<List<com.example.android.data.local.entity.ThreatHistoryEntity>> = observeAllThreats()
+    override suspend fun deleteThreatsByUserId(userId: String) {}
+
+    override suspend fun clearAllThreats() {
             records.clear()
         }
 
@@ -394,6 +409,20 @@ class Phase11IntegrationTest {
         override suspend fun updateThreatAction(id: String, action: String) {
             val idx = records.indexOfFirst { it.id == id }
             if (idx >= 0) records[idx] = records[idx].copy(actionTaken = action)
+        }
+
+        override suspend fun getPendingThreats(userId: String?): List<ThreatHistoryEntity> {
+            return records.filter { it.syncStatus == "PENDING" && (userId == null || it.userId == null || it.userId == userId) }
+        }
+
+        override suspend fun updateSyncStatus(id: String, syncStatus: String) {
+            val idx = records.indexOfFirst { it.id == id }
+            if (idx >= 0) records[idx] = records[idx].copy(syncStatus = syncStatus, retryCount = records[idx].retryCount + 1)
+        }
+
+        override suspend fun updatePendingOperation(id: String, pendingOperation: String) {
+            val idx = records.indexOfFirst { it.id == id }
+            if (idx >= 0) records[idx] = records[idx].copy(pendingOperation = pendingOperation)
         }
     }
 

@@ -189,7 +189,11 @@ class SecurityCheckPipelineTest {
             return Result.success(Unit)
         }
 
-        override suspend fun clearAllThreats(): Result<Unit> {
+            override suspend fun addThreats(threats: List<com.example.android.domain.model.ThreatRecord>): Result<Unit> = Result.success(Unit)
+    override fun observeThreatsByUserId(userId: String?): kotlinx.coroutines.flow.Flow<List<com.example.android.domain.model.ThreatRecord>> = observeAllThreats()
+    override suspend fun deleteThreatsByUserId(userId: String): Result<Unit> = Result.success(Unit)
+
+    override suspend fun clearAllThreats(): Result<Unit> {
             savedThreats.clear()
             return Result.success(Unit)
         }
@@ -219,7 +223,12 @@ class SecurityCheckPipelineTest {
     class FakeFeedbackRepository : FeedbackRepository {
         val savedFeedback = mutableListOf<UserFeedback>()
 
-        override suspend fun submitFeedback(feedback: UserFeedback): Result<Unit> {
+            override suspend fun getFeedbackForSender(sender: String): List<com.example.android.domain.model.UserFeedback> = emptyList()
+    override suspend fun getFeedbackForThreat(threatId: String): com.example.android.domain.model.UserFeedback? = null
+    override suspend fun deleteFeedback(id: String): Result<Unit> = Result.success(Unit)
+    override suspend fun deleteFeedbackForThreat(threatId: String): Result<Unit> = Result.success(Unit)
+
+    override suspend fun submitFeedback(feedback: UserFeedback): Result<Unit> {
             savedFeedback.add(feedback)
             return Result.success(Unit)
         }

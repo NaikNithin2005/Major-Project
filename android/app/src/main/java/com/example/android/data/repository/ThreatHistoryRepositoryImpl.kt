@@ -20,6 +20,15 @@ class ThreatHistoryRepositoryImpl(
         }
     }
 
+    override suspend fun addThreats(threats: List<ThreatRecord>): Result<Unit> {
+        return try {
+            dao.insertThreats(threats.map { it.toEntity() })
+            Result.success(Unit)
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
+
     override suspend fun getThreatById(id: String): Result<ThreatRecord?> {
         return try {
             val entity = dao.getThreatById(id)
@@ -31,6 +40,12 @@ class ThreatHistoryRepositoryImpl(
 
     override fun observeAllThreats(): Flow<List<ThreatRecord>> {
         return dao.observeAllThreats().map { list ->
+            list.map { it.toDomain() }
+        }
+    }
+
+    override fun observeThreatsByUserId(userId: String?): Flow<List<ThreatRecord>> {
+        return dao.observeThreatsByUserId(userId).map { list ->
             list.map { it.toDomain() }
         }
     }
@@ -95,6 +110,15 @@ class ThreatHistoryRepositoryImpl(
         }
     }
 
+    override suspend fun deleteThreatsByUserId(userId: String): Result<Unit> {
+        return try {
+            dao.deleteThreatsByUserId(userId)
+            Result.success(Unit)
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
+
     override suspend fun clearAllThreats(): Result<Unit> {
         return try {
             dao.clearAllThreats()
@@ -120,7 +144,11 @@ class ThreatHistoryRepositoryImpl(
         modelVersion = modelVersion,
         isQuarantined = isQuarantined,
         reviewStatus = reviewStatus,
-        contentRetentionMode = contentRetentionMode
+        contentRetentionMode = contentRetentionMode,
+        pendingOperation = pendingOperation,
+        syncStatus = syncStatus,
+        retryCount = retryCount,
+        userId = userId
     )
 
     private fun ThreatHistoryEntity.toDomain() = ThreatRecord(
@@ -139,6 +167,10 @@ class ThreatHistoryRepositoryImpl(
         modelVersion = modelVersion,
         isQuarantined = isQuarantined,
         reviewStatus = reviewStatus,
-        contentRetentionMode = contentRetentionMode
+        contentRetentionMode = contentRetentionMode,
+        pendingOperation = pendingOperation,
+        syncStatus = syncStatus,
+        retryCount = retryCount,
+        userId = userId
     )
 }

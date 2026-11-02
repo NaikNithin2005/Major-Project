@@ -1,0 +1,93 @@
+{
+  "datasets": {
+    "sms_train.csv": {
+      "description": "SMS Smishing Training Split",
+      "file_size_bytes": 1085825,
+      "total_samples": 9142,
+      "features_count": 1,
+      "class_distribution": {
+        "benign_0": 4974,
+        "malicious_1": 4168,
+        "benign_percentage": 54.41,
+        "malicious_percentage": 45.59
+      }
+    },
+    "sms_val.csv": {
+      "description": "SMS Smishing Validation Split",
+      "file_size_bytes": 230209,
+      "total_samples": 1959,
+      "features_count": 1,
+      "class_distribution": {
+        "benign_0": 1066,
+        "malicious_1": 893,
+        "benign_percentage": 54.42,
+        "malicious_percentage": 45.58
+      }
+    },
+    "sms_test.csv": {
+      "description": "SMS Smishing Held-Out Benchmark Test Set",
+      "file_size_bytes": 229035,
+      "total_samples": 1959,
+      "features_count": 1,
+      "class_distribution": {
+        "benign_0": 1066,
+        "malicious_1": 893,
+        "benign_percentage": 54.42,
+        "malicious_percentage": 45.58
+      }
+    },
+    "url_train.csv": {
+      "description": "URL Quishing/Phishing Training Split",
+      "file_size_bytes": 42321948,
+      "total_samples": 315123,
+      "features_count": 17,
+      "class_distribution": {
+        "benign_0": 242016,
+        "malicious_1": 73107,
+        "benign_percentage": 76.8,
+        "malicious_percentage": 23.2
+      }
+    },
+    "url_val.csv": {
+      "description": "URL Quishing/Phishing Validation Split",
+      "file_size_bytes": 9075337,
+      "total_samples": 67526,
+      "features_count": 17,
+      "class_distribution": {
+        "benign_0": 51861,
+        "malicious_1": 15665,
+        "benign_percentage": 76.8,
+        "malicious_percentage": 23.2
+      }
+    },
+    "url_test.csv": {
+      "description": "URL Quishing/Phishing Held-Out Benchmark Test Set",
+      "file_size_bytes": 9069338,
+      "total_samples": 67527,
+      "features_count": 17,
+      "class_distribution": {
+        "benign_0": 51861,
+        "malicious_1": 15666,
+        "benign_percentage": 76.8,
+        "malicious_percentage": 23.2
+      }
+    },
+    "anomaly_test.csv": {
+      "description": "Zero-Day & Unsupervised Outlier Test Set",
+      "file_size_bytes": 1223244,
+      "total_samples": 10000,
+      "features_count": 17,
+      "class_distribution": {
+        "benign_0": 0,
+        "malicious_1": 10000,
+        "benign_percentage": 0.0,
+        "malicious_percentage": 100.0
+      }
+    },
+    "adversarial_evaluation_dataset.json": {
+      "description": "Adversarial & Evasion Benchmark (Unicode homoglyphs, zero-width chars, typo-squatting, banking SMS)",
+      "file_size_bytes": 25901,
+      "total_adversarial_test_cases": 60
+    }
+  }
+}

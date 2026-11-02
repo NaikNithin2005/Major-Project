@@ -4,6 +4,7 @@ import android.content.ClipData
 import android.content.ClipboardManager
 import android.content.Context
 import android.widget.Toast
+import androidx.compose.animation.animateContentSize
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
@@ -35,17 +36,19 @@ fun HistoryTab(
     threats: List<ThreatRecord>,
     onDeleteThreat: (String) -> Unit,
     onThreatClicked: (ThreatRecord) -> Unit,
-    onNavigateToScanner: () -> Unit
+    onNavigateToScanner: () -> Unit,
+    initialTypeFilter: String = "All",
+    initialSeverityFilter: String = "All"
 ) {
     val context = LocalContext.current
     var searchQuery by remember { mutableStateOf("") }
     var selectedDateFilter by remember { mutableStateOf("All") }
-    var selectedTypeFilter by remember { mutableStateOf("All") }
-    var selectedSeverityFilter by remember { mutableStateOf("All") }
+    var selectedTypeFilter by remember(initialTypeFilter) { mutableStateOf(initialTypeFilter) }
+    var selectedSeverityFilter by remember(initialSeverityFilter) { mutableStateOf(initialSeverityFilter) }
 
     val dateOptions = listOf("All", "Today", "7 Days", "30 Days")
-    val typeOptions = listOf("All", "SMS", "QR Code", "URL", "🛡️ Quarantined")
-    val severityOptions = listOf("All", "Critical/High", "Medium", "Low")
+    val typeOptions = listOf("All", "Messages", "QR Codes", "Links", "Flagged")
+    val severityOptions = listOf("All", "Looks Safe", "Needs Attention", "Dangerous")
 
     val currentTime = System.currentTimeMillis()
     val oneDayMs = 24 * 60 * 60 * 1000L
@@ -70,18 +73,18 @@ fun HistoryTab(
 
             // Type filter
             val matchesType = when (selectedTypeFilter) {
-                "SMS" -> threat.source.contains("SMS", ignoreCase = true)
-                "QR Code" -> threat.source.contains("QR", ignoreCase = true)
-                "URL" -> threat.source.contains("URL", ignoreCase = true) || threat.details.contains("http", ignoreCase = true)
-                "🛡️ Quarantined" -> threat.isQuarantined
+                "Messages" -> threat.source.contains("SMS", ignoreCase = true) || threat.payloadType == "SMS"
+                "QR Codes" -> threat.source.contains("QR", ignoreCase = true) || threat.payloadType == "QR_CODE"
+                "Links" -> threat.source.contains("URL", ignoreCase = true) || !threat.extractedUrl.isNullOrBlank()
+                "Flagged" -> threat.isQuarantined || threat.riskScore >= 70
                 else -> true
             }
 
-            // Severity filter
+            // Severity filter (Consumer-friendly: Looks Safe, Needs Attention, Dangerous)
             val matchesSeverity = when (selectedSeverityFilter) {
-                "Critical/High" -> threat.riskScore >= 70
-                "Medium" -> threat.riskScore in 40..69
-                "Low" -> threat.riskScore < 40
+                "Dangerous" -> threat.riskScore >= 70 || threat.category == "HIGH" || threat.category == "CRITICAL"
+                "Needs Attention" -> (threat.riskScore in 35..69) || threat.category == "MEDIUM" || threat.category == "SUSPICIOUS"
+                "Looks Safe" -> threat.riskScore < 35 || threat.category == "SAFE"
                 else -> true
             }
 
@@ -100,7 +103,7 @@ fun HistoryTab(
         OutlinedTextField(
             value = searchQuery,
             onValueChange = { searchQuery = it },
-            placeholder = { Text("Search by description, sender, domain, or ID...", fontSize = 12.sp, color = Color(0xFF64748B)) },
+            placeholder = { Text("Search by sender, message text, or address...", fontSize = 12.sp, color = Color(0xFF64748B)) },
             leadingIcon = { Icon(Icons.Default.Search, contentDescription = "Search", tint = Color(0xFF94A3B8)) },
             trailingIcon = {
                 if (searchQuery.isNotBlank()) {
@@ -272,6 +275,8 @@ fun HistoryItemCard(
     onCopyId: () -> Unit,
     onDelete: () -> Unit
 ) {
+    var isExpanded by remember { mutableStateOf(false) }
+
     val isCritical = threat.riskScore >= 70
     val isSuspicious = threat.riskScore in 40..69
 
@@ -291,7 +296,8 @@ fun HistoryItemCard(
     Card(
         modifier = Modifier
             .fillMaxWidth()
-            .clickable { onClick() },
+            .animateContentSize()
+            .clickable { isExpanded = !isExpanded },
         colors = CardDefaults.cardColors(containerColor = Color(0xFF1E293B)),
         shape = RoundedCornerShape(14.dp)
     ) {
@@ -356,12 +362,20 @@ fun HistoryItemCard(
                             modifier = Modifier.padding(horizontal = 8.dp, vertical = 3.dp)
                         )
                     }
+
+                    Spacer(modifier = Modifier.width(4.dp))
+                    Icon(
+                        imageVector = if (isExpanded) Icons.Default.ExpandLess else Icons.Default.ExpandMore,
+                        contentDescription = if (isExpanded) "Collapse" else "Expand",
+                        tint = Color(0xFF94A3B8),
+                        modifier = Modifier.size(18.dp)
+                    )
                 }
             }
 
             Spacer(modifier = Modifier.height(10.dp))
 
-            // Scanned Content Preview
+            // Scanned Content Preview (Always visible)
             val hasRaw = !threat.rawContent.isNullOrBlank()
             Surface(
                 color = Color(0xFF0F172A),
@@ -375,13 +389,13 @@ fun HistoryItemCard(
                         verticalAlignment = Alignment.CenterVertically
                     ) {
                         Text(
-                            text = if (hasRaw) "Scanned Content Preview:" else "Analysis Summary:",
+                            text = if (hasRaw) "Original Message / Content:" else "Analysis Summary:",
                             fontSize = 10.sp,
                             color = Color(0xFF64748B),
                             fontWeight = FontWeight.Bold
                         )
                         Text(
-                            text = if (hasRaw) "Tap for full content" else "Content not retained",
+                            text = if (isExpanded) "Tap card to collapse" else if (hasRaw) "Tap to expand details" else "Content not retained",
                             fontSize = 10.sp,
                             color = if (hasRaw) Color(0xFF38BDF8) else Color(0xFFF59E0B)
                         )
@@ -391,10 +405,57 @@ fun HistoryItemCard(
                         text = if (hasRaw) threat.rawContent!! else threat.details.ifBlank { "No content retained." },
                         fontSize = 11.sp,
                         color = Color(0xFFE2E8F0),
-                        maxLines = 2,
+                        maxLines = if (isExpanded) 10 else 2,
                         overflow = TextOverflow.Ellipsis,
                         lineHeight = 15.sp
                     )
+                }
+            }
+
+            // Expanded Animated Details Section
+            androidx.compose.animation.AnimatedVisibility(
+                visible = isExpanded,
+                enter = androidx.compose.animation.fadeIn() + androidx.compose.animation.expandVertically(),
+                exit = androidx.compose.animation.fadeOut() + androidx.compose.animation.shrinkVertically()
+            ) {
+                Column(modifier = Modifier.padding(top = 10.dp)) {
+                    if (!threat.extractedUrl.isNullOrBlank()) {
+                        Surface(
+                            color = Color(0xFF1E1B4B),
+                            shape = RoundedCornerShape(8.dp),
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            Column(modifier = Modifier.padding(8.dp)) {
+                                Text("Website Address Found:", fontSize = 10.sp, fontWeight = FontWeight.Bold, color = Color(0xFFA5B4FC))
+                                Text(threat.extractedUrl!!, fontSize = 11.sp, color = Color.White, maxLines = 3)
+                            }
+                        }
+                        Spacer(modifier = Modifier.height(8.dp))
+                    }
+
+                    if (threat.details.isNotBlank()) {
+                        Text("Why This Result Was Given:", fontSize = 10.sp, fontWeight = FontWeight.Bold, color = Color(0xFF94A3B8))
+                        Text(threat.details, fontSize = 11.sp, color = Color(0xFFCBD5E1), lineHeight = 16.sp)
+                        Spacer(modifier = Modifier.height(8.dp))
+                    }
+
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Text(
+                            text = "Checked: On-Device Engine (100% Private)",
+                            fontSize = 10.sp,
+                            color = Color(0xFF64748B)
+                        )
+                        TextButton(
+                            onClick = onClick,
+                            contentPadding = PaddingValues(horizontal = 8.dp, vertical = 2.dp)
+                        ) {
+                            Text("Open Full Dialog", fontSize = 11.sp, color = Color(0xFF38BDF8))
+                        }
+                    }
                 }
             }
 

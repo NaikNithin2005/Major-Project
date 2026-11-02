@@ -80,7 +80,8 @@ class Phase3SmsPipelineTest {
 
         // Verify safe SMS saved to history but no threat logged
         assertEquals(1, fakeSmsRepository.savedAnalyses.size)
-        assertEquals(0, fakeThreatRepository.savedThreats.size)
+        assertEquals(1, fakeThreatRepository.savedThreats.size)
+        assertEquals("SAFE", fakeThreatRepository.savedThreats[0].category)
     }
 
     // --- Fake Test Repositories ---
@@ -141,7 +142,11 @@ class Phase3SmsPipelineTest {
             return Result.success(Unit)
         }
 
-        override suspend fun clearAllThreats(): Result<Unit> {
+            override suspend fun addThreats(threats: List<com.example.android.domain.model.ThreatRecord>): Result<Unit> = Result.success(Unit)
+    override fun observeThreatsByUserId(userId: String?): kotlinx.coroutines.flow.Flow<List<com.example.android.domain.model.ThreatRecord>> = observeAllThreats()
+    override suspend fun deleteThreatsByUserId(userId: String): Result<Unit> = Result.success(Unit)
+
+    override suspend fun clearAllThreats(): Result<Unit> {
             savedThreats.clear()
             stateFlow.value = emptyList()
             return Result.success(Unit)

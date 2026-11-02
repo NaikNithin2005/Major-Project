@@ -1,0 +1,29 @@
+{
+  "model_name": "TinyBERT Smishing Classifier v2",
+  "format": "ONNX",
+  "parameters": 14500000,
+  "model_size_mb": 53.89,
+  "test_samples": 1959,
+  "metrics": {
+    "accuracy": 0.9005,
+    "precision": 0.8613,
+    "recall": 0.9317,
+    "f1_score": 0.8951,
+    "roc_auc": 0.9611,
+    "pr_auc": 0.9464,
+    "false_positive_rate": 0.1257,
+    "false_negative_rate": 0.0683,
+    "confusion_matrix": {
+      "true_negatives": 932,
+      "false_positives": 134,
+      "false_negatives": 61,
+      "true_positives": 832
+    }
+  },
+  "latency_ms": {
+    "mean": 6.01,
+    "median": 5.75,
+    "p95": 7.84,
+    "p99": 13.15
+  }
+}

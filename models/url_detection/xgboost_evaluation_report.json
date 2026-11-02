@@ -1,0 +1,29 @@
+{
+  "model_name": "XGBoost URL Classifier v2",
+  "format": "ONNX",
+  "features_count": 16,
+  "model_size_mb": 0.72,
+  "test_samples": 67527,
+  "metrics": {
+    "accuracy": 0.9937,
+    "precision": 0.9959,
+    "recall": 0.977,
+    "f1_score": 0.9863,
+    "roc_auc": 0.9973,
+    "pr_auc": 0.9955,
+    "false_positive_rate": 0.0012,
+    "false_negative_rate": 0.023,
+    "confusion_matrix": {
+      "true_negatives": 51798,
+      "false_positives": 63,
+      "false_negatives": 361,
+      "true_positives": 15305
+    }
+  },
+  "latency_ms": {
+    "mean": 0.026,
+    "median": 0.02,
+    "p95": 0.026,
+    "p99": 0.1
+  }
+}

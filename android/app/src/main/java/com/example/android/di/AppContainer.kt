@@ -56,7 +56,11 @@ class AppContainer(private val context: Context) {
     }
 
     val settingsRepository: SettingsRepository by lazy {
-        SettingsRepositoryImpl(preferencesDataStore)
+        SettingsRepositoryImpl(
+            preferencesDataStore = preferencesDataStore,
+            firestoreDataSource = firestoreDataSource,
+            authRepository = authRepository
+        )
     }
 
     val modelRepository: ModelRepository by lazy {
@@ -74,7 +78,8 @@ class AppContainer(private val context: Context) {
             syncQueueDao = database.syncQueueDao(),
             backendApiService = backendApiService,
             authRepository = authRepository,
-            firestoreDataSource = firestoreDataSource
+            firestoreDataSource = firestoreDataSource,
+            threatHistoryDao = database.threatHistoryDao()
         )
     }
 
@@ -158,6 +163,21 @@ class AppContainer(private val context: Context) {
         com.example.android.data.classifier.OnnxTinyBertSmishingClassifier(context)
     }
 
+    val trustedSenderRepository: com.example.android.domain.repository.TrustedSenderRepository by lazy {
+        com.example.android.data.repository.TrustedSenderRepositoryImpl(database.trustedSenderDao())
+    }
+
+    val financialMessageClassifier: com.example.android.domain.financial.FinancialMessageClassifier by lazy {
+        com.example.android.domain.financial.FinancialMessageClassifier()
+    }
+
+    val personalizedLearningEngine: com.example.android.domain.learning.PersonalizedLearningEngine by lazy {
+        com.example.android.domain.learning.PersonalizedLearningEngine(
+            feedbackRepository = feedbackRepository,
+            trustedSenderRepository = trustedSenderRepository
+        )
+    }
+
     val processIncomingSmsUseCase: ProcessIncomingSmsUseCase by lazy {
         ProcessIncomingSmsUseCase(
             smsParser = smsParser,
@@ -167,7 +187,10 @@ class AppContainer(private val context: Context) {
             threatHistoryRepository = threatHistoryRepository,
             riskEngine = riskEngine,
             syncRepository = syncRepository,
-            context = context
+            context = context,
+            trustedSenderRepository = trustedSenderRepository,
+            financialMessageClassifier = financialMessageClassifier,
+            personalizedLearningEngine = personalizedLearningEngine
         )
     }
 
@@ -187,7 +210,8 @@ class AppContainer(private val context: Context) {
             threatHistoryRepository = threatHistoryRepository,
             riskEngine = riskEngine,
             syncRepository = syncRepository,
-            context = context
+            context = context,
+            authRepository = authRepository
         )
     }
 

@@ -57,42 +57,63 @@ fun DashboardScreen(
     onSaveThreat: (ThreatRecord) -> Unit = {},
     onClearAllThreats: () -> Unit = {},
     onSubmitFeedback: (String, String, String) -> Unit = { _, _, _ -> },
+    trustedSenders: List<com.example.android.domain.model.TrustedSender> = emptyList(),
+    onToggleTrustSender: (String, Boolean) -> Unit = { _, _ -> },
+    onSubmitDetailedFeedback: (String, String, String, String, String, String) -> Unit = { _, _, _, _, _, _ -> },
     onTriggerManualSync: () -> Unit = {},
     onOpenEducation: () -> Unit = {},
     onNavigateToSmsMonitoring: () -> Unit = {},
     onNavigateToQrScanner: () -> Unit = {},
     onLogoutClicked: () -> Unit,
     onOpenSecurityCheck: (url: String, source: String) -> Unit = { _, _ -> },
+    onOpenProtectionSetup: () -> Unit = {},
     smishingClassifier: SmishingClassifier,
     urlClassifier: UrlClassifier,
     ruleEngine: RuleEngine,
     explainableAiEngine: ExplainableAiEngine,
     processQrCodeUseCase: ProcessQrCodeUseCase,
-    aiViewModel: SquishAiAssistantViewModel
+    aiViewModel: SquishAiAssistantViewModel,
+    systemSettings: com.example.android.domain.model.SystemSettings = com.example.android.domain.model.SystemSettings(),
+    onToggleSmsProtection: (Boolean) -> Unit = {},
+    onToggleQrProtection: (Boolean) -> Unit = {},
+    onToggleUrlAnalysis: (Boolean) -> Unit = {},
+    onToggleHaptics: (Boolean) -> Unit = {},
+    onToggleNotifyHighSeverity: (Boolean) -> Unit = {},
+    onToggleNotifyMediumSeverity: (Boolean) -> Unit = {},
+    onToggleNotifyDailyTips: (Boolean) -> Unit = {},
+    onToggleShowNotificationPreviews: (Boolean) -> Unit = {},
+    onToggleAiModelEnabled: (Boolean) -> Unit = {},
+    onToggleOptInAiLearning: (Boolean) -> Unit = {},
+    onToggleCloudSync: (Boolean) -> Unit = {},
+    onRestoreCloudHistory: () -> Unit = {}
 ) {
     var selectedTab by remember { mutableStateOf(0) }
     var selectedThreatForDialog by remember { mutableStateOf<ThreatRecord?>(null) }
     var isAiAssistantOpen by remember { mutableStateOf(false) }
+    var historyTypeFilter by remember { mutableStateOf("All") }
+    var historySeverityFilter by remember { mutableStateOf("All") }
 
     val unreviewedThreatsCount = remember(uiState.threatHistory) {
         uiState.threatHistory.count { it.actionTaken != "RESOLVED" && it.actionTaken != "FALSE_POSITIVE" }
     }
 
     if (selectedThreatForDialog != null) {
+        val currentThreat = selectedThreatForDialog!!
+        val isSenderTrusted = trustedSenders.any { it.sender.equals(currentThreat.sender, ignoreCase = true) }
         ScanDetailsDialog(
-            threat = selectedThreatForDialog!!,
+            threat = currentThreat,
             onDismiss = { selectedThreatForDialog = null },
             onDelete = {
-                onDeleteThreat(selectedThreatForDialog!!.id)
+                onDeleteThreat(currentThreat.id)
                 selectedThreatForDialog = null
             },
             onToggleQuarantine = { isQuarantined ->
-                onToggleQuarantine(selectedThreatForDialog!!.id, isQuarantined)
-                selectedThreatForDialog = selectedThreatForDialog!!.copy(isQuarantined = isQuarantined)
+                onToggleQuarantine(currentThreat.id, isQuarantined)
+                selectedThreatForDialog = currentThreat.copy(isQuarantined = isQuarantined)
             },
             onUpdateAction = { action ->
-                onUpdateThreatAction(selectedThreatForDialog!!.id, action)
-                selectedThreatForDialog = selectedThreatForDialog!!.copy(actionTaken = action)
+                onUpdateThreatAction(currentThreat.id, action)
+                selectedThreatForDialog = currentThreat.copy(actionTaken = action)
             },
             onExplainWithAi = { threat ->
                 aiViewModel.setContext(
@@ -105,7 +126,21 @@ fun DashboardScreen(
                 )
                 isAiAssistantOpen = true
             },
-            onOpenSecurityCheck = onOpenSecurityCheck
+            onOpenSecurityCheck = onOpenSecurityCheck,
+            isSenderTrusted = isSenderTrusted,
+            onToggleTrustSender = { shouldTrust ->
+                onToggleTrustSender(currentThreat.sender, shouldTrust)
+            },
+            onSubmitFeedback = { category, comment, correctedClassification ->
+                onSubmitDetailedFeedback(
+                    currentThreat.id,
+                    category,
+                    comment,
+                    currentThreat.sender,
+                    currentThreat.category,
+                    correctedClassification
+                )
+            }
         )
     }
 
@@ -196,13 +231,22 @@ fun DashboardScreen(
                     onNavigateToTab = { selectedTab = it },
                     onOpenEducation = onOpenEducation,
                     onThreatClicked = { selectedThreatForDialog = it },
-                    onTriggerManualSync = onTriggerManualSync
+                    onTriggerManualSync = onTriggerManualSync,
+                    onOpenProtectionSetup = onOpenProtectionSetup,
+                    onOpenLiveCameraQr = onNavigateToQrScanner,
+                    onNavigateToHistoryWithFilter = { type, severity ->
+                        historyTypeFilter = type
+                        historySeverityFilter = severity
+                        selectedTab = 1
+                    }
                 )
                 1 -> HistoryTab(
                     threats = uiState.threatHistory,
                     onDeleteThreat = onDeleteThreat,
                     onThreatClicked = { selectedThreatForDialog = it },
-                    onNavigateToScanner = { selectedTab = 2 }
+                    onNavigateToScanner = { selectedTab = 2 },
+                    initialTypeFilter = historyTypeFilter,
+                    initialSeverityFilter = historySeverityFilter
                 )
                 2 -> ScannerTab(
                     smishingClassifier = smishingClassifier,
@@ -239,6 +283,18 @@ fun DashboardScreen(
                 4 -> SettingsTab(
                     currentUser = currentUser,
                     threats = uiState.threatHistory,
+                    settings = systemSettings,
+                    onToggleSmsProtection = onToggleSmsProtection,
+                    onToggleQrProtection = onToggleQrProtection,
+                    onToggleUrlAnalysis = onToggleUrlAnalysis,
+                    onToggleHaptics = onToggleHaptics,
+                    onToggleNotifyHighSeverity = onToggleNotifyHighSeverity,
+                    onToggleNotifyMediumSeverity = onToggleNotifyMediumSeverity,
+                    onToggleNotifyDailyTips = onToggleNotifyDailyTips,
+                    onToggleShowNotificationPreviews = onToggleShowNotificationPreviews,
+                    onToggleOptInAiLearning = onToggleOptInAiLearning,
+                    onToggleCloudSync = onToggleCloudSync,
+                    onRestoreCloudHistory = onRestoreCloudHistory,
                     onClearAllThreats = onClearAllThreats,
                     onOpenEducation = onOpenEducation,
                     onLogoutClicked = onLogoutClicked

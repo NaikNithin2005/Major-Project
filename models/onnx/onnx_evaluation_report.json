@@ -1,0 +1,38 @@
+[
+  {
+    "model_name": "TinyBERT Smishing Classifier",
+    "model_type": "NLP Transformer (4 layers)",
+    "model_size_mb": 53.89,
+    "sha256": "9e568f120e403d0a2a76e40ecacbdda482f48e4e834c16d994164a5fad0df8a6",
+    "cold_start_init_ms": 123.0,
+    "warm_latency_mean_ms": 5.634,
+    "warm_latency_p95_ms": 6.291,
+    "throughput_qps": 177.5,
+    "onnx_ir_version": 9223372036854775807,
+    "producers": "pytorch"
+  },
+  {
+    "model_name": "XGBoost URL Classifier",
+    "model_type": "Gradient Boosted Decision Trees",
+    "model_size_mb": 0.72,
+    "sha256": "00759e1be61979991bb220909a72dd481d0d4c1884988a1d6a0edaa267063757",
+    "cold_start_init_ms": 37.59,
+    "warm_latency_mean_ms": 0.015,
+    "warm_latency_p95_ms": 0.015,
+    "throughput_qps": 67663.6,
+    "onnx_ir_version": 0,
+    "producers": "OnnxMLTools"
+  },
+  {
+    "model_name": "Isolation Forest Anomaly Detector",
+    "model_type": "Ensemble Outlier Detector",
+    "model_size_mb": 0.65,
+    "sha256": "67086dae53260b44a02899211dba3acc2f1b0b03bec61c8b5d4e7ec232cbb06a",
+    "cold_start_init_ms": 1243.2,
+    "warm_latency_mean_ms": 1.757,
+    "warm_latency_p95_ms": 2.258,
+    "throughput_qps": 569.0,
+    "onnx_ir_version": 0,
+    "producers": "skl2onnx"
+  }
+]

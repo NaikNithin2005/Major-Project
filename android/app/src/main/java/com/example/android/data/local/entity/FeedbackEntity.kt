@@ -8,7 +8,11 @@ data class FeedbackEntity(
     @PrimaryKey val id: String,
     val threatId: String,
     val timestamp: Long,
-    val userCategory: String, // "False Positive", "False Negative", "Confirmed Threat"
+    val userCategory: String, // e.g. "Legitimate Bank/Service", "Trusted Sender", "Personal Message", "Confirmed Scam"
     val comment: String,
-    val isSubmitted: Boolean = false
+    val isSubmitted: Boolean = false,
+    val sender: String = "",
+    val originalPrediction: String = "",
+    val correctedClassification: String = "",
+    val userId: String? = null
 )

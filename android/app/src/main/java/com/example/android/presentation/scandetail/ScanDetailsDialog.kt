@@ -29,15 +29,19 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
 import com.example.android.data.parser.QrPayloadParser
+import com.example.android.domain.analysis.DetailedMessageAnalysisEngine
+import com.example.android.domain.analysis.DetailedMessageAnalysisEngine.DetectionVerdict
 import com.example.android.domain.model.ThreatRecord
-import java.text.SimpleDateFormat
-import java.util.Date
-import java.util.Locale
 
 /**
- * Reusable Scan Details dialog displaying the original scanned content,
- * sender/payload info, detected URLs, security verdicts, explainable AI reasons,
- * and quarantine actions.
+ * Production Scan Details & Message Analysis Dialog.
+ * Implements Phase 2 structured 6-section breakdown:
+ * - Section A: Message Information & Raw Content
+ * - Section B: Detection Result (Looks Safe / Needs Attention / Dangerous)
+ * - Section C: Why Was This Flagged? (Plain English explanation of triggers)
+ * - Section D: Detailed Breakdown Table / Evaluation Matrix
+ * - Section E: Contextual Recommendations (Banking, Delivery, Government, Job, Safe)
+ * - Section F: Reversible Actions & User Feedback Learning
  */
 @Composable
 fun ScanDetailsDialog(
@@ -47,35 +51,37 @@ fun ScanDetailsDialog(
     onToggleQuarantine: ((Boolean) -> Unit)? = null,
     onUpdateAction: ((String) -> Unit)? = null,
     onExplainWithAi: ((ThreatRecord) -> Unit)? = null,
-    onOpenSecurityCheck: ((url: String, source: String) -> Unit)? = null
+    onOpenSecurityCheck: ((url: String, source: String) -> Unit)? = null,
+    isSenderTrusted: Boolean = false,
+    onToggleTrustSender: ((Boolean) -> Unit)? = null,
+    onSubmitFeedback: ((category: String, comment: String, correctedClassification: String) -> Unit)? = null
 ) {
     val context = LocalContext.current
-    val dateFormat = remember { SimpleDateFormat("dd MMMM yyyy, HH:mm:ss", Locale.getDefault()) }
-    val formattedTime = remember(threat.timestamp) { dateFormat.format(Date(threat.timestamp)) }
-
     var showDeleteConfirmDialog by remember { mutableStateOf(false) }
+    var showRestoreConfirmDialog by remember { mutableStateOf(false) }
+    var showMarkSafeDialog by remember { mutableStateOf(false) }
+    var showReportScamDialog by remember { mutableStateOf(false) }
+    var showMatrixExpanded by remember { mutableStateOf(true) }
     var isPasswordRevealed by remember { mutableStateOf(false) }
 
-    val isHigh = threat.category.contains("HIGH", ignoreCase = true) ||
-            threat.category.contains("SMISHING", ignoreCase = true) ||
-            threat.category.contains("QUISHING", ignoreCase = true) ||
-            threat.riskScore >= 70
-    val isMedium = !isHigh && (threat.category.contains("MEDIUM", ignoreCase = true) ||
-            threat.category.contains("SPAM", ignoreCase = true) ||
-            threat.riskScore >= 40)
-    val isLow = !isHigh && !isMedium && (threat.category.contains("LOW", ignoreCase = true) || threat.riskScore >= 20)
+    // Run Detailed Analysis Engine
+    val analysis = remember(threat, isSenderTrusted) {
+        DetailedMessageAnalysisEngine.analyze(threat, isSenderTrusted)
+    }
 
-    val (categoryTitle, categoryColor, categoryBg) = when {
-        isHigh -> Triple("CRITICAL THREAT (HIGH)", Color(0xFFEF4444), Color(0xFFEF4444).copy(alpha = 0.15f))
-        isMedium -> Triple("SECURITY WARNING (MEDIUM)", Color(0xFFF59E0B), Color(0xFFF59E0B).copy(alpha = 0.15f))
-        isLow -> Triple("MINOR CAUTION (LOW)", Color(0xFF38BDF8), Color(0xFF38BDF8).copy(alpha = 0.15f))
-        else -> Triple("VERIFIED SAFE", Color(0xFF10B981), Color(0xFF10B981).copy(alpha = 0.15f))
+    val isHigh = analysis.verdict == DetectionVerdict.DANGEROUS
+    val isMedium = analysis.verdict == DetectionVerdict.NEEDS_ATTENTION
+    val isSafe = analysis.verdict == DetectionVerdict.LOOKS_SAFE
+
+    val (verdictTitle, verdictColor, verdictBg) = when (analysis.verdict) {
+        DetectionVerdict.DANGEROUS -> Triple("DANGEROUS", Color(0xFFEF4444), Color(0xFFEF4444).copy(alpha = 0.15f))
+        DetectionVerdict.NEEDS_ATTENTION -> Triple("NEEDS ATTENTION", Color(0xFFF59E0B), Color(0xFFF59E0B).copy(alpha = 0.15f))
+        DetectionVerdict.LOOKS_SAFE -> Triple("LOOKS SAFE", Color(0xFF10B981), Color(0xFF10B981).copy(alpha = 0.15f))
     }
 
     val isQr = threat.source.contains("QR", ignoreCase = true)
     val isSms = threat.source.contains("SMS", ignoreCase = true)
 
-    // Parse structured payload if QR
     val parsedQr = remember(threat.rawContent) {
         if (isQr && !threat.rawContent.isNullOrBlank()) {
             QrPayloadParser.parse(threat.rawContent)
@@ -84,51 +90,136 @@ fun ScanDetailsDialog(
         }
     }
 
-    val reasonsList = remember(threat.details, threat.riskScore) {
-        val parts = threat.details.split(";").map { it.trim() }.filter { it.isNotBlank() }
-        if (parts.isNotEmpty()) {
-            parts
-        } else {
-            listOf(
-                "Risk evaluation score: ${threat.riskScore}/100",
-                "Evaluated by on-device real-time detection pipeline"
-            )
-        }
+    // Interactive Mark Safe Feedback Dialog
+    if (showMarkSafeDialog) {
+        var selectedSafeReason by remember { mutableStateOf("Legitimate message from my bank or service") }
+        val safeOptions = listOf(
+            "Legitimate message from my bank or service",
+            "I know and trust this sender",
+            "This is a normal personal message",
+            "Standard delivery / service notification"
+        )
+
+        AlertDialog(
+            onDismissRequest = { showMarkSafeDialog = false },
+            title = {
+                Text("Mark as Safe & Teach Squish", fontSize = 16.sp, fontWeight = FontWeight.Bold, color = Color.White)
+            },
+            text = {
+                Column(modifier = Modifier.verticalScroll(rememberScrollState())) {
+                    Text(
+                        "Help Squish adapt to your messages. Why do you consider this message safe?",
+                        fontSize = 12.sp,
+                        color = Color(0xFFCBD5E1),
+                        lineHeight = 16.sp
+                    )
+                    Spacer(modifier = Modifier.height(10.dp))
+                    safeOptions.forEach { opt ->
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .clip(RoundedCornerShape(8.dp))
+                                .clickable { selectedSafeReason = opt }
+                                .padding(vertical = 6.dp, horizontal = 4.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            RadioButton(
+                                selected = selectedSafeReason == opt,
+                                onClick = { selectedSafeReason = opt },
+                                colors = RadioButtonDefaults.colors(selectedColor = Color(0xFF10B981))
+                            )
+                            Spacer(modifier = Modifier.width(6.dp))
+                            Text(opt, fontSize = 12.sp, color = Color.White)
+                        }
+                    }
+                }
+            },
+            confirmButton = {
+                Button(
+                    onClick = {
+                        showMarkSafeDialog = false
+                        onSubmitFeedback?.invoke("Safe / Legitimate", selectedSafeReason, "SAFE")
+                        onUpdateAction?.invoke("MARK_SAFE")
+                        Toast.makeText(context, "Marked as safe. Squish updated your local safety profile.", Toast.LENGTH_SHORT).show()
+                    },
+                    colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF10B981))
+                ) {
+                    Text("Confirm Safe", fontSize = 12.sp)
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { showMarkSafeDialog = false }) {
+                    Text("Cancel", color = Color(0xFF94A3B8))
+                }
+            },
+            containerColor = Color(0xFF1E293B)
+        )
     }
 
-    val actionText = threat.actionTaken.ifBlank {
-        when {
-            threat.isQuarantined -> "QUARANTINED"
-            isHigh -> "BLOCK_AND_DELETE"
-            isMedium -> "WARN_USER"
-            else -> "PROCEED_SAFELY"
-        }
-    }
+    // Interactive Report Scam Feedback Dialog
+    if (showReportScamDialog) {
+        var selectedScamReason by remember { mutableStateOf("Dangerous scam / phishing attempt") }
+        val scamOptions = listOf(
+            "Dangerous scam / phishing attempt",
+            "Suspicious link / unsolicited payment demand",
+            "Impersonating my bank or government agency",
+            "Spam / Unsolicited marketing"
+        )
 
-    val guidanceList = remember(isHigh, isMedium, isQr, isSms) {
-        when {
-            isQr && isHigh -> listOf(
-                "Do NOT open the decoded URL or visit any web destination.",
-                "Inspect the physical QR code sticker for signs of malicious tampering.",
-                "Never enter banking credentials, passwords, or personal data.",
-                "Discard or report the suspicious QR code."
-            )
-            isSms && isHigh -> listOf(
-                "Do NOT reply, tap any links, or call numbers listed in the message.",
-                "Bank/service officials will never ask for OTPs or passwords via SMS.",
-                "Verify transactions only through the bank's official app or web portal.",
-                "Keep this message in Quarantine to prevent accidental interactions."
-            )
-            isMedium -> listOf(
-                "Exercise caution before clicking links or executing requested instructions.",
-                "Cross-reference the sender identifier through verified official sources.",
-                "Look for urgent social engineering language or suspicious domains."
-            )
-            else -> listOf(
-                "Heuristic and AI models detected no malicious patterns.",
-                "Content is safe to view. Standard caution is always recommended."
-            )
-        }
+        AlertDialog(
+            onDismissRequest = { showReportScamDialog = false },
+            title = {
+                Text("Report Threat & Protect Others", fontSize = 16.sp, fontWeight = FontWeight.Bold, color = Color.White)
+            },
+            text = {
+                Column(modifier = Modifier.verticalScroll(rememberScrollState())) {
+                    Text(
+                        "Help Squish identify scam patterns. Why are you flagging this message as dangerous?",
+                        fontSize = 12.sp,
+                        color = Color(0xFFCBD5E1),
+                        lineHeight = 16.sp
+                    )
+                    Spacer(modifier = Modifier.height(10.dp))
+                    scamOptions.forEach { opt ->
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .clip(RoundedCornerShape(8.dp))
+                                .clickable { selectedScamReason = opt }
+                                .padding(vertical = 6.dp, horizontal = 4.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            RadioButton(
+                                selected = selectedScamReason == opt,
+                                onClick = { selectedScamReason = opt },
+                                colors = RadioButtonDefaults.colors(selectedColor = Color(0xFFEF4444))
+                            )
+                            Spacer(modifier = Modifier.width(6.dp))
+                            Text(opt, fontSize = 12.sp, color = Color.White)
+                        }
+                    }
+                }
+            },
+            confirmButton = {
+                Button(
+                    onClick = {
+                        showReportScamDialog = false
+                        onSubmitFeedback?.invoke("Scam / Threat", selectedScamReason, "DANGEROUS")
+                        onUpdateAction?.invoke("CONFIRMED_THREAT")
+                        Toast.makeText(context, "Reported as dangerous. Squish reinforced your shield.", Toast.LENGTH_SHORT).show()
+                    },
+                    colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFEF4444))
+                ) {
+                    Text("Report Scam", fontSize = 12.sp)
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { showReportScamDialog = false }) {
+                    Text("Cancel", color = Color(0xFF94A3B8))
+                }
+            },
+            containerColor = Color(0xFF1E293B)
+        )
     }
 
     // Confirmation dialog for deletion
@@ -136,28 +227,14 @@ fun ScanDetailsDialog(
         AlertDialog(
             onDismissRequest = { showDeleteConfirmDialog = false },
             title = {
-                Text(
-                    text = "Delete Scan Record?",
-                    fontSize = 16.sp,
-                    fontWeight = FontWeight.Bold,
-                    color = Color.White
-                )
+                Text("Delete Record?", fontSize = 16.sp, fontWeight = FontWeight.Bold, color = Color.White)
             },
             text = {
-                Column {
-                    Text(
-                        text = "This will permanently delete this scan record and its retained content from your local device database.",
-                        fontSize = 13.sp,
-                        color = Color(0xFFCBD5E1),
-                        lineHeight = 18.sp
-                    )
-                    Spacer(modifier = Modifier.height(8.dp))
-                    Text(
-                        text = "Note: If Cloud Sync was enabled, only anonymized metadata was synchronized with Firestore. Full raw message contents are kept strictly on-device.",
-                        fontSize = 11.sp,
-                        color = Color(0xFF94A3B8)
-                    )
-                }
+                Text(
+                    "This will delete this scan record from your device database. Safe messages and verified senders can still be managed in your settings.",
+                    fontSize = 12.sp,
+                    color = Color(0xFFCBD5E1)
+                )
             },
             confirmButton = {
                 Button(
@@ -167,7 +244,7 @@ fun ScanDetailsDialog(
                     },
                     colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFEF4444))
                 ) {
-                    Text("Delete Record", fontSize = 12.sp)
+                    Text("Delete", fontSize = 12.sp)
                 }
             },
             dismissButton = {
@@ -179,11 +256,53 @@ fun ScanDetailsDialog(
         )
     }
 
-    Dialog(onDismissRequest = onDismiss) {
+    // Confirmation dialog before restoring / releasing quarantined threat
+    if (showRestoreConfirmDialog) {
+        AlertDialog(
+            onDismissRequest = { showRestoreConfirmDialog = false },
+            title = {
+                Text("Release from Quarantine?", fontSize = 16.sp, fontWeight = FontWeight.Bold, color = Color.White)
+            },
+            text = {
+                Text(
+                    "Are you sure you want to release this message from Quarantine? This marks the record as reviewed.",
+                    fontSize = 12.sp,
+                    color = Color(0xFFCBD5E1)
+                )
+            },
+            confirmButton = {
+                Button(
+                    onClick = {
+                        showRestoreConfirmDialog = false
+                        onToggleQuarantine?.invoke(false)
+                        Toast.makeText(context, "Released from Quarantine", Toast.LENGTH_SHORT).show()
+                    },
+                    colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF10B981))
+                ) {
+                    Text("Confirm Release", fontSize = 12.sp)
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { showRestoreConfirmDialog = false }) {
+                    Text("Cancel", color = Color(0xFF94A3B8))
+                }
+            },
+            containerColor = Color(0xFF1E293B)
+        )
+    }
+
+    Dialog(
+        onDismissRequest = onDismiss,
+        properties = androidx.compose.ui.window.DialogProperties(
+            usePlatformDefaultWidth = false
+        )
+    ) {
         Card(
             modifier = Modifier
-                .fillMaxWidth()
-                .padding(vertical = 16.dp),
+                .fillMaxWidth(0.95f)
+                .fillMaxHeight(0.92f)
+                .padding(vertical = 12.dp)
+                .imePadding(),
             shape = RoundedCornerShape(20.dp),
             colors = CardDefaults.cardColors(containerColor = Color(0xFF0F172A))
         ) {
@@ -191,9 +310,9 @@ fun ScanDetailsDialog(
                 modifier = Modifier
                     .fillMaxWidth()
                     .verticalScroll(rememberScrollState())
-                    .padding(20.dp)
+                    .padding(18.dp)
             ) {
-                // Header Row
+                // Top Header Row
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.SpaceBetween,
@@ -203,7 +322,7 @@ fun ScanDetailsDialog(
                         Box(
                             modifier = Modifier
                                 .size(40.dp)
-                                .background(categoryBg, CircleShape),
+                                .background(verdictBg, CircleShape),
                             contentAlignment = Alignment.Center
                         ) {
                             Icon(
@@ -213,20 +332,20 @@ fun ScanDetailsDialog(
                                     else -> Icons.Default.Link
                                 },
                                 contentDescription = null,
-                                tint = categoryColor,
+                                tint = verdictColor,
                                 modifier = Modifier.size(22.dp)
                             )
                         }
                         Spacer(modifier = Modifier.width(10.dp))
                         Column {
                             Text(
-                                text = "Scan Details Report",
+                                text = "Safety Check Analysis",
                                 fontSize = 16.sp,
                                 fontWeight = FontWeight.Bold,
                                 color = Color.White
                             )
                             Text(
-                                text = formattedTime,
+                                text = analysis.formattedTimestamp,
                                 fontSize = 11.sp,
                                 color = Color(0xFF94A3B8)
                             )
@@ -240,61 +359,224 @@ fun ScanDetailsDialog(
 
                 Spacer(modifier = Modifier.height(14.dp))
 
-                // Scan Metadata & Retention Info Row
-                Row(
+                // SECTION B: DETECTION RESULT BANNER (Prominent Visual Indicator)
+                Card(
                     modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    shape = RoundedCornerShape(14.dp),
+                    colors = CardDefaults.cardColors(containerColor = Color(0xFF1E293B)),
+                    border = CardDefaults.outlinedCardBorder().copy(brush = androidx.compose.ui.graphics.SolidColor(verdictColor.copy(alpha = 0.4f)))
                 ) {
-                    // Retention Mode Badge
-                    Surface(
-                        color = Color(0xFF1E293B),
-                        shape = RoundedCornerShape(8.dp),
-                        modifier = Modifier.weight(1f)
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(14.dp),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
                     ) {
-                        Row(
-                            modifier = Modifier.padding(horizontal = 8.dp, vertical = 6.dp),
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            Icon(Icons.Default.Storage, contentDescription = null, tint = Color(0xFF38BDF8), modifier = Modifier.size(14.dp))
-                            Spacer(modifier = Modifier.width(6.dp))
+                        Column {
+                            Text("Overall Safety Status", fontSize = 11.sp, color = Color(0xFF94A3B8))
+                            Spacer(modifier = Modifier.height(2.dp))
                             Text(
-                                text = threat.contentRetentionMode.ifBlank { "LOCAL_SAVED" },
-                                fontSize = 10.sp,
-                                fontWeight = FontWeight.SemiBold,
-                                color = Color(0xFF38BDF8)
+                                text = verdictTitle,
+                                fontSize = 20.sp,
+                                fontWeight = FontWeight.Black,
+                                color = verdictColor
+                            )
+                            Text(
+                                text = "Category: ${analysis.detectedCategory}",
+                                fontSize = 11.sp,
+                                color = Color(0xFF38BDF8),
+                                fontWeight = FontWeight.SemiBold
                             )
                         }
-                    }
 
-                    // Quarantine Badge
-                    Surface(
-                        color = if (threat.isQuarantined) Color(0xFFEF4444).copy(alpha = 0.2f) else Color(0xFF10B981).copy(alpha = 0.2f),
-                        shape = RoundedCornerShape(8.dp)
-                    ) {
-                        Row(
-                            modifier = Modifier.padding(horizontal = 8.dp, vertical = 6.dp),
-                            verticalAlignment = Alignment.CenterVertically
+                        Surface(
+                            color = verdictBg,
+                            shape = RoundedCornerShape(10.dp)
                         ) {
-                            Icon(
-                                imageVector = if (threat.isQuarantined) Icons.Default.Lock else Icons.Default.Shield,
-                                contentDescription = null,
-                                tint = if (threat.isQuarantined) Color(0xFFEF4444) else Color(0xFF10B981),
-                                modifier = Modifier.size(14.dp)
-                            )
-                            Spacer(modifier = Modifier.width(4.dp))
-                            Text(
-                                text = if (threat.isQuarantined) "Quarantined" else "Active",
-                                fontSize = 10.sp,
-                                fontWeight = FontWeight.Bold,
-                                color = if (threat.isQuarantined) Color(0xFFEF4444) else Color(0xFF10B981)
-                            )
+                            Column(
+                                modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp),
+                                horizontalAlignment = Alignment.CenterHorizontally
+                            ) {
+                                Text("Safety Rating", fontSize = 9.sp, color = verdictColor, fontWeight = FontWeight.Bold)
+                                Text(
+                                    text = "${threat.riskScore}/100",
+                                    fontSize = 15.sp,
+                                    fontWeight = FontWeight.Bold,
+                                    color = verdictColor
+                                )
+                            }
                         }
                     }
                 }
 
-                Spacer(modifier = Modifier.height(14.dp))
+                Spacer(modifier = Modifier.height(12.dp))
 
-                // SECTION 1: ORIGINAL SCANNED CONTENT (Plain Text, Safe, Copyable)
+                // SECTION A: MESSAGE INFORMATION & ORIGINAL CONTENT
+                Card(
+                    modifier = Modifier.fillMaxWidth(),
+                    shape = RoundedCornerShape(14.dp),
+                    colors = CardDefaults.cardColors(containerColor = Color(0xFF1E293B))
+                ) {
+                    Column(modifier = Modifier.padding(14.dp)) {
+                        // Sender row with copy button and trust indicator
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Column(modifier = Modifier.weight(1f)) {
+                                Text("Sender Identifier", fontSize = 10.sp, color = Color(0xFF94A3B8), fontWeight = FontWeight.Bold)
+                                Row(verticalAlignment = Alignment.CenterVertically) {
+                                    Text(
+                                        text = analysis.sender,
+                                        fontSize = 13.sp,
+                                        fontWeight = FontWeight.Bold,
+                                        color = Color.White
+                                    )
+                                    if (isSenderTrusted) {
+                                        Spacer(modifier = Modifier.width(6.dp))
+                                        Surface(
+                                            color = Color(0xFF10B981).copy(alpha = 0.2f),
+                                            shape = RoundedCornerShape(4.dp)
+                                        ) {
+                                            Text(
+                                                "Trusted",
+                                                fontSize = 9.sp,
+                                                fontWeight = FontWeight.Bold,
+                                                color = Color(0xFF10B981),
+                                                modifier = Modifier.padding(horizontal = 4.dp, vertical = 1.dp)
+                                            )
+                                        }
+                                    }
+                                }
+                            }
+
+                            Row {
+                                IconButton(
+                                    onClick = {
+                                        val clipboard = context.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
+                                        clipboard.setPrimaryClip(ClipData.newPlainText("Sender", analysis.sender))
+                                        Toast.makeText(context, "Copied sender", Toast.LENGTH_SHORT).show()
+                                    },
+                                    modifier = Modifier.size(28.dp)
+                                ) {
+                                    Icon(Icons.Default.ContentCopy, contentDescription = "Copy Sender", tint = Color(0xFF38BDF8), modifier = Modifier.size(15.dp))
+                                }
+                            }
+                        }
+
+                        Spacer(modifier = Modifier.height(10.dp))
+
+                        // Message Text Box
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Text(
+                                text = if (isSms) "Original Text Message" else "Original Scanned Payload",
+                                fontSize = 11.sp,
+                                fontWeight = FontWeight.Bold,
+                                color = Color.White
+                            )
+
+                            TextButton(
+                                onClick = {
+                                    val clipboard = context.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
+                                    clipboard.setPrimaryClip(ClipData.newPlainText("Message Text", analysis.originalContent))
+                                    Toast.makeText(context, "Copied message text", Toast.LENGTH_SHORT).show()
+                                },
+                                contentPadding = PaddingValues(horizontal = 6.dp, vertical = 2.dp)
+                            ) {
+                                Icon(Icons.Default.ContentCopy, contentDescription = null, tint = Color(0xFF38BDF8), modifier = Modifier.size(13.dp))
+                                Spacer(modifier = Modifier.width(4.dp))
+                                Text("Copy Text", fontSize = 11.sp, color = Color(0xFF38BDF8))
+                            }
+                        }
+
+                        Surface(
+                            color = Color(0xFF0F172A),
+                            shape = RoundedCornerShape(10.dp),
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            SelectionContainer {
+                                Text(
+                                    text = analysis.originalContent,
+                                    fontSize = 12.sp,
+                                    color = Color(0xFFF1F5F9),
+                                    lineHeight = 18.sp,
+                                    modifier = Modifier.padding(12.dp)
+                                )
+                            }
+                        }
+
+                        // Extracted Link Preview
+                        val targetUrl = threat.extractedUrl ?: parsedQr?.extractedUrl
+                        if (!targetUrl.isNullOrBlank()) {
+                            Spacer(modifier = Modifier.height(10.dp))
+                            Surface(
+                                color = Color(0xFF0F172A),
+                                shape = RoundedCornerShape(8.dp),
+                                modifier = Modifier.fillMaxWidth()
+                            ) {
+                                Column(modifier = Modifier.padding(10.dp)) {
+                                    Row(verticalAlignment = Alignment.CenterVertically) {
+                                        Icon(Icons.Default.Link, contentDescription = null, tint = Color(0xFF38BDF8), modifier = Modifier.size(14.dp))
+                                        Spacer(modifier = Modifier.width(6.dp))
+                                        Text("Web Link in Message:", fontSize = 10.sp, fontWeight = FontWeight.Bold, color = Color(0xFF38BDF8))
+                                    }
+                                    Spacer(modifier = Modifier.height(2.dp))
+                                    Text(targetUrl, fontSize = 11.sp, color = Color.White, maxLines = 2)
+
+                                    if (onOpenSecurityCheck != null) {
+                                        Spacer(modifier = Modifier.height(6.dp))
+                                        Button(
+                                            onClick = {
+                                                onDismiss()
+                                                onOpenSecurityCheck(targetUrl, threat.source)
+                                            },
+                                            modifier = Modifier.fillMaxWidth().height(32.dp),
+                                            colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF4F46E5)),
+                                            shape = RoundedCornerShape(6.dp),
+                                            contentPadding = PaddingValues(0.dp)
+                                        ) {
+                                            Text("Inspect in Security Check", fontSize = 11.sp)
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+
+                Spacer(modifier = Modifier.height(12.dp))
+
+                // SECTION C: WHY WAS THIS MESSAGE FLAGGED?
+                Card(
+                    modifier = Modifier.fillMaxWidth(),
+                    shape = RoundedCornerShape(14.dp),
+                    colors = CardDefaults.cardColors(containerColor = Color(0xFF1E293B))
+                ) {
+                    Column(modifier = Modifier.padding(14.dp)) {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Icon(Icons.Default.Psychology, contentDescription = null, tint = Color(0xFF38BDF8), modifier = Modifier.size(18.dp))
+                            Spacer(modifier = Modifier.width(6.dp))
+                            Text("Why Was This Message Flagged?", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = Color.White)
+                        }
+                        Spacer(modifier = Modifier.height(8.dp))
+                        Text(
+                            text = analysis.whyFlaggedExplanation,
+                            fontSize = 12.sp,
+                            color = Color(0xFFE2E8F0),
+                            lineHeight = 17.sp
+                        )
+                    }
+                }
+
+                Spacer(modifier = Modifier.height(12.dp))
+
+                // SECTION D: DETAILED BREAKDOWN TABLE (Evaluation Matrix)
                 Card(
                     modifier = Modifier.fillMaxWidth(),
                     shape = RoundedCornerShape(14.dp),
@@ -302,365 +584,113 @@ fun ScanDetailsDialog(
                 ) {
                     Column(modifier = Modifier.padding(14.dp)) {
                         Row(
-                            modifier = Modifier.fillMaxWidth(),
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .clickable { showMatrixExpanded = !showMatrixExpanded },
                             horizontalArrangement = Arrangement.SpaceBetween,
                             verticalAlignment = Alignment.CenterVertically
                         ) {
                             Row(verticalAlignment = Alignment.CenterVertically) {
-                                Icon(Icons.Default.Article, contentDescription = null, tint = Color(0xFF38BDF8), modifier = Modifier.size(16.dp))
+                                Icon(Icons.Default.TableChart, contentDescription = null, tint = Color(0xFF38BDF8), modifier = Modifier.size(16.dp))
                                 Spacer(modifier = Modifier.width(6.dp))
-                                Text(
-                                    text = if (isSms) "Full SMS Message Content" else if (isQr) "Decoded QR Payload" else "Original Scanned Content",
-                                    fontSize = 12.sp,
-                                    fontWeight = FontWeight.Bold,
-                                    color = Color.White
-                                )
+                                Text("Detailed Evaluation Matrix", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = Color.White)
                             }
-
-                            if (!threat.rawContent.isNullOrBlank()) {
-                                TextButton(
-                                    onClick = {
-                                        val clipboard = context.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
-                                        clipboard.setPrimaryClip(ClipData.newPlainText("Original Content", threat.rawContent))
-                                        Toast.makeText(context, "Copied original content to clipboard", Toast.LENGTH_SHORT).show()
-                                    },
-                                    contentPadding = PaddingValues(horizontal = 8.dp, vertical = 4.dp)
-                                ) {
-                                    Icon(Icons.Default.ContentCopy, contentDescription = "Copy", tint = Color(0xFF38BDF8), modifier = Modifier.size(14.dp))
-                                    Spacer(modifier = Modifier.width(4.dp))
-                                    Text("Copy Text", fontSize = 11.sp, color = Color(0xFF38BDF8))
-                                }
+                            IconButton(onClick = { showMatrixExpanded = !showMatrixExpanded }, modifier = Modifier.size(24.dp)) {
+                                Icon(
+                                    imageVector = if (showMatrixExpanded) Icons.Default.ExpandLess else Icons.Default.ExpandMore,
+                                    contentDescription = "Toggle Matrix",
+                                    tint = Color(0xFF94A3B8)
+                                )
                             }
                         }
 
-                        Spacer(modifier = Modifier.height(8.dp))
-
-                        if (!threat.rawContent.isNullOrBlank()) {
-                            // Rendered as plain text, no HTML, no auto-clickable hyperlinks
-                            SelectionContainer {
-                                Text(
-                                    text = threat.rawContent,
-                                    fontSize = 12.sp,
-                                    color = Color(0xFFF1F5F9),
-                                    lineHeight = 18.sp,
-                                    fontFamily = FontFamily.Default
+                        AnimatedVisibility(visible = showMatrixExpanded) {
+                            Column(modifier = Modifier.padding(top = 10.dp)) {
+                                val matrixRows = listOf(
+                                    analysis.senderVerification,
+                                    analysis.languageUrgency,
+                                    analysis.linkSafety,
+                                    analysis.personalInfoRequest,
+                                    analysis.financialAction,
+                                    analysis.overallAssessment
                                 )
-                            }
-                            Spacer(modifier = Modifier.height(8.dp))
-                            Row(
-                                modifier = Modifier.fillMaxWidth(),
-                                horizontalArrangement = Arrangement.SpaceBetween
-                            ) {
-                                Text(
-                                    text = "Length: ${threat.rawContent.length} characters",
-                                    fontSize = 10.sp,
-                                    color = Color(0xFF64748B)
-                                )
-                                Text(
-                                    text = "Plain text rendering (links not executed)",
-                                    fontSize = 10.sp,
-                                    color = Color(0xFF64748B)
-                                )
-                            }
-                        } else {
-                            // Missing Content State
-                            Surface(
-                                color = Color(0xFF0F172A),
-                                shape = RoundedCornerShape(8.dp),
-                                modifier = Modifier.fillMaxWidth()
-                            ) {
-                                Row(
-                                    modifier = Modifier.padding(10.dp),
-                                    verticalAlignment = Alignment.CenterVertically
-                                ) {
-                                    Icon(Icons.Default.Info, contentDescription = null, tint = Color(0xFFF59E0B), modifier = Modifier.size(18.dp))
-                                    Spacer(modifier = Modifier.width(8.dp))
-                                    Text(
-                                        text = "Original scanned content was not retained due to device privacy settings or permission policy. Squish does not generate fabricated text.",
-                                        fontSize = 11.sp,
-                                        color = Color(0xFFCBD5E1),
-                                        lineHeight = 15.sp
-                                    )
-                                }
-                            }
-                        }
-                    }
-                }
 
-                // SECTION 2: QR CODE STRUCTURED PAYLOAD BREAKDOWN (If QR)
-                if (parsedQr != null && parsedQr.structuredFields.isNotEmpty()) {
-                    Spacer(modifier = Modifier.height(12.dp))
-                    Card(
-                        modifier = Modifier.fillMaxWidth(),
-                        shape = RoundedCornerShape(14.dp),
-                        colors = CardDefaults.cardColors(containerColor = Color(0xFF1E293B))
-                    ) {
-                        Column(modifier = Modifier.padding(14.dp)) {
-                            Row(
-                                modifier = Modifier.fillMaxWidth(),
-                                horizontalArrangement = Arrangement.SpaceBetween,
-                                verticalAlignment = Alignment.CenterVertically
-                            ) {
-                                Row(verticalAlignment = Alignment.CenterVertically) {
-                                    Icon(Icons.Default.QrCode, contentDescription = null, tint = Color(0xFFA78BFA), modifier = Modifier.size(16.dp))
-                                    Spacer(modifier = Modifier.width(6.dp))
-                                    Text(
-                                        text = "QR Format: ${parsedQr.payloadType}",
-                                        fontSize = 12.sp,
-                                        fontWeight = FontWeight.Bold,
-                                        color = Color.White
-                                    )
-                                }
-                                Surface(
-                                    color = Color(0xFFA78BFA).copy(alpha = 0.2f),
-                                    shape = RoundedCornerShape(6.dp)
-                                ) {
-                                    Text(
-                                        text = parsedQr.displayTitle,
-                                        fontSize = 10.sp,
-                                        fontWeight = FontWeight.SemiBold,
-                                        color = Color(0xFFA78BFA),
-                                        modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
-                                    )
-                                }
-                            }
+                                matrixRows.forEachIndexed { index, row ->
+                                    val rowBg = if (row.isFavorable) Color(0xFF10B981).copy(alpha = 0.12f) else Color(0xFFEF4444).copy(alpha = 0.12f)
+                                    val rowColor = if (row.isFavorable) Color(0xFF10B981) else Color(0xFFEF4444)
 
-                            Spacer(modifier = Modifier.height(8.dp))
-
-                            parsedQr.structuredFields.forEach { (key, value) ->
-                                Row(
-                                    modifier = Modifier
-                                        .fillMaxWidth()
-                                        .padding(vertical = 3.dp),
-                                    horizontalArrangement = Arrangement.SpaceBetween,
-                                    verticalAlignment = Alignment.CenterVertically
-                                ) {
-                                    Text(key, fontSize = 11.sp, color = Color(0xFF94A3B8))
-
-                                    if (key.equals("Password", ignoreCase = true)) {
-                                        Row(verticalAlignment = Alignment.CenterVertically) {
-                                            Text(
-                                                text = if (isPasswordRevealed) value else "••••••••",
-                                                fontSize = 11.sp,
-                                                fontWeight = FontWeight.SemiBold,
-                                                color = Color.White
-                                            )
-                                            IconButton(
-                                                onClick = { isPasswordRevealed = !isPasswordRevealed },
-                                                modifier = Modifier.size(24.dp)
+                                    Surface(
+                                        color = Color(0xFF0F172A),
+                                        shape = RoundedCornerShape(8.dp),
+                                        modifier = Modifier
+                                            .fillMaxWidth()
+                                            .padding(vertical = 3.dp)
+                                    ) {
+                                        Column(modifier = Modifier.padding(10.dp)) {
+                                            Row(
+                                                modifier = Modifier.fillMaxWidth(),
+                                                horizontalArrangement = Arrangement.SpaceBetween,
+                                                verticalAlignment = Alignment.CenterVertically
                                             ) {
-                                                Icon(
-                                                    imageVector = if (isPasswordRevealed) Icons.Default.VisibilityOff else Icons.Default.Visibility,
-                                                    contentDescription = "Toggle password",
-                                                    tint = Color(0xFF38BDF8),
-                                                    modifier = Modifier.size(14.dp)
-                                                )
+                                                Text(row.dimension, fontSize = 11.sp, fontWeight = FontWeight.SemiBold, color = Color.White)
+                                                Surface(color = rowBg, shape = RoundedCornerShape(6.dp)) {
+                                                    Text(
+                                                        text = row.status,
+                                                        fontSize = 10.sp,
+                                                        fontWeight = FontWeight.Bold,
+                                                        color = rowColor,
+                                                        modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
+                                                    )
+                                                }
                                             }
+                                            Spacer(modifier = Modifier.height(3.dp))
+                                            Text(
+                                                text = row.description,
+                                                fontSize = 10.sp,
+                                                color = Color(0xFF94A3B8),
+                                                lineHeight = 14.sp
+                                            )
                                         }
-                                    } else {
-                                        Text(
-                                            text = value,
-                                            fontSize = 11.sp,
-                                            fontWeight = FontWeight.SemiBold,
-                                            color = Color.White
-                                        )
                                     }
                                 }
                             }
-
-                            if (parsedQr.payloadType == "WIFI") {
-                                Spacer(modifier = Modifier.height(6.dp))
-                                Text(
-                                    text = "Squish will not automatically connect to Wi-Fi networks.",
-                                    fontSize = 10.sp,
-                                    color = Color(0xFFF59E0B)
-                                )
-                            }
                         }
                     }
                 }
 
-                // SECTION 3: SENDER / TARGET ORIGIN
                 Spacer(modifier = Modifier.height(12.dp))
+
+                // SECTION E: CONTEXTUAL RECOMMENDATIONS
                 Card(
                     modifier = Modifier.fillMaxWidth(),
-                    shape = RoundedCornerShape(12.dp),
-                    colors = CardDefaults.cardColors(containerColor = Color(0xFF1E293B))
-                ) {
-                    Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(12.dp),
-                        horizontalArrangement = Arrangement.SpaceBetween,
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Column(modifier = Modifier.weight(1f)) {
-                            Text(
-                                text = if (isSms) "Sender / Originating Address" else "Target / Payload Label",
-                                fontSize = 11.sp,
-                                color = Color(0xFF94A3B8)
-                            )
-                            Text(
-                                text = threat.sender.ifBlank { "Unknown Origin" },
-                                fontSize = 13.sp,
-                                fontWeight = FontWeight.SemiBold,
-                                color = Color.White
-                            )
-                        }
-
-                        IconButton(
-                            onClick = {
-                                val clipboard = context.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
-                                clipboard.setPrimaryClip(ClipData.newPlainText("Sender", threat.sender))
-                                Toast.makeText(context, "Copied identifier to clipboard", Toast.LENGTH_SHORT).show()
-                            },
-                            modifier = Modifier.size(32.dp)
-                        ) {
-                            Icon(Icons.Default.ContentCopy, contentDescription = "Copy", tint = Color(0xFF38BDF8), modifier = Modifier.size(16.dp))
-                        }
-                    }
-                }
-
-                // SECTION 4: EXTRACTED URL (If present)
-                val targetUrl = threat.extractedUrl ?: parsedQr?.extractedUrl
-                if (!targetUrl.isNullOrBlank()) {
-                    Spacer(modifier = Modifier.height(12.dp))
-                    Card(
-                        modifier = Modifier.fillMaxWidth(),
-                        shape = RoundedCornerShape(12.dp),
-                        colors = CardDefaults.cardColors(containerColor = Color(0xFF1E293B))
-                    ) {
-                        Column(modifier = Modifier.padding(12.dp)) {
-                            Row(
-                                modifier = Modifier.fillMaxWidth(),
-                                horizontalArrangement = Arrangement.SpaceBetween,
-                                verticalAlignment = Alignment.CenterVertically
-                            ) {
-                                Row(verticalAlignment = Alignment.CenterVertically) {
-                                    Icon(Icons.Default.Link, contentDescription = null, tint = Color(0xFF38BDF8), modifier = Modifier.size(16.dp))
-                                    Spacer(modifier = Modifier.width(6.dp))
-                                    Text("Detected Destination URL", fontSize = 11.sp, fontWeight = FontWeight.Bold, color = Color.White)
-                                }
-                                IconButton(
-                                    onClick = {
-                                        val clipboard = context.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
-                                        clipboard.setPrimaryClip(ClipData.newPlainText("Detected URL", targetUrl))
-                                        Toast.makeText(context, "Copied URL to clipboard", Toast.LENGTH_SHORT).show()
-                                    },
-                                    modifier = Modifier.size(24.dp)
-                                ) {
-                                    Icon(Icons.Default.ContentCopy, contentDescription = "Copy URL", tint = Color(0xFF38BDF8), modifier = Modifier.size(14.dp))
-                                }
-                            }
-                            Spacer(modifier = Modifier.height(4.dp))
-                            Text(
-                                text = targetUrl,
-                                fontSize = 12.sp,
-                                color = Color(0xFF38BDF8),
-                                maxLines = 2
-                            )
-                            Spacer(modifier = Modifier.height(4.dp))
-                            Text(
-                                text = "Auto-navigation is disabled to prevent drive-by attacks.",
-                                fontSize = 10.sp,
-                                color = Color(0xFF94A3B8)
-                            )
-
-                            if (onOpenSecurityCheck != null) {
-                                Spacer(modifier = Modifier.height(8.dp))
-                                Button(
-                                    onClick = {
-                                        onDismiss()
-                                        onOpenSecurityCheck(targetUrl, threat.source)
-                                    },
-                                    modifier = Modifier.fillMaxWidth().height(36.dp),
-                                    colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF6366F1)),
-                                    shape = RoundedCornerShape(8.dp)
-                                ) {
-                                    Icon(Icons.Default.VerifiedUser, contentDescription = null, modifier = Modifier.size(14.dp))
-                                    Spacer(modifier = Modifier.width(6.dp))
-                                    Text("Inspect in Security Check", fontSize = 11.sp)
-                                }
-                            }
-                        }
-                    }
-                }
-
-                // SECTION 5: SECURITY VERDICT & RISK SCORE
-                Spacer(modifier = Modifier.height(12.dp))
-                Card(
-                    modifier = Modifier.fillMaxWidth(),
-                    shape = RoundedCornerShape(12.dp),
-                    colors = CardDefaults.cardColors(containerColor = Color(0xFF1E293B))
-                ) {
-                    Column(modifier = Modifier.padding(14.dp)) {
-                        Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.SpaceBetween,
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            Column {
-                                Text("Risk Evaluation Score", fontSize = 11.sp, color = Color(0xFF94A3B8))
-                                Text(
-                                    text = "${threat.riskScore} / 100",
-                                    fontSize = 24.sp,
-                                    fontWeight = FontWeight.Bold,
-                                    color = categoryColor
-                                )
-                            }
-
-                            Surface(
-                                color = categoryBg,
-                                shape = RoundedCornerShape(8.dp)
-                            ) {
-                                Text(
-                                    text = categoryTitle,
-                                    fontSize = 11.sp,
-                                    fontWeight = FontWeight.Bold,
-                                    color = categoryColor,
-                                    modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
-                                )
-                            }
-                        }
-
-                        Spacer(modifier = Modifier.height(10.dp))
-                        LinearProgressIndicator(
-                            progress = { (threat.riskScore / 100f).coerceIn(0f, 1f) },
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .height(6.dp)
-                                .clip(RoundedCornerShape(3.dp)),
-                            color = categoryColor,
-                            trackColor = Color(0xFF334155),
-                        )
-                    }
-                }
-
-                // SECTION 6: WHY SQUISH FLAGGED THIS CONTENT (XAI REASONS)
-                Spacer(modifier = Modifier.height(12.dp))
-                Card(
-                    modifier = Modifier.fillMaxWidth(),
-                    shape = RoundedCornerShape(12.dp),
+                    shape = RoundedCornerShape(14.dp),
                     colors = CardDefaults.cardColors(containerColor = Color(0xFF1E293B))
                 ) {
                     Column(modifier = Modifier.padding(14.dp)) {
                         Row(verticalAlignment = Alignment.CenterVertically) {
-                            Icon(Icons.Default.Psychology, contentDescription = null, tint = Color(0xFF38BDF8), modifier = Modifier.size(16.dp))
+                            Icon(Icons.Default.VerifiedUser, contentDescription = null, tint = Color(0xFF10B981), modifier = Modifier.size(16.dp))
                             Spacer(modifier = Modifier.width(6.dp))
-                            Text("Why Squish Flagged This Content", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = Color.White)
+                            Text("Contextual Safety Guidance", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = Color.White)
                         }
                         Spacer(modifier = Modifier.height(8.dp))
-                        reasonsList.forEach { reason ->
+                        analysis.contextualRecommendations.forEachIndexed { idx, guide ->
                             Row(
                                 modifier = Modifier.padding(vertical = 3.dp),
                                 verticalAlignment = Alignment.Top
                             ) {
-                                Text("•", color = Color(0xFF38BDF8), fontSize = 14.sp, fontWeight = FontWeight.Bold)
-                                Spacer(modifier = Modifier.width(6.dp))
+                                Box(
+                                    modifier = Modifier
+                                        .size(18.dp)
+                                        .background(Color(0xFF10B981).copy(alpha = 0.2f), CircleShape),
+                                    contentAlignment = Alignment.Center
+                                ) {
+                                    Text("${idx + 1}", fontSize = 10.sp, fontWeight = FontWeight.Bold, color = Color(0xFF10B981))
+                                }
+                                Spacer(modifier = Modifier.width(8.dp))
                                 Text(
-                                    text = reason,
-                                    fontSize = 12.sp,
-                                    color = Color(0xFFE2E8F0),
+                                    text = guide,
+                                    fontSize = 11.sp,
+                                    color = Color(0xFFCBD5E1),
                                     lineHeight = 16.sp
                                 )
                             }
@@ -668,82 +698,7 @@ fun ScanDetailsDialog(
                     }
                 }
 
-                // SECTION 7: RECOMMENDED ACTION STEPS
-                Spacer(modifier = Modifier.height(12.dp))
-                Card(
-                    modifier = Modifier.fillMaxWidth(),
-                    shape = RoundedCornerShape(12.dp),
-                    colors = CardDefaults.cardColors(containerColor = Color(0xFF1E293B))
-                ) {
-                    Column(modifier = Modifier.padding(14.dp)) {
-                        Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.SpaceBetween,
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            Text("Recommended Next Steps", fontSize = 11.sp, color = Color(0xFF94A3B8))
-                            Surface(
-                                color = Color(0xFFEF4444).copy(alpha = 0.15f),
-                                shape = RoundedCornerShape(6.dp)
-                            ) {
-                                Text(
-                                    text = actionText,
-                                    fontSize = 10.sp,
-                                    fontWeight = FontWeight.Bold,
-                                    color = Color(0xFFEF4444),
-                                    modifier = Modifier.padding(horizontal = 8.dp, vertical = 3.dp)
-                                )
-                            }
-                        }
-
-                        Spacer(modifier = Modifier.height(8.dp))
-                        guidanceList.forEachIndexed { idx, guide ->
-                            Row(
-                                modifier = Modifier.padding(vertical = 2.dp),
-                                verticalAlignment = Alignment.Top
-                            ) {
-                                Text("${idx + 1}.", color = Color(0xFF34D399), fontSize = 11.sp, fontWeight = FontWeight.Bold)
-                                Spacer(modifier = Modifier.width(6.dp))
-                                Text(
-                                    text = guide,
-                                    fontSize = 11.sp,
-                                    color = Color(0xFFCBD5E1),
-                                    lineHeight = 15.sp
-                                )
-                            }
-                        }
-                    }
-                }
-
-                // SECTION 8: MODEL PIPELINE & ON-DEVICE ENGINE
-                Spacer(modifier = Modifier.height(12.dp))
-                Card(
-                    modifier = Modifier.fillMaxWidth(),
-                    shape = RoundedCornerShape(12.dp),
-                    colors = CardDefaults.cardColors(containerColor = Color(0xFF1E293B))
-                ) {
-                    Column(modifier = Modifier.padding(12.dp)) {
-                        Text("Model Pipeline & Engine", fontSize = 11.sp, color = Color(0xFF94A3B8))
-                        Spacer(modifier = Modifier.height(6.dp))
-
-                        Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                            Text("Channel Source", fontSize = 11.sp, color = Color(0xFF64748B))
-                            Text(threat.source, fontSize = 11.sp, fontWeight = FontWeight.SemiBold, color = Color.White)
-                        }
-                        Spacer(modifier = Modifier.height(3.dp))
-                        Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                            Text("Model Version", fontSize = 11.sp, color = Color(0xFF64748B))
-                            Text(threat.modelVersion ?: "v2.1-edge", fontSize = 11.sp, fontWeight = FontWeight.SemiBold, color = Color(0xFF38BDF8))
-                        }
-                        Spacer(modifier = Modifier.height(3.dp))
-                        Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                            Text("Execution Mode", fontSize = 11.sp, color = Color(0xFF64748B))
-                            Text("100% On-Device Edge (<30ms)", fontSize = 11.sp, fontWeight = FontWeight.SemiBold, color = Color(0xFF34D399))
-                        }
-                    }
-                }
-
-                Spacer(modifier = Modifier.height(16.dp))
+                Spacer(modifier = Modifier.height(14.dp))
 
                 // EXPLAIN WITH SQUISH AI BUTTON
                 if (onExplainWithAi != null) {
@@ -752,30 +707,93 @@ fun ScanDetailsDialog(
                             onDismiss()
                             onExplainWithAi(threat)
                         },
-                        modifier = Modifier.fillMaxWidth().height(44.dp),
-                        shape = RoundedCornerShape(12.dp),
+                        modifier = Modifier.fillMaxWidth().height(42.dp),
+                        shape = RoundedCornerShape(10.dp),
                         colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF0EA5E9))
                     ) {
-                        Icon(Icons.Default.AutoAwesome, contentDescription = null, modifier = Modifier.size(18.dp))
-                        Spacer(modifier = Modifier.width(8.dp))
-                        Text("Explain with Squish AI", fontSize = 13.sp, fontWeight = FontWeight.SemiBold)
+                        Icon(Icons.Default.AutoAwesome, contentDescription = null, modifier = Modifier.size(16.dp))
+                        Spacer(modifier = Modifier.width(6.dp))
+                        Text("Explain with Squish AI Assistant", fontSize = 12.sp, fontWeight = FontWeight.SemiBold)
                     }
                     Spacer(modifier = Modifier.height(10.dp))
                 }
 
-                // QUARANTINE TOGGLE BUTTON
-                if (onToggleQuarantine != null) {
+                // SECTION F: ACTION BUTTONS (Reversible Feedback, Trust Sender, Quarantine, Delete)
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    // Mark Safe with feedback dialog
+                    OutlinedButton(
+                        onClick = { showMarkSafeDialog = true },
+                        modifier = Modifier.weight(1f).height(40.dp),
+                        shape = RoundedCornerShape(10.dp),
+                        colors = ButtonDefaults.outlinedButtonColors(contentColor = Color(0xFF10B981))
+                    ) {
+                        Icon(Icons.Default.CheckCircle, contentDescription = null, modifier = Modifier.size(15.dp))
+                        Spacer(modifier = Modifier.width(4.dp))
+                        Text("Mark Safe", fontSize = 11.sp, fontWeight = FontWeight.Bold)
+                    }
+
+                    // Report Scam with feedback dialog
+                    OutlinedButton(
+                        onClick = { showReportScamDialog = true },
+                        modifier = Modifier.weight(1f).height(40.dp),
+                        shape = RoundedCornerShape(10.dp),
+                        colors = ButtonDefaults.outlinedButtonColors(contentColor = Color(0xFFEF4444))
+                    ) {
+                        Icon(Icons.Default.Report, contentDescription = null, modifier = Modifier.size(15.dp))
+                        Spacer(modifier = Modifier.width(4.dp))
+                        Text("Report Scam", fontSize = 11.sp, fontWeight = FontWeight.Bold)
+                    }
+                }
+
+                // Trust Sender Toggle
+                if (onToggleTrustSender != null && analysis.sender.isNotBlank()) {
+                    Spacer(modifier = Modifier.height(8.dp))
                     OutlinedButton(
                         onClick = {
-                            val nextState = !threat.isQuarantined
-                            onToggleQuarantine(nextState)
+                            val newTrust = !isSenderTrusted
+                            onToggleTrustSender(newTrust)
                             Toast.makeText(
                                 context,
-                                if (nextState) "Threat placed in Quarantine" else "Released from Quarantine",
+                                if (newTrust) "Sender added to your trusted list" else "Sender removed from trusted list",
                                 Toast.LENGTH_SHORT
                             ).show()
                         },
-                        modifier = Modifier.fillMaxWidth().height(42.dp),
+                        modifier = Modifier.fillMaxWidth().height(38.dp),
+                        shape = RoundedCornerShape(10.dp),
+                        colors = ButtonDefaults.outlinedButtonColors(
+                            contentColor = if (isSenderTrusted) Color(0xFFF59E0B) else Color(0xFF38BDF8)
+                        )
+                    ) {
+                        Icon(
+                            imageVector = if (isSenderTrusted) Icons.Default.PersonRemove else Icons.Default.PersonAdd,
+                            contentDescription = null,
+                            modifier = Modifier.size(15.dp)
+                        )
+                        Spacer(modifier = Modifier.width(6.dp))
+                        Text(
+                            text = if (isSenderTrusted) "Remove from Trusted Senders" else "Trust This Sender in Future",
+                            fontSize = 11.sp,
+                            fontWeight = FontWeight.SemiBold
+                        )
+                    }
+                }
+
+                // Quarantine Toggle
+                if (onToggleQuarantine != null) {
+                    Spacer(modifier = Modifier.height(8.dp))
+                    OutlinedButton(
+                        onClick = {
+                            if (threat.isQuarantined) {
+                                showRestoreConfirmDialog = true
+                            } else {
+                                onToggleQuarantine(true)
+                                Toast.makeText(context, "Threat quarantined locally", Toast.LENGTH_SHORT).show()
+                            }
+                        },
+                        modifier = Modifier.fillMaxWidth().height(38.dp),
                         shape = RoundedCornerShape(10.dp),
                         colors = ButtonDefaults.outlinedButtonColors(
                             contentColor = if (threat.isQuarantined) Color(0xFF10B981) else Color(0xFFEF4444)
@@ -784,78 +802,42 @@ fun ScanDetailsDialog(
                         Icon(
                             imageVector = if (threat.isQuarantined) Icons.Default.LockOpen else Icons.Default.Lock,
                             contentDescription = null,
-                            modifier = Modifier.size(16.dp)
+                            modifier = Modifier.size(15.dp)
                         )
                         Spacer(modifier = Modifier.width(6.dp))
                         Text(
                             text = if (threat.isQuarantined) "Release from Quarantine" else "Quarantine Threat",
-                            fontSize = 12.sp,
-                            fontWeight = FontWeight.Bold
+                            fontSize = 11.sp,
+                            fontWeight = FontWeight.SemiBold
                         )
                     }
-                    Spacer(modifier = Modifier.height(10.dp))
                 }
 
-                // USER ACTIONS: BLOCK / MARK SAFE
-                if (onUpdateAction != null) {
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.spacedBy(10.dp)
-                    ) {
-                        OutlinedButton(
-                            onClick = {
-                                onUpdateAction("BLOCKED")
-                                Toast.makeText(context, "Marked as Blocked", Toast.LENGTH_SHORT).show()
-                            },
-                            modifier = Modifier.weight(1f),
-                            shape = RoundedCornerShape(10.dp),
-                            colors = ButtonDefaults.outlinedButtonColors(contentColor = Color(0xFFEF4444))
-                        ) {
-                            Icon(Icons.Default.Block, contentDescription = null, modifier = Modifier.size(15.dp))
-                            Spacer(modifier = Modifier.width(4.dp))
-                            Text("Block", fontSize = 12.sp)
-                        }
+                Spacer(modifier = Modifier.height(8.dp))
 
-                        OutlinedButton(
-                            onClick = {
-                                onUpdateAction("MARK_SAFE")
-                                Toast.makeText(context, "Marked as Safe", Toast.LENGTH_SHORT).show()
-                            },
-                            modifier = Modifier.weight(1f),
-                            shape = RoundedCornerShape(10.dp),
-                            colors = ButtonDefaults.outlinedButtonColors(contentColor = Color(0xFF10B981))
-                        ) {
-                            Icon(Icons.Default.CheckCircle, contentDescription = null, modifier = Modifier.size(15.dp))
-                            Spacer(modifier = Modifier.width(4.dp))
-                            Text("Mark Safe", fontSize = 12.sp)
-                        }
-                    }
-                    Spacer(modifier = Modifier.height(10.dp))
-                }
-
-                // BOTTOM CONTROLS: DELETE & CLOSE
+                // Delete & Close Row
                 Row(
                     modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(10.dp)
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
                     OutlinedButton(
                         onClick = { showDeleteConfirmDialog = true },
-                        modifier = Modifier.weight(1f),
+                        modifier = Modifier.weight(1f).height(38.dp),
                         shape = RoundedCornerShape(10.dp),
                         colors = ButtonDefaults.outlinedButtonColors(contentColor = Color(0xFF94A3B8))
                     ) {
-                        Icon(Icons.Default.Delete, contentDescription = null, modifier = Modifier.size(15.dp))
+                        Icon(Icons.Default.Delete, contentDescription = null, modifier = Modifier.size(14.dp))
                         Spacer(modifier = Modifier.width(4.dp))
-                        Text("Delete", fontSize = 12.sp)
+                        Text("Delete", fontSize = 11.sp)
                     }
 
                     Button(
                         onClick = onDismiss,
-                        modifier = Modifier.weight(1f),
+                        modifier = Modifier.weight(1f).height(38.dp),
                         shape = RoundedCornerShape(10.dp),
                         colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF334155))
                     ) {
-                        Text("Close", fontSize = 12.sp)
+                        Text("Done", fontSize = 11.sp)
                     }
                 }
             }

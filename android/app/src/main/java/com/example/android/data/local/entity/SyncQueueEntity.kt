@@ -39,12 +39,24 @@ data class SyncQueueEntity(
 
     val syncedAt: Long? = null,
 
-    val userId: String? = null
+    val userId: String? = null,
+
+    val pendingOperation: String = OP_TELEMETRY_SYNC,
+
+    val errorCategory: String? = null
 ) {
     companion object {
         const val STATUS_PENDING = "PENDING"
         const val STATUS_SYNCING = "SYNCING"
         const val STATUS_SYNCED = "SYNCED"
         const val STATUS_FAILED = "FAILED"
+
+        const val OP_TELEMETRY_SYNC = "TELEMETRY_SYNC"
+        const val OP_REMOTE_URL_CHECK = "REMOTE_URL_CHECK"
+
+        const val ERROR_NETWORK_OFFLINE = "NETWORK_OFFLINE"
+        const val ERROR_AUTH_REQUIRED = "AUTH_REQUIRED"
+        const val ERROR_SERVER = "SERVER_ERROR"
+        const val ERROR_PERMANENT = "PERMANENT_REJECT"
     }
 }

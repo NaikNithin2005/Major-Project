@@ -202,30 +202,7 @@ export default function LoginPage() {
             </Link>
           </div>
 
-          {/* Development Quick-Login Controls */}
-          <div className="mt-6 pt-4 border-t border-slate-800/60">
-            <div className="text-[10px] font-semibold text-slate-500 uppercase tracking-wider text-center mb-2.5">
-              Development Quick-Sign In
-            </div>
-            <div className="grid grid-cols-2 gap-2">
-              <button
-                type="button"
-                onClick={() => handleDevLogin('user')}
-                disabled={isSubmitting || isLoading}
-                className="py-1.5 px-2 rounded bg-slate-800/80 hover:bg-slate-800 border border-slate-700/80 text-[11px] text-slate-300 font-medium text-center transition-colors"
-              >
-                Standard User
-              </button>
-              <button
-                type="button"
-                onClick={() => handleDevLogin('admin')}
-                disabled={isSubmitting || isLoading}
-                className="py-1.5 px-2 rounded bg-amber-500/10 hover:bg-amber-500/20 border border-amber-500/30 text-[11px] text-amber-300 font-medium text-center transition-colors"
-              >
-                System Admin
-              </button>
-            </div>
-          </div>
+
         </div>
 
         {/* Security Assurance Footer */}
@@ -259,11 +236,10 @@ export default function LoginPage() {
 
             {forgotMsg && (
               <div
-                className={`mb-4 p-3 rounded-lg text-xs flex items-start space-x-2 ${
-                  forgotStatus === 'success'
+                className={`mb-4 p-3 rounded-lg text-xs flex items-start space-x-2 ${forgotStatus === 'success'
                     ? 'bg-emerald-500/10 text-emerald-300 border border-emerald-500/20'
                     : 'bg-rose-500/10 text-rose-300 border border-rose-500/20'
-                }`}
+                  }`}
               >
                 {forgotStatus === 'success' ? (
                   <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" />

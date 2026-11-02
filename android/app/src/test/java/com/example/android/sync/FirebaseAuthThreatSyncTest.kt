@@ -59,7 +59,8 @@ class FirebaseAuthThreatSyncTest {
             syncQueueDao = fakeSyncDao,
             backendApiService = fakeBackend,
             authRepository = fakeAuth,
-            firestoreDataSource = fakeFirestore
+            firestoreDataSource = fakeFirestore,
+            threatHistoryDao = fakeThreatDao
         )
 
         threatRepository = ThreatHistoryRepositoryImpl(fakeThreatDao)
@@ -358,6 +359,16 @@ class FirebaseAuthThreatSyncTest {
         override fun observeAll(): Flow<List<SyncQueueEntity>> = flowOf(items)
         override suspend fun getPendingCount(): Int = items.count { it.status == "PENDING" }
         override suspend fun resetFailedItems(): Int = 0
+        override suspend fun resetAllPendingForImmediateSync(): Int {
+            var count = 0
+            items.forEachIndexed { idx, entity ->
+                if (entity.status == "FAILED" || entity.status == "PENDING") {
+                    items[idx] = entity.copy(status = "PENDING", nextAttemptAt = 0L)
+                    count++
+                }
+            }
+            return count
+        }
         override suspend fun purgeOldSynced(cutoffTimestamp: Long): Int = 0
     }
 
@@ -378,7 +389,11 @@ class FirebaseAuthThreatSyncTest {
         override suspend fun deleteThreatById(id: String) {
             threats.removeAll { it.id == id }
         }
-        override suspend fun clearAllThreats() {
+            override suspend fun insertThreats(threats: List<com.example.android.data.local.entity.ThreatHistoryEntity>) { threats.forEach { insertThreat(it) } }
+    override fun observeThreatsByUserId(userId: String?): kotlinx.coroutines.flow.Flow<List<com.example.android.data.local.entity.ThreatHistoryEntity>> = observeAllThreats()
+    override suspend fun deleteThreatsByUserId(userId: String) {}
+
+    override suspend fun clearAllThreats() {
             threats.clear()
         }
         override fun observeQuarantinedThreats(): Flow<List<ThreatHistoryEntity>> = flowOf(threats.filter { it.isQuarantined })
@@ -393,6 +408,17 @@ class FirebaseAuthThreatSyncTest {
         override suspend fun updateThreatAction(id: String, action: String) {
             val idx = threats.indexOfFirst { it.id == id }
             if (idx >= 0) threats[idx] = threats[idx].copy(actionTaken = action)
+        }
+        override suspend fun getPendingThreats(userId: String?): List<ThreatHistoryEntity> {
+            return threats.filter { it.syncStatus == "PENDING" && (userId == null || it.userId == null || it.userId == userId) }
+        }
+        override suspend fun updateSyncStatus(id: String, syncStatus: String) {
+            val idx = threats.indexOfFirst { it.id == id }
+            if (idx >= 0) threats[idx] = threats[idx].copy(syncStatus = syncStatus, retryCount = threats[idx].retryCount + 1)
+        }
+        override suspend fun updatePendingOperation(id: String, pendingOperation: String) {
+            val idx = threats.indexOfFirst { it.id == id }
+            if (idx >= 0) threats[idx] = threats[idx].copy(pendingOperation = pendingOperation)
         }
     }
 

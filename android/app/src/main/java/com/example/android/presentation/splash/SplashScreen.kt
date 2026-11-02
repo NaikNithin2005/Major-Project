@@ -22,10 +22,12 @@ import kotlinx.coroutines.delay
 @Composable
 fun SplashScreen(
     authState: AuthState,
+    onNavigateToPermissions: () -> Unit,
     onNavigateToOnboarding: () -> Unit,
     onNavigateToLogin: () -> Unit,
     onNavigateToMain: () -> Unit
 ) {
+    val context = androidx.compose.ui.platform.LocalContext.current
     val infiniteTransition = rememberInfiniteTransition(label = "pulse")
     val scale by infiniteTransition.animateFloat(
         initialValue = 0.9f,
@@ -39,10 +41,15 @@ fun SplashScreen(
 
     LaunchedEffect(authState) {
         delay(1500) // Aesthetic splash duration
-        when (authState) {
-            is AuthState.Authenticated -> onNavigateToMain()
-            is AuthState.Unauthenticated, is AuthState.Error -> onNavigateToOnboarding()
-            else -> onNavigateToLogin()
+        val hasPermissions = com.example.android.util.PermissionUtils.hasAllRequiredPermissions(context)
+        if (!hasPermissions) {
+            onNavigateToPermissions()
+        } else {
+            when (authState) {
+                is AuthState.Authenticated -> onNavigateToMain()
+                is AuthState.Unauthenticated, is AuthState.Error -> onNavigateToOnboarding()
+                else -> onNavigateToLogin()
+            }
         }
     }
 

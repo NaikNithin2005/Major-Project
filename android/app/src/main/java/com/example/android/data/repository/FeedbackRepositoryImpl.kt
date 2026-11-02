@@ -33,9 +33,43 @@ class FeedbackRepositoryImpl(
         return dao.observeAllFeedback().map { list -> list.map { it.toDomain() } }
     }
 
+    override suspend fun getFeedbackForSender(sender: String): List<UserFeedback> {
+        return try {
+            dao.getFeedbackForSender(sender).map { it.toDomain() }
+        } catch (e: Exception) {
+            emptyList()
+        }
+    }
+
+    override suspend fun getFeedbackForThreat(threatId: String): UserFeedback? {
+        return try {
+            dao.getFeedbackForThreat(threatId)?.toDomain()
+        } catch (e: Exception) {
+            null
+        }
+    }
+
     override suspend fun markAsSubmitted(id: String): Result<Unit> {
         return try {
             dao.markSubmitted(id)
+            Result.success(Unit)
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
+
+    override suspend fun deleteFeedback(id: String): Result<Unit> {
+        return try {
+            dao.deleteFeedback(id)
+            Result.success(Unit)
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
+
+    override suspend fun deleteFeedbackForThreat(threatId: String): Result<Unit> {
+        return try {
+            dao.deleteFeedbackForThreat(threatId)
             Result.success(Unit)
         } catch (e: Exception) {
             Result.failure(e)
@@ -48,7 +82,11 @@ class FeedbackRepositoryImpl(
         timestamp = timestamp,
         userCategory = userCategory,
         comment = comment,
-        isSubmitted = isSubmitted
+        isSubmitted = isSubmitted,
+        sender = sender,
+        originalPrediction = originalPrediction,
+        correctedClassification = correctedClassification,
+        userId = userId
     )
 
     private fun FeedbackEntity.toDomain() = UserFeedback(
@@ -57,6 +95,10 @@ class FeedbackRepositoryImpl(
         timestamp = timestamp,
         userCategory = userCategory,
         comment = comment,
-        isSubmitted = isSubmitted
+        isSubmitted = isSubmitted,
+        sender = sender,
+        originalPrediction = originalPrediction,
+        correctedClassification = correctedClassification,
+        userId = userId
     )
 }

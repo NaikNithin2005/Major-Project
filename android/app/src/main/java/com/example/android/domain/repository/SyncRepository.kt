@@ -18,4 +18,6 @@ interface SyncRepository {
     fun observePendingCount(): Flow<Int>
     fun observeSyncQueue(): Flow<List<SyncQueueEntity>>
     suspend fun fetchAndApplyServerProfile(): Result<User>
+    suspend fun restoreUserCloudHistory(userId: String): Result<Int>
+    suspend fun syncAllLocalThreatsToFirestore(userId: String): Result<Int>
 }

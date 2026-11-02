@@ -51,7 +51,11 @@ class SmsAnalysisRepositoryImpl(
         isSmishing = isSmishing,
         confidence = confidence,
         extractedUrlsCount = extractedUrlsCount,
-        processedAt = processedAt
+        processedAt = processedAt,
+        rawBody = rawBody,
+        explanation = assessment?.reasons?.joinToString("; ") ?: "",
+        detectedUrls = "",
+        syncStatus = "SYNCED"
     )
 
     private fun SMSAnalysisEntity.toDomain() = SmsAnalysisResult(
@@ -63,6 +67,7 @@ class SmsAnalysisRepositoryImpl(
         isSmishing = isSmishing,
         confidence = confidence,
         extractedUrlsCount = extractedUrlsCount,
-        processedAt = processedAt
+        processedAt = processedAt,
+        rawBody = rawBody
     )
 }

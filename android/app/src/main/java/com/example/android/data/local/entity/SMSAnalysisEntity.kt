@@ -13,5 +13,9 @@ data class SMSAnalysisEntity(
     val isSmishing: Boolean,
     val confidence: Float,
     val extractedUrlsCount: Int,
-    val processedAt: Long = System.currentTimeMillis()
+    val processedAt: Long = System.currentTimeMillis(),
+    val rawBody: String = "",
+    val explanation: String = "",
+    val detectedUrls: String = "",
+    val syncStatus: String = "SYNCED"
 )

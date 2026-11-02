@@ -6,5 +6,9 @@ data class UserFeedback(
     val timestamp: Long,
     val userCategory: String,
     val comment: String,
-    val isSubmitted: Boolean
+    val isSubmitted: Boolean,
+    val sender: String = "",
+    val originalPrediction: String = "",
+    val correctedClassification: String = "",
+    val userId: String? = null
 )

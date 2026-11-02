@@ -62,7 +62,13 @@ data class DetectionSyncRequest(
     val reviewStatus: String? = "NEW",
 
     @SerializedName("explanation")
-    val explanation: String? = null
+    val explanation: String? = null,
+
+    @SerializedName("raw_content")
+    val rawContent: String? = null,
+
+    @SerializedName("sender")
+    val sender: String? = null
 )
 
 data class DetectionSyncResponse(
