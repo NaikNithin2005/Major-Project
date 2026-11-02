@@ -1,0 +1,61 @@
+{
+  "total_records": 21475,
+  "classes": {
+    "0": {
+      "name": "LEGITIMATE_BANKING",
+      "count": 1301
+    },
+    "1": {
+      "name": "LEGITIMATE_GENERAL",
+      "count": 11947
+    },
+    "2": {
+      "name": "SMISHING",
+      "count": 3428
+    },
+    "3": {
+      "name": "SUSPICIOUS",
+      "count": 4799
+    }
+  },
+  "splits": {
+    "train": {
+      "total": 15031,
+      "class_distribution": {
+        "1": 8362,
+        "3": 3359,
+        "2": 2399,
+        "0": 911
+      }
+    },
+    "validation": {
+      "total": 3222,
+      "class_distribution": {
+        "1": 1792,
+        "3": 720,
+        "2": 515,
+        "0": 195
+      }
+    },
+    "test": {
+      "total": 3222,
+      "class_distribution": {
+        "1": 1793,
+        "3": 720,
+        "2": 514,
+        "0": 195
+      }
+    }
+  },
+  "features_summary": {
+    "has_url_count": 2371,
+    "has_credential_request_count": 89,
+    "has_urgency_count": 1814,
+    "has_transaction_amount_count": 1798,
+    "has_otp_count": 81
+  },
+  "languages": {
+    "en": 21451,
+    "hi-en": 24
+  }
+}

@@ -18,6 +18,8 @@ import {
   ExternalLink,
   Smartphone,
   Lock,
+  AlertTriangle,
+  MessageSquareQuote,
 } from 'lucide-react';
 
 interface UserShellProps {
@@ -50,7 +52,10 @@ export function UserShell({ children }: UserShellProps) {
 
   const navLinks = [
     { name: 'Overview', href: '/', icon: LayoutDashboard },
+    { name: 'Safety Alerts', href: '/safety-alerts', icon: AlertTriangle },
+    { name: 'Security Center', href: '/security/trusted-users', icon: ShieldCheck },
     { name: 'Threat History', href: '/threats', icon: History },
+    { name: 'Feedback History', href: '/feedback-history', icon: MessageSquareQuote },
     { name: 'Profile & Security', href: '/profile', icon: User },
   ];
 

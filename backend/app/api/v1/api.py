@@ -9,6 +9,8 @@ from app.api.v1.admin import router as admin_router
 from app.api.v1.operations import router as operations_router
 from app.api.v1.threat_intel import router as threat_intel_router
 from app.api.v1.incidents import router as incidents_router
+from app.api.v1.security import router as security_router
+from app.api.v1.alerts import router as alerts_router
 
 api_v1_router = APIRouter(prefix="/v1")
 
@@ -22,3 +24,5 @@ api_v1_router.include_router(admin_router)
 api_v1_router.include_router(operations_router)
 api_v1_router.include_router(threat_intel_router)
 api_v1_router.include_router(incidents_router)
+api_v1_router.include_router(security_router)
+api_v1_router.include_router(alerts_router)

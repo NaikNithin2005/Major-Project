@@ -1,5 +1,6 @@
 import time
 from dataclasses import dataclass, asdict
+import numpy as np
 import torch
 import torch.nn as nn
 from transformers import AutoModelForSequenceClassification, AutoTokenizer
@@ -7,7 +8,15 @@ from ai.preprocessing.sms_preprocessor import SmsPreprocessor
 
 MODEL_VERSION = "tinybert-smishing-v1"
 MODEL_VERSION_V2 = "tinybert-smishing-v2"
+MODEL_VERSION_4CLASS = "tinybert-smishing-banking-v2"
 CHECKPOINT_NAME = "huawei-noah/TinyBERT_General_4L_312D"
+
+CLASS_NAMES_4 = {
+    0: "LEGITIMATE_BANKING",
+    1: "LEGITIMATE_GENERAL",
+    2: "SMISHING",
+    3: "SUSPICIOUS"
+}
 
 @dataclass
 class TinyBertResult:
@@ -16,13 +25,15 @@ class TinyBertResult:
     probabilities: dict
     confidence: float
     timestamp: float
+    class_id: int = 0
 
 class PyTorchTinyBertModel(nn.Module):
     """
-    4-Layer Transformer Architecture matching TinyBERT (312 hidden dim, 4 heads, 2 labels).
+    4-Layer Transformer Architecture matching TinyBERT (312 hidden dim, 4 heads, configurable num_classes).
     """
-    def __init__(self, vocab_size: int = 30522, hidden_dim: int = 312, num_classes: int = 2):
+    def __init__(self, vocab_size: int = 30522, hidden_dim: int = 312, num_classes: int = 4):
         super().__init__()
+        self.num_classes = num_classes
         self.embedding = nn.Embedding(vocab_size, hidden_dim)
         encoder_layer = nn.TransformerEncoderLayer(d_model=hidden_dim, nhead=4, dim_feedforward=1200, batch_first=True)
         self.encoder = nn.TransformerEncoder(encoder_layer, num_layers=4, enable_nested_tensor=False)
@@ -53,7 +64,9 @@ class TinyBertSmsClassifier:
             self.load_model(model_path)
 
     def load_model(self, model_path: str):
-        if "v2" in model_path:
+        if "4Class" in model_path or "New Trained" in model_path or "banking" in model_path:
+            self.model_version = MODEL_VERSION_4CLASS
+        elif "v2" in model_path:
             self.model_version = MODEL_VERSION_V2
         else:
             self.model_version = MODEL_VERSION
@@ -63,8 +76,13 @@ class TinyBertSmsClassifier:
             self.model = AutoModelForSequenceClassification.from_pretrained(model_path)
         except Exception:
             try:
-                self.model = PyTorchTinyBertModel()
                 state_dict = torch.load(model_path, map_location=self.device)
+                # Inspect classifier shape to determine num_classes (2 vs 4)
+                if "classifier.1.weight" in state_dict:
+                    out_classes = state_dict["classifier.1.weight"].shape[0]
+                else:
+                    out_classes = 4 if ("4Class" in model_path or "New Trained" in model_path) else 2
+                self.model = PyTorchTinyBertModel(num_classes=out_classes)
                 self.model.load_state_dict(state_dict)
             except Exception as e:
                 raise RuntimeError(f"Failed to load TinyBERT model from {model_path}: {e}")
@@ -87,15 +105,34 @@ class TinyBertSmsClassifier:
                 logits = outputs
             probs = torch.softmax(logits, dim=-1).squeeze(0).cpu().numpy()
 
-        p_safe = float(probs[0])
-        p_smishing = float(probs[1])
-        predicted_class = "smishing" if p_smishing >= 0.5 else "safe"
-        confidence = float(max(p_safe, p_smishing))
-
-        return TinyBertResult(
-            model_version=self.model_version,
-            label=predicted_class,
-            probabilities={"safe": round(p_safe, 4), "smishing": round(p_smishing, 4)},
-            confidence=round(confidence, 4),
-            timestamp=time.time()
-        )
+        if len(probs) >= 4:
+            pred_idx = int(np.argmax(probs))
+            predicted_class = CLASS_NAMES_4.get(pred_idx, "UNKNOWN")
+            confidence = float(probs[pred_idx])
+            prob_dict = {
+                "legitimate_banking": round(float(probs[0]), 4),
+                "legitimate_general": round(float(probs[1]), 4),
+                "smishing": round(float(probs[2]), 4),
+                "suspicious": round(float(probs[3]), 4)
+            }
+            return TinyBertResult(
+                model_version=self.model_version,
+                label=predicted_class,
+                probabilities=prob_dict,
+                confidence=round(confidence, 4),
+                timestamp=time.time(),
+                class_id=pred_idx
+            )
+        else:
+            p_safe = float(probs[0])
+            p_smishing = float(probs[1])
+            predicted_class = "smishing" if p_smishing >= 0.5 else "safe"
+            confidence = float(max(p_safe, p_smishing))
+            return TinyBertResult(
+                model_version=self.model_version,
+                label=predicted_class,
+                probabilities={"safe": round(p_safe, 4), "smishing": round(p_smishing, 4)},
+                confidence=round(confidence, 4),
+                timestamp=time.time(),
+                class_id=1 if predicted_class == "smishing" else 0
+            )

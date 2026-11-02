@@ -174,9 +174,10 @@ open class FirestoreDataSource {
 
         val reviewStatus = when (action) {
             "BLOCK" -> "BLOCKED"
-            "MARK_SAFE" -> "RESOLVED"
+            "MARK_SAFE", "RESOLVED" -> "RESOLVED"
             else -> "REVIEWED"
         }
+        val status = if (action == "RESOLVED" || action == "MARK_SAFE") "RESOLVED" else if (action == "BLOCK") "BLOCKED" else "REVIEWED"
 
         return try {
             withTimeoutOrNull(8000L) {
@@ -187,7 +188,9 @@ open class FirestoreDataSource {
                     .update(
                         mapOf(
                             "actionTaken" to action,
+                            "userAction" to action,
                             "reviewStatus" to reviewStatus,
+                            "status" to status,
                             "updatedAt" to FieldValue.serverTimestamp()
                         )
                     )

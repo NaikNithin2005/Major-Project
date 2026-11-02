@@ -38,6 +38,15 @@ import com.example.android.presentation.sms.SmsMonitoringViewModel
 import com.example.android.presentation.splash.SplashScreen
 import com.example.android.presentation.splash.SplashViewModel
 import com.example.android.util.DeepLinkRequest
+import com.example.android.presentation.security.SafetyAlertsScreen
+import com.example.android.presentation.security.TrustedUsersScreen
+import com.example.android.presentation.security.UntrustedUsersScreen
+import com.example.android.presentation.security.QuarantinedSmsScreen
+import com.example.android.presentation.security.BlockedUsersScreen
+import com.example.android.presentation.security.BlockedSmsScreen
+import com.example.android.presentation.security.FeedbackHistoryScreen
+import com.example.android.presentation.security.SmsDetailsScreen
+import com.example.android.presentation.security.SenderDetailsScreen
 
 @Composable
 fun AegisNavGraph(
@@ -325,7 +334,16 @@ fun AegisNavGraph(
                 onToggleAiModelEnabled = viewModel::toggleAiModelEnabled,
                 onToggleOptInAiLearning = viewModel::toggleOptInAiLearning,
                 onToggleCloudSync = viewModel::toggleCloudSync,
-                onRestoreCloudHistory = { viewModel.restoreCloudHistory(context) }
+                onRestoreCloudHistory = { viewModel.restoreCloudHistory(context) },
+                onNavigateToSafetyAlerts = {
+                    navController.navigate(Screen.SafetyAlerts.route)
+                },
+                onNavigateToSecurity = {
+                    navController.navigate(Screen.TrustedUsers.route)
+                },
+                onNavigateToFeedbackHistory = {
+                    navController.navigate(Screen.FeedbackHistory.route)
+                }
             )
         }
 
@@ -377,6 +395,129 @@ fun AegisNavGraph(
                 viewModel = viewModel,
                 onNavigateBack = {
                     navController.popBackStack()
+                }
+            )
+        }
+
+        // Safety Alerts Screen
+        composable(Screen.SafetyAlerts.route) {
+            SafetyAlertsScreen(
+                repository = container.threatHistoryRepository,
+                userId = null,
+                firestoreDataSource = container.firestoreDataSource,
+                onNavigateBack = { navController.popBackStack() },
+                onNavigateToThreatDetails = { threat ->
+                    navController.navigate(Screen.SmsDetails.createRoute(threat.id))
+                },
+                onNavigateToSenderDetails = { sender ->
+                    navController.navigate(Screen.SenderDetails.createRoute(sender))
+                }
+            )
+        }
+
+        // Trusted Users Screen
+        composable(Screen.TrustedUsers.route) {
+            TrustedUsersScreen(
+                trustedSenderRepository = container.trustedSenderRepository,
+                onNavigateBack = { navController.popBackStack() },
+                onNavigateToSenderDetails = { sender ->
+                    navController.navigate(Screen.SenderDetails.createRoute(sender))
+                }
+            )
+        }
+
+        // Untrusted Users Screen
+        composable(Screen.UntrustedUsers.route) {
+            UntrustedUsersScreen(
+                threatHistoryRepository = container.threatHistoryRepository,
+                trustedSenderRepository = container.trustedSenderRepository,
+                onNavigateBack = { navController.popBackStack() },
+                onNavigateToSenderDetails = { sender ->
+                    navController.navigate(Screen.SenderDetails.createRoute(sender))
+                }
+            )
+        }
+
+        // Quarantined SMS Screen
+        composable(Screen.QuarantinedSms.route) {
+            val quarantinedThreats by container.threatHistoryRepository.observeQuarantinedThreats().collectAsState(initial = emptyList())
+            QuarantinedSmsScreen(
+                quarantinedThreats = quarantinedThreats,
+                userId = null,
+                repository = container.threatHistoryRepository,
+                firestoreDataSource = container.firestoreDataSource,
+                onNavigateBack = { navController.popBackStack() },
+                onNavigateToDetails = { threat ->
+                    navController.navigate(Screen.SmsDetails.createRoute(threat.id))
+                }
+            )
+        }
+
+        // Blocked Users Screen
+        composable(Screen.BlockedUsers.route) {
+            BlockedUsersScreen(
+                threatHistoryRepository = container.threatHistoryRepository,
+                onNavigateBack = { navController.popBackStack() },
+                onNavigateToSenderDetails = { sender ->
+                    navController.navigate(Screen.SenderDetails.createRoute(sender))
+                }
+            )
+        }
+
+        // Blocked SMS Screen
+        composable(Screen.BlockedSms.route) {
+            BlockedSmsScreen(
+                repository = container.threatHistoryRepository,
+                onNavigateBack = { navController.popBackStack() },
+                onNavigateToDetails = { threat ->
+                    navController.navigate(Screen.SmsDetails.createRoute(threat.id))
+                }
+            )
+        }
+
+        // Feedback History Screen
+        composable(Screen.FeedbackHistory.route) {
+            FeedbackHistoryScreen(
+                feedbackRepository = container.feedbackRepository,
+                onNavigateBack = { navController.popBackStack() }
+            )
+        }
+
+        // SMS Details Screen
+        composable(
+            route = Screen.SmsDetails.route,
+            arguments = listOf(navArgument("threatId") { type = NavType.StringType })
+        ) { backStackEntry ->
+            val threatId = backStackEntry.arguments?.getString("threatId") ?: ""
+            SmsDetailsScreen(
+                threatId = threatId,
+                repository = container.threatHistoryRepository,
+                trustedSenderRepository = container.trustedSenderRepository,
+                onNavigateBack = { navController.popBackStack() },
+                onNavigateToSenderDetails = { sender ->
+                    navController.navigate(Screen.SenderDetails.createRoute(sender))
+                }
+            )
+        }
+
+        // Sender Details Screen
+        composable(
+            route = Screen.SenderDetails.route,
+            arguments = listOf(navArgument("senderId") { type = NavType.StringType })
+        ) { backStackEntry ->
+            val encodedSenderId = backStackEntry.arguments?.getString("senderId") ?: ""
+            val senderId = try {
+                java.net.URLDecoder.decode(encodedSenderId, "UTF-8")
+            } catch (e: Exception) {
+                encodedSenderId
+            }
+            SenderDetailsScreen(
+                senderId = senderId,
+                threatHistoryRepository = container.threatHistoryRepository,
+                trustedSenderRepository = container.trustedSenderRepository,
+                onNavigateBack = { navController.popBackStack() },
+                onNavigateToThreatDetails = { threat ->
+                    navController.navigate(Screen.SmsDetails.createRoute(threat.id))
                 }
             )
         }

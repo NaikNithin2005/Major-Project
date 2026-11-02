@@ -638,7 +638,7 @@ export async function takeUserThreatAction(
 
   threatId: string,
 
-  action: 'BLOCK' | 'MARK_SAFE' | 'IGNORE'
+  action: 'BLOCK' | 'MARK_SAFE' | 'IGNORE' | 'RESOLVED'
 
 ): Promise<void> {
 
@@ -654,7 +654,9 @@ export async function takeUserThreatAction(
 
   const threatDocRef = doc(activeDb, 'users', uid, 'threats', threatId);
 
-  const reviewStatus = action === 'BLOCK' ? 'BLOCKED' : action === 'MARK_SAFE' ? 'RESOLVED' : 'REVIEWED';
+  const reviewStatus = action === 'BLOCK' ? 'BLOCKED' : (action === 'MARK_SAFE' || action === 'RESOLVED') ? 'RESOLVED' : 'REVIEWED';
+
+  const status = (action === 'RESOLVED' || action === 'MARK_SAFE') ? 'RESOLVED' : (action === 'BLOCK') ? 'BLOCKED' : 'REVIEWED';
 
   await updateDoc(threatDocRef, {
 
@@ -663,6 +665,8 @@ export async function takeUserThreatAction(
     userAction: action,
 
     reviewStatus,
+
+    status,
 
     updatedAt: serverTimestamp(),
 

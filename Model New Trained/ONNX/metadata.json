@@ -1,0 +1,110 @@
+{
+  "model_name": "Squish TinyBERT 4-Class Smishing and Banking Classifier",
+  "version": "tinybert-smishing-banking-v2",
+  "release_version": "TinyBERT-v2-4Class",
+  "training_date": "2026-11-02 20:03:40",
+  "random_seed": 42,
+  "base_architecture": "TinyBERT_General_4L_312D",
+  "num_classes": 4,
+  "max_sequence_length": 128,
+  "label_mapping": {
+    "0": "LEGITIMATE_BANKING",
+    "1": "LEGITIMATE_GENERAL",
+    "2": "SMISHING",
+    "3": "SUSPICIOUS"
+  },
+  "evaluation_metrics": {
+    "accuracy": 0.8107,
+    "macro_precision": 0.7354,
+    "macro_recall": 0.8207,
+    "macro_f1": 0.768,
+    "weighted_f1": 0.8175,
+    "banking_specificity": 0.9795,
+    "smishing_recall": 0.821,
+    "false_positive_rate": 0.0372,
+    "false_negative_rate": 0.179
+  },
+  "onnx_parity": {
+    "verified": true,
+    "max_abs_diff": 1.1622905731201172e-06,
+    "sample_verification": [
+      {
+        "description": "Legitimate Debit",
+        "text": "Dear SBI User, your A/C ending in 4921 has been debited by Rs 2,500.00 via UPI txn 628192837189. Avl Bal: Rs 48,210.50.",
+        "expected_label": 0,
+        "predicted_label": 0,
+        "predicted_class_name": "LEGITIMATE_BANKING",
+        "confidence": 0.9901290535926819,
+        "max_abs_diff": 7.152557373046875e-07,
+        "parity_status": "PASS"
+      },
+      {
+        "description": "Legitimate Credit/Refund",
+        "text": "Dear Customer, Refund of Rs 699.00 has been credited to your ICICI Bank Credit Card from AMAZON PAY.",
+        "expected_label": 0,
+        "predicted_label": 3,
+        "predicted_class_name": "SUSPICIOUS",
+        "confidence": 0.4854626953601837,
+        "max_abs_diff": 1.1622905731201172e-06,
+        "parity_status": "PASS"
+      },
+      {
+        "description": "UPI Transaction",
+        "text": "Paid Rs. 150 to Swiggy via PhonePe from HDFC Bank A/C XX8421. UPI Ref: 391029481028.",
+        "expected_label": 0,
+        "predicted_label": 0,
+        "predicted_class_name": "LEGITIMATE_BANKING",
+        "confidence": 0.9482123255729675,
+        "max_abs_diff": 2.384185791015625e-07,
+        "parity_status": "PASS"
+      },
+      {
+        "description": "Fake KYC Smishing",
+        "text": "Dear SBI Customer, your bank account is blocked due to KYC expired. Update PAN card at http://sbi-kyc.xyz immediately.",
+        "expected_label": 2,
+        "predicted_label": 0,
+        "predicted_class_name": "LEGITIMATE_BANKING",
+        "confidence": 0.5700385570526123,
+        "max_abs_diff": 9.5367431640625e-07,
+        "parity_status": "PASS"
+      },
+      {
+        "description": "Fraudulent OTP Request",
+        "text": "URGENT: Please share 6-digit OTP sent to your phone to cancel unauthorized charge of Rs 48,000.",
+        "expected_label": 2,
+        "predicted_label": 2,
+        "predicted_class_name": "SMISHING",
+        "confidence": 0.6670020818710327,
+        "max_abs_diff": 1.0728836059570312e-06,
+        "parity_status": "PASS"
+      },
+      {
+        "description": "Suspicious Banking Link",
+        "text": "Notice: Account documentation pending review. Verify details here: http://bit.ly/bank-doc-rev",
+        "expected_label": 3,
+        "predicted_label": 2,
+        "predicted_class_name": "SMISHING",
+        "confidence": 0.9095333814620972,
+        "max_abs_diff": 2.384185791015625e-07,
+        "parity_status": "PASS"
+      }
+    ]
+  },
+  "artifacts": {
+    "onnx_file": "tinybert_smishing.onnx",
+    "onnx_sha256": "dc66a9706f578b2815246f3eac39719e3ac155b5acb8e66616482273483f8173",
+    "onnx_size_bytes": 56506586,
+    "pytorch_weights_file": "model.pth",
+    "pytorch_sha256": "65813edf4956f6680c47b3e0b2ecf82a5236f85227c1c22c0763dd0b93d2d9d7",
+    "pytorch_size_bytes": 56387416,
+    "safetensors_file": "model.safetensors",
+    "safetensors_sha256": "cc77e6c83393c897c0be866906e6f3d688d52f86588bb475a9c4ec1d9ad7ccce",
+    "safetensors_size_bytes": 56376568
+  },
+  "environment": {
+    "python_version": "3.13.5",
+    "torch_version": "2.9.1+cpu",
+    "onnx_version": "1.22.0",
+    "onnxruntime_version": "1.23.2"
+  }
+}

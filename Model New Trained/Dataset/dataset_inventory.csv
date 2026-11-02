@@ -1,0 +1,7 @@
+dataset_filename,number_of_records,available_columns,existing_label_categories,missing_values,duplicate_records,language_distribution,banking_related_count,smishing_related_count,legitimate_count
+Dataset_10191.csv,10191,"['LABEL', 'TEXT', 'URL', 'EMAIL', 'PHONE']","{'ham': 3397, 'smishing': 3397, 'spam': 3397}",0,2200,"en: 10191, hi-en: 0",568,621,9570
+Dataset_5971.csv,5971,"['LABEL', 'TEXT', 'URL', 'EMAIL', 'PHONE']","{'ham': 4844, 'Smishing': 616, 'spam': 466, 'Spam': 23, 'smishing': 22}",0,22,"en: 5970, hi-en: 1",145,161,5810
+indian-payment-sms-dataset.json,172,"['id', 'source_ids', 'provenance', 'kind', 'rail', 'raw_sms', 'expected', 'variant_of']","{'debit': 78, 'non_financial': 43, 'credit': 15, 'upcoming': 9, 'reversal': 6}",0,0,"en: 172, hi-en: 0",163,0,172
+spam_ham_india.csv,2267,"['Msg', 'Label']","{'ham': 1521, 'spam': 745}",1,204,"en: 2266, hi-en: 1",166,17,2250
+financial_benchmark.csv,331,"['text', 'label', 'category']","{0: 262, 1: 69}",0,0,"en: 331, hi-en: 0",308,31,300
+Combined-Labeled-Dataset.csv,15000,"['message', 'spam label', 'smishing label']","{'0': 10087, '1': 3213, 'Smishing': 624}",0,3519,"en: 14999, hi-en: 1",1191,274,14726

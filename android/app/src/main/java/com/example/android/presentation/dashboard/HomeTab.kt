@@ -45,7 +45,10 @@ fun HomeTab(
     onTriggerManualSync: () -> Unit,
     onOpenProtectionSetup: (() -> Unit)? = null,
     onOpenLiveCameraQr: (() -> Unit)? = null,
-    onNavigateToHistoryWithFilter: ((type: String, severity: String) -> Unit)? = null
+    onNavigateToHistoryWithFilter: ((type: String, severity: String) -> Unit)? = null,
+    onNavigateToSafetyAlerts: (() -> Unit)? = null,
+    onNavigateToSecurity: (() -> Unit)? = null,
+    onNavigateToFeedbackHistory: (() -> Unit)? = null
 ) {
     val context = LocalContext.current
     var expandedTip by remember { mutableStateOf<SecurityTip?>(null) }
@@ -312,7 +315,75 @@ fun HomeTab(
             }
         }
 
-        // Section 3: Important Safety Alerts (if any)
+        // Section 3: Quick Action Buttons (Phase 9 Sequence)
+        item {
+            Column(modifier = Modifier.fillMaxWidth()) {
+                Text(
+                    text = "Quick Actions",
+                    fontSize = 15.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = Color.White
+                )
+                Spacer(modifier = Modifier.height(10.dp))
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    Button(
+                        onClick = { onNavigateToTab(2) },
+                        modifier = Modifier.weight(1f).height(46.dp),
+                        shape = RoundedCornerShape(12.dp),
+                        colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF0284C7))
+                    ) {
+                        Icon(Icons.Default.EditNote, contentDescription = null, modifier = Modifier.size(16.dp))
+                        Spacer(modifier = Modifier.width(6.dp))
+                        Text("Check SMS", fontSize = 12.sp, fontWeight = FontWeight.SemiBold)
+                    }
+
+                    Button(
+                        onClick = { if (onOpenLiveCameraQr != null) onOpenLiveCameraQr() else onNavigateToTab(2) },
+                        modifier = Modifier.weight(1f).height(46.dp),
+                        shape = RoundedCornerShape(12.dp),
+                        colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF0EA5E9))
+                    ) {
+                        Icon(Icons.Default.QrCodeScanner, contentDescription = null, modifier = Modifier.size(16.dp))
+                        Spacer(modifier = Modifier.width(6.dp))
+                        Text("Scan QR", fontSize = 12.sp, fontWeight = FontWeight.SemiBold)
+                    }
+                }
+                Spacer(modifier = Modifier.height(8.dp))
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    OutlinedButton(
+                        onClick = { onNavigateToSafetyAlerts?.invoke() ?: onNavigateToTab(3) },
+                        modifier = Modifier.weight(1f).height(46.dp),
+                        shape = RoundedCornerShape(12.dp),
+                        colors = ButtonDefaults.outlinedButtonColors(contentColor = Color(0xFFFBBF24)),
+                        border = androidx.compose.foundation.BorderStroke(1.dp, Color(0xFFF59E0B).copy(alpha = 0.4f))
+                    ) {
+                        Icon(Icons.Default.Notifications, contentDescription = null, modifier = Modifier.size(16.dp))
+                        Spacer(modifier = Modifier.width(6.dp))
+                        Text("Alerts (${uiState.safetyAlerts.size})", fontSize = 12.sp, fontWeight = FontWeight.SemiBold)
+                    }
+
+                    OutlinedButton(
+                        onClick = { onOpenEducation() },
+                        modifier = Modifier.weight(1f).height(46.dp),
+                        shape = RoundedCornerShape(12.dp),
+                        colors = ButtonDefaults.outlinedButtonColors(contentColor = Color(0xFF38BDF8)),
+                        border = androidx.compose.foundation.BorderStroke(1.dp, Color(0xFF0284C7).copy(alpha = 0.4f))
+                    ) {
+                        Icon(Icons.Default.School, contentDescription = null, modifier = Modifier.size(16.dp))
+                        Spacer(modifier = Modifier.width(6.dp))
+                        Text("Academy", fontSize = 12.sp, fontWeight = FontWeight.SemiBold)
+                    }
+                }
+            }
+        }
+
+        // Section 4: Important Safety Alerts (Phase 9 Sequence)
         if (uiState.safetyAlerts.isNotEmpty()) {
             item {
                 Card(
@@ -345,7 +416,7 @@ fun HomeTab(
                                 fontSize = 12.sp,
                                 fontWeight = FontWeight.SemiBold,
                                 color = Color(0xFF38BDF8),
-                                modifier = Modifier.clickable { onNavigateToTab(2) }
+                                modifier = Modifier.clickable { onNavigateToSafetyAlerts?.invoke() ?: onNavigateToTab(1) }
                             )
                         }
                         Spacer(modifier = Modifier.height(10.dp))
@@ -388,75 +459,98 @@ fun HomeTab(
             }
         }
 
-        // Section 4: Quick Action Buttons (4 Primary Actions)
+                // Section 5: Safety Tip Recommendation (Phase 9 Sequence)
         item {
-            Column(modifier = Modifier.fillMaxWidth()) {
-                Text(
-                    text = "Quick Actions",
-                    fontSize = 15.sp,
-                    fontWeight = FontWeight.Bold,
-                    color = Color.White
-                )
-                Spacer(modifier = Modifier.height(10.dp))
+            Card(
+                modifier = Modifier.fillMaxWidth(),
+                colors = CardDefaults.cardColors(containerColor = Color(0xFF0F2937)),
+                shape = RoundedCornerShape(16.dp)
+            ) {
                 Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    modifier = Modifier.padding(14.dp),
+                    verticalAlignment = Alignment.CenterVertically
                 ) {
-                    Button(
-                        onClick = { onNavigateToTab(2) },
-                        modifier = Modifier.weight(1f).height(46.dp),
-                        shape = RoundedCornerShape(12.dp),
-                        colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF0284C7))
+                    Box(
+                        modifier = Modifier
+                            .size(36.dp)
+                            .background(Color(0xFF38BDF8).copy(alpha = 0.15f), CircleShape),
+                        contentAlignment = Alignment.Center
                     ) {
-                        Icon(Icons.Default.EditNote, contentDescription = null, modifier = Modifier.size(16.dp))
-                        Spacer(modifier = Modifier.width(6.dp))
-                        Text("Check SMS", fontSize = 12.sp, fontWeight = FontWeight.SemiBold)
+                        Icon(Icons.Default.Security, contentDescription = null, tint = Color(0xFF38BDF8), modifier = Modifier.size(18.dp))
                     }
-
-                    Button(
-                        onClick = { if (onOpenLiveCameraQr != null) onOpenLiveCameraQr() else onNavigateToTab(2) },
-                        modifier = Modifier.weight(1f).height(46.dp),
-                        shape = RoundedCornerShape(12.dp),
-                        colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF0EA5E9))
-                    ) {
-                        Icon(Icons.Default.QrCodeScanner, contentDescription = null, modifier = Modifier.size(16.dp))
-                        Spacer(modifier = Modifier.width(6.dp))
-                        Text("Scan QR", fontSize = 12.sp, fontWeight = FontWeight.SemiBold)
-                    }
-                }
-                Spacer(modifier = Modifier.height(8.dp))
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(8.dp)
-                ) {
-                    OutlinedButton(
-                        onClick = { onNavigateToTab(3) },
-                        modifier = Modifier.weight(1f).height(46.dp),
-                        shape = RoundedCornerShape(12.dp),
-                        colors = ButtonDefaults.outlinedButtonColors(contentColor = Color(0xFFFBBF24)),
-                        border = androidx.compose.foundation.BorderStroke(1.dp, Color(0xFFF59E0B).copy(alpha = 0.4f))
-                    ) {
-                        Icon(Icons.Default.Notifications, contentDescription = null, modifier = Modifier.size(16.dp))
-                        Spacer(modifier = Modifier.width(6.dp))
-                        Text("Alerts (${uiState.safetyAlerts.size})", fontSize = 12.sp, fontWeight = FontWeight.SemiBold)
-                    }
-
-                    OutlinedButton(
-                        onClick = { onOpenEducation() },
-                        modifier = Modifier.weight(1f).height(46.dp),
-                        shape = RoundedCornerShape(12.dp),
-                        colors = ButtonDefaults.outlinedButtonColors(contentColor = Color(0xFF38BDF8)),
-                        border = androidx.compose.foundation.BorderStroke(1.dp, Color(0xFF0284C7).copy(alpha = 0.4f))
-                    ) {
-                        Icon(Icons.Default.School, contentDescription = null, modifier = Modifier.size(16.dp))
-                        Spacer(modifier = Modifier.width(6.dp))
-                        Text("Academy", fontSize = 12.sp, fontWeight = FontWeight.SemiBold)
+                    Spacer(modifier = Modifier.width(12.dp))
+                    Column(modifier = Modifier.weight(1f)) {
+                        Text("Safety Tip: Verify Bank SMS Headers", fontSize = 13.sp, fontWeight = FontWeight.Bold, color = Color(0xFFBAE6FD))
+                        Text("Official Indian bank transaction alerts always feature registered 6-character TRAI headers (e.g. VK-HDFCBK or AX-SBIBNK). Legitimate banks never ask you to click links to cancel transfers.", fontSize = 11.sp, color = Color(0xFF94A3B8), lineHeight = 15.sp)
                     }
                 }
             }
         }
 
-        // Section 5: Recently Checked Messages
+// Section 6: Daily Tip (Phase 9 Sequence)
+        item {
+            Card(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clickable { expandedTip = todayTip },
+                colors = CardDefaults.cardColors(containerColor = Color(0xFF1E293B)),
+                shape = RoundedCornerShape(16.dp)
+            ) {
+                Row(
+                    modifier = Modifier.padding(14.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Box(
+                        modifier = Modifier
+                            .size(36.dp)
+                            .background(Color(0xFF38BDF8).copy(alpha = 0.15f), CircleShape),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Icon(Icons.Default.Lightbulb, contentDescription = null, tint = Color(0xFF38BDF8), modifier = Modifier.size(18.dp))
+                    }
+                    Spacer(modifier = Modifier.width(12.dp))
+                    Column(modifier = Modifier.weight(1f)) {
+                        Text("Safety Tip: " + todayTip.title, fontSize = 13.sp, fontWeight = FontWeight.Bold, color = Color.White)
+                        Text(todayTip.details, fontSize = 11.sp, color = Color(0xFF94A3B8), maxLines = 1, overflow = TextOverflow.Ellipsis)
+                    }
+                    Icon(Icons.Default.ChevronRight, contentDescription = null, tint = Color(0xFF64748B))
+                }
+            }
+            Spacer(modifier = Modifier.height(16.dp))
+        }
+        // Section 7: Academy & Educational Resources (Phase 9 Sequence)
+        item {
+            Card(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clickable { onOpenEducation() },
+                colors = CardDefaults.cardColors(containerColor = Color(0xFF1E293B)),
+                shape = RoundedCornerShape(16.dp)
+            ) {
+                Row(
+                    modifier = Modifier.padding(14.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Box(
+                        modifier = Modifier
+                            .size(36.dp)
+                            .background(Color(0xFF0284C7).copy(alpha = 0.2f), CircleShape),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Icon(Icons.Default.School, contentDescription = null, tint = Color(0xFF38BDF8), modifier = Modifier.size(18.dp))
+                    }
+                    Spacer(modifier = Modifier.width(12.dp))
+                    Column(modifier = Modifier.weight(1f)) {
+                        Text("Squish Safety Academy", fontSize = 13.sp, fontWeight = FontWeight.Bold, color = Color.White)
+                        Text("Explore interactive defense guides against Smishing, Quishing & Fake KYC scams", fontSize = 11.sp, color = Color(0xFF94A3B8), maxLines = 1, overflow = TextOverflow.Ellipsis)
+                    }
+                    Icon(Icons.Default.ChevronRight, contentDescription = null, tint = Color(0xFF64748B))
+                }
+            }
+        }
+
+        // Section 8: Remaining Sections - Recent Activity (Phase 9 Sequence)
+// Section 5: Recently Checked Messages
         item {
             Column(modifier = Modifier.fillMaxWidth()) {
                 Row(
@@ -544,37 +638,7 @@ fun HomeTab(
             }
         }
 
-        // Section 7: Security Tip of the Day
-        item {
-            Card(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .clickable { expandedTip = todayTip },
-                colors = CardDefaults.cardColors(containerColor = Color(0xFF1E293B)),
-                shape = RoundedCornerShape(16.dp)
-            ) {
-                Row(
-                    modifier = Modifier.padding(14.dp),
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Box(
-                        modifier = Modifier
-                            .size(36.dp)
-                            .background(Color(0xFF38BDF8).copy(alpha = 0.15f), CircleShape),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        Icon(Icons.Default.Lightbulb, contentDescription = null, tint = Color(0xFF38BDF8), modifier = Modifier.size(18.dp))
-                    }
-                    Spacer(modifier = Modifier.width(12.dp))
-                    Column(modifier = Modifier.weight(1f)) {
-                        Text("Safety Tip: " + todayTip.title, fontSize = 13.sp, fontWeight = FontWeight.Bold, color = Color.White)
-                        Text(todayTip.details, fontSize = 11.sp, color = Color(0xFF94A3B8), maxLines = 1, overflow = TextOverflow.Ellipsis)
-                    }
-                    Icon(Icons.Default.ChevronRight, contentDescription = null, tint = Color(0xFF64748B))
-                }
-            }
-            Spacer(modifier = Modifier.height(16.dp))
-        }
+                item { Spacer(modifier = Modifier.height(24.dp)) }
     }
 }
 

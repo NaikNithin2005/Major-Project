@@ -1,0 +1,65 @@
+{
+  "overall": {
+    "accuracy": 0.8107,
+    "macro_precision": 0.7354,
+    "macro_recall": 0.8207,
+    "macro_f1": 0.768,
+    "weighted_f1": 0.8175,
+    "banking_specificity": 0.9795,
+    "smishing_recall": 0.821,
+    "false_positive_rate": 0.0372,
+    "false_negative_rate": 0.179
+  },
+  "per_class": {
+    "LEGITIMATE_BANKING": {
+      "precision": 0.6344,
+      "recall": 0.9077,
+      "f1_score": 0.7468,
+      "support": 195
+    },
+    "LEGITIMATE_GENERAL": {
+      "precision": 0.9739,
+      "recall": 0.8332,
+      "f1_score": 0.8981,
+      "support": 1793
+    },
+    "SMISHING": {
+      "precision": 0.6512,
+      "recall": 0.821,
+      "f1_score": 0.7263,
+      "support": 514
+    },
+    "SUSPICIOUS": {
+      "precision": 0.682,
+      "recall": 0.7208,
+      "f1_score": 0.7009,
+      "support": 720
+    }
+  },
+  "confusion_matrix": [
+    [
+      177,
+      11,
+      4,
+      3
+    ],
+    [
+      64,
+      1494,
+      70,
+      165
+    ],
+    [
+      13,
+      5,
+      422,
+      74
+    ],
+    [
+      25,
+      24,
+      152,
+      519
+    ]
+  ]
+}

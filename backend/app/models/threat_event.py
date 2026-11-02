@@ -1,7 +1,7 @@
 import uuid
 from datetime import datetime, timezone
 from typing import Any, Dict, List
-from sqlalchemy import String, Integer, DateTime, ForeignKey, CheckConstraint
+from sqlalchemy import String, Integer, DateTime, ForeignKey, CheckConstraint, Boolean, Text
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from app.database.base import Base
 from app.database.types import JSONBCompat
@@ -32,6 +32,15 @@ class ThreatEvent(Base):
     qr_metadata: Mapped[Dict[str, Any] | None] = mapped_column(JSONBCompat, nullable=True)
     
     client_event_id: Mapped[str | None] = mapped_column(String(64), index=True, nullable=True)
+    sender: Mapped[str | None] = mapped_column(String(128), index=True, nullable=True)
+    raw_content: Mapped[str | None] = mapped_column(Text, nullable=True)
+    extracted_url: Mapped[str | None] = mapped_column(String(2048), nullable=True)
+    is_quarantined: Mapped[bool] = mapped_column(Boolean, default=False, index=True, nullable=False)
+    quarantined_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    quarantine_reason: Mapped[str | None] = mapped_column(Text, nullable=True)
+    is_blocked: Mapped[bool] = mapped_column(Boolean, default=False, index=True, nullable=False)
+    blocked_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    block_reason: Mapped[str | None] = mapped_column(Text, nullable=True)
     related_threat_id: Mapped[str | None] = mapped_column(String(36), nullable=True)
     campaign_id: Mapped[str | None] = mapped_column(String(64), index=True, nullable=True)
     status: Mapped[str] = mapped_column(String(32), default="REPORTED", index=True, nullable=False)

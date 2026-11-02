@@ -1,0 +1,32 @@
+{
+  "model_architecture": {
+    "vocab_size": 30522,
+    "hidden_dimension": 312,
+    "num_hidden_layers": 4,
+    "num_attention_heads": 4,
+    "intermediate_size": 1200,
+    "num_classes": 4,
+    "max_sequence_length": 128
+  },
+  "hyperparameters": {
+    "batch_size": 32,
+    "learning_rate": 2e-05,
+    "weight_decay": 0.01,
+    "optimizer": "AdamW",
+    "scheduler": "linear_warmup_decay",
+    "warmup_steps": 49,
+    "epochs": 4,
+    "loss_function": "WeightedCrossEntropyLoss",
+    "class_weights": [
+      1.3929815292358398,
+      0.9761585593223572,
+      1.1713902950286865,
+      0.9761585593223572
+    ]
+  },
+  "dataset_splits": {
+    "train_samples": 3911,
+    "validation_samples": 945,
+    "test_samples": 3222
+  }
+}

@@ -6,6 +6,8 @@ from app.models.model_info import ModelInfo
 from app.models.audit_log import AuditLog
 from app.models.threat_intel import ThreatIntel, UserSharingPreference, CommunityThreatReport
 from app.models.incident import Incident, IncidentThreatLink, IncidentNote, IncidentEvent
+from app.models.sender_security import SenderSecurity
+from app.models.safety_alert import SafetyAlert
 
 __all__ = [
     "User",
@@ -21,5 +23,8 @@ __all__ = [
     "IncidentThreatLink",
     "IncidentNote",
     "IncidentEvent",
+    "SenderSecurity",
+    "SafetyAlert",
 ]
+
 

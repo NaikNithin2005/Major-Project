@@ -71,6 +71,9 @@ import {
   Trash2,
 
   Flame,
+  Zap,
+  BookOpen,
+  MessageSquareQuote,
 
 } from 'lucide-react';
 
@@ -1129,7 +1132,72 @@ export default function UserDashboardPage() {
 
 
 
-        {/* SECTION 3: IMPORTANT SAFETY ALERTS (IF ANY) */}
+        {/* SECTION 3: QUICK ACTIONS (PHASE 9 REQUIREMENT) */}
+        <div>
+          <div className="flex items-center justify-between mb-3">
+            <h2 className="text-sm font-bold text-slate-100 flex items-center gap-2">
+              <Zap className="w-4 h-4 text-cyan-400" />
+              <span>Quick Actions</span>
+            </h2>
+          </div>
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+            <Link
+              href="/threats"
+              className="glass-card rounded-xl p-4 border-slate-800 hover:border-cyan-500/40 hover:bg-slate-800/40 transition-all flex flex-col items-center text-center space-y-2 group"
+            >
+              <div className="w-10 h-10 rounded-xl bg-cyan-500/10 border border-cyan-500/30 flex items-center justify-center text-cyan-400 group-hover:scale-105 transition-transform">
+                <Search className="w-5 h-5" />
+              </div>
+              <div>
+                <div className="text-xs font-bold text-white">Scan Threat</div>
+                <div className="text-[10px] text-slate-400">Scan SMS text or URL</div>
+              </div>
+            </Link>
+
+            <Link
+              href="/security/trusted-users"
+              className="glass-card rounded-xl p-4 border-slate-800 hover:border-emerald-500/40 hover:bg-slate-800/40 transition-all flex flex-col items-center text-center space-y-2 group"
+            >
+              <div className="w-10 h-10 rounded-xl bg-emerald-500/10 border border-emerald-500/30 flex items-center justify-center text-emerald-400 group-hover:scale-105 transition-transform">
+                <ShieldCheck className="w-5 h-5" />
+              </div>
+              <div>
+                <div className="text-xs font-bold text-white">Security Center</div>
+                <div className="text-[10px] text-slate-400">Trusted & Blocked lists</div>
+              </div>
+            </Link>
+
+            <Link
+              href="/safety-alerts"
+              className="glass-card rounded-xl p-4 border-slate-800 hover:border-rose-500/40 hover:bg-slate-800/40 transition-all flex flex-col items-center text-center space-y-2 group"
+            >
+              <div className="w-10 h-10 rounded-xl bg-rose-500/10 border border-rose-500/30 flex items-center justify-center text-rose-400 group-hover:scale-105 transition-transform">
+                <AlertTriangle className="w-5 h-5" />
+              </div>
+              <div>
+                <div className="text-xs font-bold text-white">Safety Alerts</div>
+                <div className="text-[10px] text-slate-400">
+                  {safetyAlerts.length > 0 ? `${safetyAlerts.length} Active` : '0 Active'}
+                </div>
+              </div>
+            </Link>
+
+            <Link
+              href="/feedback-history"
+              className="glass-card rounded-xl p-4 border-slate-800 hover:border-purple-500/40 hover:bg-slate-800/40 transition-all flex flex-col items-center text-center space-y-2 group"
+            >
+              <div className="w-10 h-10 rounded-xl bg-purple-500/10 border border-purple-500/30 flex items-center justify-center text-purple-400 group-hover:scale-105 transition-transform">
+                <MessageSquareQuote className="w-5 h-5" />
+              </div>
+              <div>
+                <div className="text-xs font-bold text-white">Feedback Log</div>
+                <div className="text-[10px] text-slate-400">AI reclassification trail</div>
+              </div>
+            </Link>
+          </div>
+        </div>
+
+        {/* SECTION 4: IMPORTANT SAFETY ALERTS (PHASE 9 REQUIREMENT) */}
 
         {safetyAlerts.length > 0 && (
 
@@ -1149,7 +1217,13 @@ export default function UserDashboardPage() {
 
               </div>
 
-              <span className="text-xs text-rose-400/80">Action recommended</span>
+              <Link
+                href="/safety-alerts"
+                className="text-xs font-bold text-cyan-400 hover:text-cyan-300 flex items-center gap-1"
+              >
+                <span>View All Alerts</span>
+                <ExternalLink className="w-3 h-3" />
+              </Link>
 
             </div>
 
@@ -1199,6 +1273,62 @@ export default function UserDashboardPage() {
 
 
 
+        {/* SECTION 5: SAFETY TIP RECOMMENDATION (PHASE 9 REQUIREMENT) */}
+        <div className="p-4 rounded-xl bg-cyan-950/25 border border-cyan-800/40 flex items-start space-x-3.5">
+          <ShieldAlert className="w-5 h-5 text-cyan-400 shrink-0 mt-0.5" />
+          <div className="text-xs text-slate-300 space-y-1">
+            <p className="font-semibold text-cyan-300">Safety Tip Recommendation: Banking SMS Verification</p>
+            <p className="text-slate-400 leading-relaxed">
+              Legitimate Indian bank notifications always originate from registered 6-character TRAI headers (e.g. <code className="text-cyan-300">VK-HDFCBK</code> or <code className="text-cyan-300">AX-SBIBNK</code>).
+              Legitimate transaction debit SMS will <strong>never ask you to click a link to cancel a transfer or claim a refund</strong>.
+            </p>
+          </div>
+        </div>
+
+        {/* SECTION 6: DAILY TIP (PHASE 9 REQUIREMENT) */}
+        <div className="p-4 rounded-xl bg-slate-900/80 border border-slate-800 flex items-start space-x-3.5">
+          <Zap className="w-5 h-5 text-amber-400 shrink-0 mt-0.5" />
+          <div className="text-xs text-slate-300 space-y-1">
+            <p className="font-semibold text-amber-300">Daily Tip: QR Code Safety in Public Places</p>
+            <p className="text-slate-400 leading-relaxed">
+              When scanning QR codes at parking meters, restaurants, or payment counters, visually check that no fraudulent sticker has been placed over the original code before confirming payment.
+            </p>
+          </div>
+        </div>
+
+        {/* SECTION 7: ACADEMY / EDUCATIONAL RESOURCES (PHASE 9 REQUIREMENT) */}
+        <div className="p-5 rounded-2xl bg-slate-900/60 border border-slate-800 space-y-3">
+          <div className="flex items-center justify-between">
+            <h3 className="text-sm font-bold text-white flex items-center gap-2">
+              <BookOpen className="w-4 h-4 text-cyan-400" />
+              <span>Squish Safety Academy & Defense Guides</span>
+            </h3>
+            <span className="text-xs text-slate-500 font-mono">3 Interactive Modules</span>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-3 pt-1">
+            <div className="p-3.5 bg-slate-950/70 rounded-xl border border-slate-800/80 space-y-1.5 hover:border-cyan-500/40 transition-colors">
+              <div className="text-xs font-bold text-cyan-300">1. Banking SMS vs Smishing</div>
+              <p className="text-[11px] text-slate-400 leading-snug">
+                Learn how Squish&apos;s TinyBERT differentiates authentic debit/credit notifications from fake KYC expiration traps.
+              </p>
+            </div>
+            <div className="p-3.5 bg-slate-950/70 rounded-xl border border-slate-800/80 space-y-1.5 hover:border-cyan-500/40 transition-colors">
+              <div className="text-xs font-bold text-purple-300">2. Quishing Attack Vectors</div>
+              <p className="text-[11px] text-slate-400 leading-snug">
+                Understand how malicious actors craft disguised QR codes to hijack UPI sessions and harvest credentials.
+              </p>
+            </div>
+            <div className="p-3.5 bg-slate-950/70 rounded-xl border border-slate-800/80 space-y-1.5 hover:border-cyan-500/40 transition-colors">
+              <div className="text-xs font-bold text-amber-300">3. OTP & Urgency Tactics</div>
+              <p className="text-[11px] text-slate-400 leading-snug">
+                Master how psychological pressure and fake countdown timers are used by cybercriminals to bypass 2FA.
+              </p>
+            </div>
+          </div>
+        </div>
+
+        {/* SECTION 8: REMAINING SECTIONS - OVERVIEW VISUALIZATIONS & THREAT HISTORY */}
         {/* Security Overview Visualizations */}
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">

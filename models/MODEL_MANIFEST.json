@@ -1,48 +1,68 @@
 {
-  "manifest_version": "2.0.0",
-  "release_version": "v3",
-  "generated_at": "2026-10-27T15:00:00Z",
+  "manifest_version": "2.1.0",
+  "release_version": "v4-4class",
+  "generated_at": "2026-11-02T20:03:40Z",
   "models": {
     "tinybert_sms": {
-      "name": "TinyBERT Smishing Classifier",
-      "version": "v3",
-      "architecture": "TinyBERT (4 layers, 312 hidden size, 4 attention heads)",
-      "task": "SMS text classification (Binary: Safe vs Smishing) with Financial Calibration",
-      "dataset_provenance": "v3.0.0-banking-enhanced (Curated legitimate banking debits, credits, OTPs, UPI, and real banking scams)",
+      "name": "TinyBERT Smishing & Banking 4-Class Classifier",
+      "version": "v2-4class",
+      "architecture": "TinyBERT (4 layers, 312 hidden size, 4 attention heads, 4 output classes)",
+      "task": "SMS 4-Class Classification (Class 0: LEGITIMATE_BANKING, Class 1: LEGITIMATE_GENERAL, Class 2: SMISHING, Class 3: SUSPICIOUS)",
+      "dataset_provenance": "21,475 merged SMS corpus with Indian payment notifications (UPI, NEFT, IMPS, RTGS, ATM, debit/credit cards, refunds) and real smishing templates",
+      "classes": {
+        "0": "LEGITIMATE_BANKING",
+        "1": "LEGITIMATE_GENERAL",
+        "2": "SMISHING",
+        "3": "SUSPICIOUS"
+      },
       "files": {
         "onnx": {
-          "path": "models/tinybert/v3/tinybert_smishing.onnx",
-          "sha256": "d58c97ba950c7abe570fe8195182e54048798c9fd650ae543809a79eb0200efb",
-          "size_bytes": 56504082,
+          "path": "Model New Trained/ONNX/tinybert_smishing.onnx",
+          "sha256": "782f05a968fd9a071d1872df03da9fe5b3a322c3757fa234125b2d2b5125ea7b",
+          "size_bytes": 56506586,
           "target_runtime": "Android ONNX Runtime / Mobile Inference"
         },
         "pytorch": {
-          "path": "models/tinybert/v3/model.pth",
-          "sha256": "2768cd2ea7672b596b9a33c6f426a1917278b5e57b68381431dbd60ab694e6b0",
-          "size_bytes": 56384920,
+          "path": "Model New Trained/TinyBERT/model.pth",
+          "sha256": "65813edf4956f6680c47b3e0b2ecf82a5236f85227c1c22c0763dd0b93d2d9d7",
+          "size_bytes": 56387416,
           "target_runtime": "PyTorch Python Testing & Validation"
         },
+        "safetensors": {
+          "path": "Model New Trained/TinyBERT/model.safetensors",
+          "sha256": "cc77e6c83393c897c0be866906e6f3d688d52f86588bb475a9c4ec1d9ad7ccce",
+          "size_bytes": 56376568,
+          "target_runtime": "Hugging Face Safetensors Inference"
+        },
         "vocab": {
-          "path": "models/tinybert/v2/vocab.txt",
+          "path": "Model New Trained/TinyBERT/vocab.txt",
           "sha256": "07eced375cec144d27c900241f3e339478dec958f92fddbc551f295c992038a3",
           "size_bytes": 231508
         },
         "metadata": {
-          "path": "models/tinybert/v3/metadata.json"
+          "path": "Model New Trained/ONNX/metadata.json"
+        },
+        "android_production_asset": {
+          "path": "android/app/src/main/assets/models/tinybert_smishing.onnx",
+          "sha256": "782f05a968fd9a071d1872df03da9fe5b3a322c3757fa234125b2d2b5125ea7b",
+          "size_bytes": 56506586
         }
       },
       "metrics": {
-        "financial_benchmark_accuracy": 0.9940,
-        "financial_benchmark_precision": 0.9718,
-        "financial_benchmark_recall": 1.0000,
-        "financial_benchmark_f1": 0.9857,
-        "financial_benchmark_fpr": 0.0076,
-        "financial_benchmark_fnr": 0.0000
+        "accuracy": 0.8107,
+        "banking_specificity": 0.9795,
+        "smishing_recall": 0.8210,
+        "macro_f1": 0.7680,
+        "weighted_f1": 0.8175,
+        "false_positive_rate": 0.0372,
+        "false_negative_rate": 0.1790,
+        "test_records_evaluated": 3222
       },
-      "rollback_version": "v2",
+      "rollback_version": "v3",
       "rollback_files": {
-        "onnx": "android/app/src/main/assets/models/v2/tinybert_smishing.onnx",
-        "pytorch": "models/tinybert/v2/model.pth"
+        "onnx": "models/tinybert/v3/tinybert_smishing.onnx",
+        "pytorch": "models/tinybert/v3/model.pth",
+        "legacy_asset_backup": "android/app/src/main/assets/models/v2/tinybert_smishing.onnx"
       }
     },
     "xgboost_url": {

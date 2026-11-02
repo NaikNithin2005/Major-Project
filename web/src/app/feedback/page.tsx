@@ -110,12 +110,16 @@ export default function FeedbackPage() {
                       </td>
 
                       <td className="py-3.5 px-4 font-mono text-cyan-400">
-                        <Link
-                          href={`/threats/${item.threat_event_id}`}
-                          className="hover:underline flex items-center space-x-1"
-                        >
-                          <span>{item.threat_event_id.slice(0, 8)}...</span>
-                        </Link>
+                        {item.threat_event_id ? (
+                          <Link
+                            href={`/threats/${item.threat_event_id}`}
+                            className="hover:underline flex items-center space-x-1"
+                          >
+                            <span>{item.threat_event_id.slice(0, 8)}...</span>
+                          </Link>
+                        ) : (
+                          <span className="text-slate-500 italic font-sans text-xs">Direct Submission</span>
+                        )}
                       </td>
 
                       <td className="py-3.5 px-4">
@@ -144,13 +148,17 @@ export default function FeedbackPage() {
                       </td>
 
                       <td className="py-3.5 px-4 text-right">
-                        <Link
-                          href={`/threats/${item.threat_event_id}`}
-                          className="text-[11px] font-semibold text-cyan-400 hover:text-cyan-300 px-2 py-1 rounded bg-cyan-500/10 hover:bg-cyan-500/20 border border-cyan-500/25 inline-flex items-center space-x-1"
-                        >
-                          <span>Inspect Event</span>
-                          <ArrowRight className="w-3 h-3" />
-                        </Link>
+                        {item.threat_event_id ? (
+                          <Link
+                            href={`/threats/${item.threat_event_id}`}
+                            className="text-[11px] font-semibold text-cyan-400 hover:text-cyan-300 px-2 py-1 rounded bg-cyan-500/10 hover:bg-cyan-500/20 border border-cyan-500/25 inline-flex items-center space-x-1"
+                          >
+                            <span>Inspect Event</span>
+                            <ArrowRight className="w-3 h-3" />
+                          </Link>
+                        ) : (
+                          <span className="text-[11px] text-slate-500 px-2 py-1">Logged Feedback</span>
+                        )}
                       </td>
                     </tr>
                   ))}

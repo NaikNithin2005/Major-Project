@@ -41,3 +41,41 @@ def get_model_metadata(
             detail={"code": "MODEL_NOT_FOUND", "message": f"Model metadata for {model_id} not found."}
         )
     return ModelInfoResponse.model_validate(model)
+
+
+@router.post("/{model_id}/approve", response_model=ModelInfoResponse)
+def approve_model_version(
+    model_id: str,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    """
+    Admin: Promote candidate model version to ACTIVE.
+    """
+    if current_user.role != "ADMIN":
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail={"code": "FORBIDDEN", "message": "Only administrators can approve model deployments."}
+        )
+    service = ModelService(db)
+    model = service.approve_model_version(model_id, current_user)
+    return ModelInfoResponse.model_validate(model)
+
+
+@router.post("/{model_id}/rollback", response_model=ModelInfoResponse)
+def rollback_model_version(
+    model_id: str,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    """
+    Admin: Roll back current active model version to the previous stable release.
+    """
+    if current_user.role != "ADMIN":
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail={"code": "FORBIDDEN", "message": "Only administrators can trigger model rollbacks."}
+        )
+    service = ModelService(db)
+    model = service.rollback_model(model_id, current_user)
+    return ModelInfoResponse.model_validate(model)

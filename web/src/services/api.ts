@@ -8,6 +8,7 @@ import {
   UserStats,
   ModelInfo,
   FeedbackItem,
+  FeedbackStats,
   AuditLogItem,
   ApiError,
   Incident,
@@ -20,6 +21,12 @@ import {
   CommunityThreatReport,
   FeedStatusItem,
   ThreatIntelHealth,
+  SenderSecurityItem,
+  QuarantinedSmsItem,
+  BlockedSmsItem,
+  SafetyAlertItem,
+  SenderDetailsData,
+  SmsDetailsData,
 } from '@/types';
 
 const API_BASE_URL =
@@ -245,12 +252,46 @@ export const api = {
   models: {
     list: () => request<ModelInfo[]>('/models'),
     get: (id: string) => request<ModelInfo>(`/models/${id}`),
+    approve: (id: string) =>
+      request<ModelInfo>(`/models/${id}/approve`, { method: 'POST' }),
+    rollback: (id: string) =>
+      request<ModelInfo>(`/models/${id}/rollback`, { method: 'POST' }),
   },
 
   // Feedback
   feedback: {
-    list: (page: number = 1, pageSize: number = 20) =>
-      request<PaginatedResponse<FeedbackItem>>(`/feedback?page=${page}&page_size=${pageSize}`),
+    list: (page: number = 1, pageSize: number = 20, status?: string) => {
+      const q = new URLSearchParams({ page: page.toString(), page_size: pageSize.toString() });
+      if (status) q.set('status', status);
+      return request<PaginatedResponse<FeedbackItem>>(`/feedback?${q.toString()}`);
+    },
+    submit: (payload: {
+      threat_event_id?: string;
+      classification: string;
+      comment?: string;
+      message_hash?: string;
+      sender_hash?: string;
+      original_prediction?: string;
+      corrected_label?: string;
+      original_confidence?: number;
+      feedback_source?: string;
+    }) =>
+      request<FeedbackItem>('/feedback', {
+        method: 'POST',
+        body: JSON.stringify(payload),
+      }),
+    stats: () => request<FeedbackStats>('/feedback/stats'),
+    review: (id: string, reviewStatus: 'APPROVED' | 'REJECTED', comment?: string) =>
+      request<FeedbackItem>(`/feedback/${id}/review`, {
+        method: 'PUT',
+        body: JSON.stringify({ review_status: reviewStatus, comment }),
+      }),
+    retrainCandidate: () =>
+      request<{ job_id: string; status: string; approved_samples_count: number; message: string; model_candidate_version?: string }>('/feedback/retrain-candidate', {
+        method: 'POST',
+      }),
+    reputation: (senderHash: string) =>
+      request<{ sender_hash: string; reputation_score: number; trust_level: string }>(`/feedback/reputation/${senderHash}`),
   },
 
   // Audit Logs
@@ -459,6 +500,85 @@ export const api = {
           body: JSON.stringify(payload),
         }
       ),
+  },
+
+  security: {
+    getTrustedSenders: () =>
+      request<SenderSecurityItem[]>('/security/trusted-senders'),
+
+    trustSender: (payload: { sender_id: string; display_name?: string; reason?: string }) =>
+      request<SenderSecurityItem>('/security/trusted-senders', {
+        method: 'POST',
+        body: JSON.stringify(payload),
+      }),
+
+    removeTrustedSender: (senderId: string) =>
+      request<SenderSecurityItem>(`/security/trusted-senders/${senderId}`, {
+        method: 'DELETE',
+      }),
+
+    getUntrustedSenders: () =>
+      request<SenderSecurityItem[]>('/security/untrusted-senders'),
+
+    getBlockedSenders: () =>
+      request<SenderSecurityItem[]>('/security/blocked-senders'),
+
+    blockSender: (payload: { sender_id: string; reason?: string }) =>
+      request<SenderSecurityItem>('/security/blocked-senders', {
+        method: 'POST',
+        body: JSON.stringify(payload),
+      }),
+
+    unblockSender: (senderId: string) =>
+      request<SenderSecurityItem>(`/security/blocked-senders/${senderId}`, {
+        method: 'DELETE',
+      }),
+
+    getQuarantinedSms: () =>
+      request<QuarantinedSmsItem[]>('/security/quarantined-sms'),
+
+    quarantineAction: (threatId: string, payload: { action: string; reason?: string }) =>
+      request<QuarantinedSmsItem>(`/security/quarantined-sms/${threatId}/action`, {
+        method: 'POST',
+        body: JSON.stringify(payload),
+      }),
+
+    getBlockedSms: () =>
+      request<BlockedSmsItem[]>('/security/blocked-sms'),
+
+    blockedSmsAction: (threatId: string, payload: { action: string; reason?: string }) =>
+      request<BlockedSmsItem>(`/security/blocked-sms/${threatId}/action`, {
+        method: 'POST',
+        body: JSON.stringify(payload),
+      }),
+
+    getSenderDetails: (senderId: string) =>
+      request<SenderDetailsData>(`/security/senders/${senderId}`),
+
+    getSmsDetails: (threatId: string) =>
+      request<SmsDetailsData>(`/security/sms/${threatId}`),
+  },
+
+  alerts: {
+    getAlerts: (status?: string) => {
+      const q = status ? `?status=${encodeURIComponent(status)}` : '';
+      return request<SafetyAlertItem[]>(`/alerts${q}`);
+    },
+
+    getAlertById: (alertId: string) =>
+      request<SafetyAlertItem>(`/alerts/${alertId}`),
+
+    resolveAlert: (alertId: string, notes?: string) =>
+      request<SafetyAlertItem>(`/alerts/${alertId}/resolve`, {
+        method: 'POST',
+        body: JSON.stringify({ action: 'RESOLVED', resolution_notes: notes }),
+      }),
+
+    acknowledgeAlert: (alertId: string, notes?: string) =>
+      request<SafetyAlertItem>(`/alerts/${alertId}/acknowledge`, {
+        method: 'POST',
+        body: JSON.stringify({ action: 'ACKNOWLEDGED', resolution_notes: notes }),
+      }),
   },
 };
 

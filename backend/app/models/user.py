@@ -21,6 +21,8 @@ class User(Base):
 
     # Relationships
     devices = relationship("Device", back_populates="user", cascade="all, delete-orphan")
-    threat_events = relationship("ThreatEvent", back_populates="user")
-    feedback = relationship("Feedback", back_populates="user")
+    threat_events = relationship("ThreatEvent", back_populates="user", cascade="all, delete-orphan")
+    feedback = relationship("Feedback", back_populates="user", cascade="all, delete-orphan")
     audit_logs = relationship("AuditLog", back_populates="actor")
+    sender_security_records = relationship("SenderSecurity", back_populates="user", cascade="all, delete-orphan")
+    safety_alerts = relationship("SafetyAlert", back_populates="user", cascade="all, delete-orphan")

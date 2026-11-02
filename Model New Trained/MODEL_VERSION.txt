@@ -1,0 +1,6 @@
+TinyBERT-v2-4Class
+VersionString: tinybert-smishing-banking-v2
+Trained: 2026-11-02 20:03:40
+Accuracy: 81.07%
+BankingSpecificity: 97.95%
+SmishingRecall: 82.10%

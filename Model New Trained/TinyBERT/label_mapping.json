@@ -1,0 +1,15 @@
+{
+  "id2label": {
+    "0": "LEGITIMATE_BANKING",
+    "1": "LEGITIMATE_GENERAL",
+    "2": "SMISHING",
+    "3": "SUSPICIOUS"
+  },
+  "label2id": {
+    "LEGITIMATE_BANKING": 0,
+    "LEGITIMATE_GENERAL": 1,
+    "SMISHING": 2,
+    "SUSPICIOUS": 3
+  }
+}
+

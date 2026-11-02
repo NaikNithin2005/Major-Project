@@ -358,7 +358,7 @@ class SyncRepositoryImpl(
         }
 
         val classification = if (request.threatCategory.equals("SAFE", ignoreCase = true)) {
-            "BENIGN"
+            "SAFE"
         } else if (request.eventType.equals("SMS", ignoreCase = true)) {
             "SMISHING"
         } else {
@@ -439,7 +439,7 @@ class SyncRepositoryImpl(
                 }
 
                 val threatType = if (normalizedCategory == "SAFE") "SAFE" else if (isSms) "SMISHING" else "QUISHING"
-                val classification = if (normalizedCategory == "SAFE") "BENIGN" else if (isSms) "SMISHING" else "QUISHING"
+                val classification = if (normalizedCategory == "SAFE") "SAFE" else if (isSms) "SMISHING" else "QUISHING"
                 val sanitizedDesc = threat.details?.ifBlank { "$eventType scan event" } ?: "$eventType scan event"
                 val displaySender = threat.sender ?: (if (isSms) "Unknown Sender" else "QR Scan")
                 val preview = "${if (isSms) "SMS from " else "QR Scan: "}$displaySender"

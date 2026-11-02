@@ -36,7 +36,7 @@ interface ThreatHistoryDao {
     @Query("UPDATE threat_history SET reviewStatus = :reviewStatus WHERE id = :id")
     suspend fun updateReviewStatus(id: String, reviewStatus: String)
 
-    @Query("UPDATE threat_history SET actionTaken = :action WHERE id = :id")
+    @Query("UPDATE threat_history SET actionTaken = :action, reviewStatus = CASE WHEN :action IN ('RESOLVED', 'MARK_SAFE') THEN 'RESOLVED' WHEN :action = 'BLOCK' THEN 'BLOCKED' ELSE 'REVIEWED' END WHERE id = :id")
     suspend fun updateThreatAction(id: String, action: String)
 
     @Query("SELECT * FROM threat_history WHERE syncStatus = 'PENDING' AND (:userId IS NULL OR userId = :userId) ORDER BY timestamp ASC")

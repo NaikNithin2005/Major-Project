@@ -12,6 +12,8 @@ import {
   MessageSquareQuote,
   FileText,
   Shield,
+  AlertTriangle,
+  ShieldCheck,
   X,
 } from 'lucide-react';
 
@@ -22,6 +24,8 @@ interface SidebarProps {
 
 const navItems = [
   { name: 'Safety Overview', href: '/', icon: LayoutDashboard },
+  { name: 'Safety Alerts', href: '/safety-alerts', icon: AlertTriangle },
+  { name: 'Security Center', href: '/security/trusted-users', icon: ShieldCheck },
   { name: 'Messages & QR History', href: '/threats', icon: ShieldAlert },
   { name: 'Protection Analytics', href: '/analytics', icon: BarChart3 },
   { name: 'Users & Devices', href: '/users', icon: Users },

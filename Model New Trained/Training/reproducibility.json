@@ -1,0 +1,16 @@
+{
+  "random_seed": 42,
+  "torch_seed": 42,
+  "numpy_seed": 42,
+  "platform": "Windows-11-10.0.26300-SP0",
+  "python_version": "3.13.5",
+  "torch_version": "2.9.1+cpu",
+  "transformers_version": "4.x",
+  "onnx_version": "1.22.0",
+  "timestamp": "2026-11-02 14:33:40 UTC",
+  "dataset_hashes": {
+    "train_csv_sha256": "91fcc1ca94c46dc4e7faba25ad362b8fd33a778c8037c2a27483769c51f4b723",
+    "val_csv_sha256": "934209d75e435ada612902b67e645ccd5fc6643fc366853fd2066c6074ce0db1",
+    "test_csv_sha256": "b392a41914d7be5b934a16aa113ea75c837dd7bb8b84f672c0b8664a67b97157"
+  }
+}

@@ -1,0 +1,7 @@
+Squish TinyBERT 4-Class Training Log - 2026-11-02 19:54:55
+Hyperparameters: epochs=4, batch_size=32, lr=2e-05, warmup_steps=49
+
+Epoch 1/4 | Train Loss: 1.6289 - Train Acc: 39.38% | Val Loss: 0.8687 - Val Acc: 55.34%
+Epoch 2/4 | Train Loss: 0.7000 - Train Acc: 70.54% | Val Loss: 0.5986 - Val Acc: 79.37%
+Epoch 3/4 | Train Loss: 0.5378 - Train Acc: 79.47% | Val Loss: 0.5279 - Val Acc: 81.90%
+Epoch 4/4 | Train Loss: 0.5015 - Train Acc: 80.70% | Val Loss: 0.5154 - Val Acc: 81.69%

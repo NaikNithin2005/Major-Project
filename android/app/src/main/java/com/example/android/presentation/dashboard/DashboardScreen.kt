@@ -85,7 +85,10 @@ fun DashboardScreen(
     onToggleAiModelEnabled: (Boolean) -> Unit = {},
     onToggleOptInAiLearning: (Boolean) -> Unit = {},
     onToggleCloudSync: (Boolean) -> Unit = {},
-    onRestoreCloudHistory: () -> Unit = {}
+    onRestoreCloudHistory: () -> Unit = {},
+    onNavigateToSafetyAlerts: (() -> Unit)? = null,
+    onNavigateToSecurity: (() -> Unit)? = null,
+    onNavigateToFeedbackHistory: (() -> Unit)? = null
 ) {
     var selectedTab by remember { mutableStateOf(0) }
     var selectedThreatForDialog by remember { mutableStateOf<ThreatRecord?>(null) }
@@ -238,7 +241,10 @@ fun DashboardScreen(
                         historyTypeFilter = type
                         historySeverityFilter = severity
                         selectedTab = 1
-                    }
+                    },
+                    onNavigateToSafetyAlerts = onNavigateToSafetyAlerts,
+                    onNavigateToSecurity = onNavigateToSecurity,
+                    onNavigateToFeedbackHistory = onNavigateToFeedbackHistory
                 )
                 1 -> HistoryTab(
                     threats = uiState.threatHistory,
