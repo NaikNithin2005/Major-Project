@@ -5,6 +5,8 @@ import Link from 'next/link';
 import { UserShell } from '@/components/layout/UserShell';
 import { SecurityTabs } from '@/components/security/SecurityTabs';
 import { api } from '@/services/api';
+import { useAuth } from '@/context/AuthContext';
+import { setSenderBlockStatus } from '@/services/threatFirestore';
 import { SenderSecurityItem } from '@/types';
 import {
   Ban,
@@ -18,6 +20,8 @@ import {
 import { RiskBadge } from '@/components/ui/Badge';
 
 export default function BlockedUsersPage() {
+  const { user } = useAuth();
+  const currentUid = user?.firebase_uid || user?.id;
   const [senders, setSenders] = useState<SenderSecurityItem[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
@@ -44,6 +48,9 @@ export default function BlockedUsersPage() {
     try {
       setActionLoading(true);
       await api.security.unblockSender(senderId);
+      if (currentUid) {
+        await setSenderBlockStatus(currentUid, senderId, false).catch(() => {});
+      }
       await fetchBlockedSenders();
     } catch (err: any) {
       alert(`Error unblocking sender: ${err.message}`);

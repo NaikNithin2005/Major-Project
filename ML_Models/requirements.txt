@@ -1,0 +1,10 @@
+# Minimal dependencies for Squish Machine Learning Models Suite
+numpy>=1.24.0
+pandas>=2.0.0
+scikit-learn>=1.3.0
+onnxruntime>=1.15.0
+transformers>=4.30.0
+h5py>=3.8.0
+matplotlib>=3.7.0
+seaborn>=0.12.0
+

@@ -303,7 +303,10 @@ fun DashboardScreen(
                     onRestoreCloudHistory = onRestoreCloudHistory,
                     onClearAllThreats = onClearAllThreats,
                     onOpenEducation = onOpenEducation,
-                    onLogoutClicked = onLogoutClicked
+                    onLogoutClicked = onLogoutClicked,
+                    onNavigateToSecurity = onNavigateToSecurity,
+                    onNavigateToSafetyAlerts = onNavigateToSafetyAlerts,
+                    onNavigateToFeedbackHistory = onNavigateToFeedbackHistory
                 )
             }
         }

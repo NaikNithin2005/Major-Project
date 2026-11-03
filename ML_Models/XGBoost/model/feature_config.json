@@ -1,0 +1,27 @@
+{
+  "feature_order": [
+    "url_length",
+    "host_length",
+    "path_length",
+    "query_length",
+    "num_dots_host",
+    "num_hyphens_host",
+    "num_subdomains",
+    "has_at_symbol",
+    "has_userinfo",
+    "is_ip_host",
+    "is_https",
+    "has_port",
+    "suspicious_tld",
+    "is_shortener",
+    "digit_ratio_host",
+    "digit_ratio_url",
+    "entropy_host",
+    "entropy_url",
+    "num_query_params",
+    "brand_edit_distance",
+    "path_depth",
+    "has_double_slash_in_path"
+  ],
+  "num_features": 22
+}

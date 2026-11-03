@@ -369,15 +369,15 @@ fun HomeTab(
                     }
 
                     OutlinedButton(
-                        onClick = { onOpenEducation() },
+                        onClick = { onNavigateToSecurity?.invoke() ?: onNavigateToTab(4) },
                         modifier = Modifier.weight(1f).height(46.dp),
                         shape = RoundedCornerShape(12.dp),
                         colors = ButtonDefaults.outlinedButtonColors(contentColor = Color(0xFF38BDF8)),
                         border = androidx.compose.foundation.BorderStroke(1.dp, Color(0xFF0284C7).copy(alpha = 0.4f))
                     ) {
-                        Icon(Icons.Default.School, contentDescription = null, modifier = Modifier.size(16.dp))
+                        Icon(Icons.Default.VerifiedUser, contentDescription = null, modifier = Modifier.size(16.dp))
                         Spacer(modifier = Modifier.width(6.dp))
-                        Text("Academy", fontSize = 12.sp, fontWeight = FontWeight.SemiBold)
+                        Text("Trusted Users", fontSize = 12.sp, fontWeight = FontWeight.SemiBold)
                     }
                 }
             }

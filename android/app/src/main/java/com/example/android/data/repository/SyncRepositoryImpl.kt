@@ -32,7 +32,8 @@ class SyncRepositoryImpl(
     private val authRepository: AuthRepository,
     private val firestoreDataSource: FirestoreDataSource = FirestoreDataSource(),
     private val gson: Gson = Gson(),
-    private val threatHistoryDao: ThreatHistoryDao? = null
+    private val threatHistoryDao: ThreatHistoryDao? = null,
+    private val trustedSenderRepository: com.example.android.domain.repository.TrustedSenderRepository? = null
 ) : SyncRepository {
 
     override suspend fun enqueueDetection(request: DetectionSyncRequest): Result<String> = withContext(Dispatchers.IO) {
@@ -88,6 +89,11 @@ class SyncRepositoryImpl(
 
         try {
             syncQueueDao.resetAllPendingForImmediateSync()
+        } catch (ignored: Exception) {}
+
+        // Dual-sync: Synchronize Security Center Trusted Senders
+        try {
+            trustedSenderRepository?.syncTrustedSenders(currentUserId)
         } catch (ignored: Exception) {}
 
         var totalSynced = 0
@@ -240,6 +246,11 @@ class SyncRepositoryImpl(
         if (userId.isBlank()) {
             return@withContext Result.failure(IllegalArgumentException("User ID cannot be blank"))
         }
+
+        // Dual-sync: Synchronize Security Center Trusted Senders
+        try {
+            trustedSenderRepository?.syncTrustedSenders(userId)
+        } catch (ignored: Exception) {}
 
         try {
             val cloudResult = firestoreDataSource.fetchUserThreats(userId)
@@ -465,6 +476,7 @@ class SyncRepositoryImpl(
                     "explanation" to sanitizedDesc,
                     "actionTaken" to (threat.actionTaken?.ifBlank { "PROCEED_SAFELY" } ?: "PROCEED_SAFELY"),
                     "reviewStatus" to (threat.reviewStatus?.ifBlank { "NEW" } ?: "NEW"),
+                    "isQuarantined" to threat.isQuarantined,
                     "createdAt" to Timestamp(date),
                     "userId" to userId,
                     "rawContent" to (threat.rawContent ?: preview),

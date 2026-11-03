@@ -5,6 +5,8 @@ import Link from 'next/link';
 import { UserShell } from '@/components/layout/UserShell';
 import { SecurityTabs } from '@/components/security/SecurityTabs';
 import { api } from '@/services/api';
+import { useAuth } from '@/context/AuthContext';
+import { setSenderTrustStatus, setSenderBlockStatus } from '@/services/threatFirestore';
 import { SenderSecurityItem } from '@/types';
 import {
   ShieldAlert,
@@ -20,6 +22,8 @@ import {
 import { RiskBadge } from '@/components/ui/Badge';
 
 export default function UntrustedUsersPage() {
+  const { user } = useAuth();
+  const currentUid = user?.firebase_uid || user?.id;
   const [senders, setSenders] = useState<SenderSecurityItem[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
@@ -47,6 +51,9 @@ export default function UntrustedUsersPage() {
     try {
       setActionLoading(true);
       await api.security.trustSender({ sender_id: senderId, reason });
+      if (currentUid) {
+        await setSenderTrustStatus(currentUid, senderId, true, reason).catch(() => {});
+      }
       await fetchUntrustedSenders();
     } catch (err: any) {
       alert(`Error trusting sender: ${err.message}`);
@@ -61,6 +68,9 @@ export default function UntrustedUsersPage() {
     try {
       setActionLoading(true);
       await api.security.blockSender({ sender_id: senderId, reason });
+      if (currentUid) {
+        await setSenderBlockStatus(currentUid, senderId, true, reason).catch(() => {});
+      }
       await fetchUntrustedSenders();
     } catch (err: any) {
       alert(`Error blocking sender: ${err.message}`);

@@ -40,7 +40,12 @@ class AppContainer(private val context: Context) {
     }
 
     val threatHistoryRepository: ThreatHistoryRepository by lazy {
-        ThreatHistoryRepositoryImpl(database.threatHistoryDao())
+        ThreatHistoryRepositoryImpl(
+            dao = database.threatHistoryDao(),
+            backendApiService = backendApiService,
+            firestoreDataSource = firestoreDataSource,
+            authRepository = authRepository
+        )
     }
 
     val smsAnalysisRepository: SmsAnalysisRepository by lazy {
@@ -79,7 +84,8 @@ class AppContainer(private val context: Context) {
             backendApiService = backendApiService,
             authRepository = authRepository,
             firestoreDataSource = firestoreDataSource,
-            threatHistoryDao = database.threatHistoryDao()
+            threatHistoryDao = database.threatHistoryDao(),
+            trustedSenderRepository = trustedSenderRepository
         )
     }
 
@@ -164,7 +170,12 @@ class AppContainer(private val context: Context) {
     }
 
     val trustedSenderRepository: com.example.android.domain.repository.TrustedSenderRepository by lazy {
-        com.example.android.data.repository.TrustedSenderRepositoryImpl(database.trustedSenderDao())
+        com.example.android.data.repository.TrustedSenderRepositoryImpl(
+            dao = database.trustedSenderDao(),
+            backendApiService = backendApiService,
+            firestoreDataSource = firestoreDataSource,
+            authRepository = authRepository
+        )
     }
 
     val financialMessageClassifier: com.example.android.domain.financial.FinancialMessageClassifier by lazy {

@@ -37,7 +37,8 @@ fun QuarantinedSmsScreen(
     repository: ThreatHistoryRepository,
     firestoreDataSource: FirestoreDataSource,
     onNavigateBack: () -> Unit,
-    onNavigateToDetails: (ThreatRecord) -> Unit
+    onNavigateToDetails: (ThreatRecord) -> Unit,
+    onNavigateToTab: ((Int) -> Unit)? = null
 ) {
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
@@ -45,20 +46,28 @@ fun QuarantinedSmsScreen(
 
     Scaffold(
         topBar = {
-            TopAppBar(
-                title = {
-                    Column {
-                        Text("Quarantined SMS Messages", fontSize = 16.sp, fontWeight = FontWeight.Bold, color = Color.White)
-                        Text("Isolated suspicious communications", fontSize = 11.sp, color = Color(0xFF94A3B8))
-                    }
-                },
-                navigationIcon = {
-                    IconButton(onClick = onNavigateBack) {
-                        Icon(Icons.Default.ArrowBack, contentDescription = "Back", tint = Color.White)
-                    }
-                },
-                colors = TopAppBarDefaults.topAppBarColors(containerColor = Color(0xFF0F172A))
-            )
+            Column {
+                TopAppBar(
+                    title = {
+                        Column {
+                            Text("Security Center", fontSize = 16.sp, fontWeight = FontWeight.Bold, color = Color.White)
+                            Text("Quarantined SMS Messages", fontSize = 11.sp, color = Color(0xFF94A3B8))
+                        }
+                    },
+                    navigationIcon = {
+                        IconButton(onClick = onNavigateBack) {
+                            Icon(Icons.Default.ArrowBack, contentDescription = "Back", tint = Color.White)
+                        }
+                    },
+                    colors = TopAppBarDefaults.topAppBarColors(containerColor = Color(0xFF0F172A))
+                )
+                if (onNavigateToTab != null) {
+                    SecurityTabRow(
+                        selectedTabIndex = 2,
+                        onTabSelected = onNavigateToTab
+                    )
+                }
+            }
         },
         containerColor = Color(0xFF090D16)
     ) { padding ->

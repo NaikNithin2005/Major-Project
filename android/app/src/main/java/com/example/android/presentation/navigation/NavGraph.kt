@@ -415,6 +415,24 @@ fun AegisNavGraph(
             )
         }
 
+        // Security Tabs Navigation Helper
+        val navigateSecurityTab: (Int, String) -> Unit = { targetIndex, currentRoute ->
+            val targetRoute = when (targetIndex) {
+                0 -> Screen.TrustedUsers.route
+                1 -> Screen.UntrustedUsers.route
+                2 -> Screen.QuarantinedSms.route
+                3 -> Screen.BlockedUsers.route
+                4 -> Screen.BlockedSms.route
+                else -> Screen.TrustedUsers.route
+            }
+            if (targetRoute != currentRoute) {
+                navController.navigate(targetRoute) {
+                    popUpTo(Screen.Main.route)
+                    launchSingleTop = true
+                }
+            }
+        }
+
         // Trusted Users Screen
         composable(Screen.TrustedUsers.route) {
             TrustedUsersScreen(
@@ -422,7 +440,8 @@ fun AegisNavGraph(
                 onNavigateBack = { navController.popBackStack() },
                 onNavigateToSenderDetails = { sender ->
                     navController.navigate(Screen.SenderDetails.createRoute(sender))
-                }
+                },
+                onNavigateToTab = { navigateSecurityTab(it, Screen.TrustedUsers.route) }
             )
         }
 
@@ -434,7 +453,8 @@ fun AegisNavGraph(
                 onNavigateBack = { navController.popBackStack() },
                 onNavigateToSenderDetails = { sender ->
                     navController.navigate(Screen.SenderDetails.createRoute(sender))
-                }
+                },
+                onNavigateToTab = { navigateSecurityTab(it, Screen.UntrustedUsers.route) }
             )
         }
 
@@ -449,7 +469,8 @@ fun AegisNavGraph(
                 onNavigateBack = { navController.popBackStack() },
                 onNavigateToDetails = { threat ->
                     navController.navigate(Screen.SmsDetails.createRoute(threat.id))
-                }
+                },
+                onNavigateToTab = { navigateSecurityTab(it, Screen.QuarantinedSms.route) }
             )
         }
 
@@ -460,7 +481,8 @@ fun AegisNavGraph(
                 onNavigateBack = { navController.popBackStack() },
                 onNavigateToSenderDetails = { sender ->
                     navController.navigate(Screen.SenderDetails.createRoute(sender))
-                }
+                },
+                onNavigateToTab = { navigateSecurityTab(it, Screen.BlockedUsers.route) }
             )
         }
 
@@ -471,7 +493,8 @@ fun AegisNavGraph(
                 onNavigateBack = { navController.popBackStack() },
                 onNavigateToDetails = { threat ->
                     navController.navigate(Screen.SmsDetails.createRoute(threat.id))
-                }
+                },
+                onNavigateToTab = { navigateSecurityTab(it, Screen.BlockedSms.route) }
             )
         }
 

@@ -32,7 +32,8 @@ import java.util.Locale
 fun TrustedUsersScreen(
     trustedSenderRepository: TrustedSenderRepository,
     onNavigateBack: () -> Unit,
-    onNavigateToSenderDetails: (String) -> Unit
+    onNavigateToSenderDetails: (String) -> Unit,
+    onNavigateToTab: ((Int) -> Unit)? = null
 ) {
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
@@ -42,6 +43,14 @@ fun TrustedUsersScreen(
     var newSenderInput by remember { mutableStateOf("") }
     val timeFormatter = remember { SimpleDateFormat("MMM dd, yyyy", Locale.getDefault()) }
 
+    LaunchedEffect(Unit) {
+        scope.launch {
+            try {
+                trustedSenderRepository.syncTrustedSenders()
+            } catch (ignored: Exception) {}
+        }
+    }
+
     val filtered = remember(trustedSenders, searchQuery) {
         if (searchQuery.isBlank()) trustedSenders
         else trustedSenders.filter { it.sender.contains(searchQuery, ignoreCase = true) }
@@ -49,25 +58,44 @@ fun TrustedUsersScreen(
 
     Scaffold(
         topBar = {
-            TopAppBar(
-                title = {
-                    Column {
-                        Text("Trusted Users & Senders", fontSize = 16.sp, fontWeight = FontWeight.Bold, color = Color.White)
-                        Text("Verified sender identities", fontSize = 11.sp, color = Color(0xFF94A3B8))
-                    }
-                },
-                navigationIcon = {
-                    IconButton(onClick = onNavigateBack) {
-                        Icon(Icons.Default.ArrowBack, contentDescription = "Back", tint = Color.White)
-                    }
-                },
-                actions = {
-                    IconButton(onClick = { showAddDialog = true }) {
-                        Icon(Icons.Default.Add, contentDescription = "Add Trusted Sender", tint = Color(0xFF38BDF8))
-                    }
-                },
-                colors = TopAppBarDefaults.topAppBarColors(containerColor = Color(0xFF0F172A))
-            )
+            Column {
+                TopAppBar(
+                    title = {
+                        Column {
+                            Text("Security Center", fontSize = 16.sp, fontWeight = FontWeight.Bold, color = Color.White)
+                            Text("Trusted Users & Senders", fontSize = 11.sp, color = Color(0xFF94A3B8))
+                        }
+                    },
+                    navigationIcon = {
+                        IconButton(onClick = onNavigateBack) {
+                            Icon(Icons.Default.ArrowBack, contentDescription = "Back", tint = Color.White)
+                        }
+                    },
+                    actions = {
+                        IconButton(
+                            onClick = {
+                                scope.launch {
+                                    val res = trustedSenderRepository.syncTrustedSenders()
+                                    val count = res.getOrDefault(0)
+                                    Toast.makeText(context, "Synced $count trusted senders from cloud", Toast.LENGTH_SHORT).show()
+                                }
+                            }
+                        ) {
+                            Icon(Icons.Default.Refresh, contentDescription = "Sync Cloud", tint = Color(0xFF38BDF8))
+                        }
+                        IconButton(onClick = { showAddDialog = true }) {
+                            Icon(Icons.Default.Add, contentDescription = "Add Trusted Sender", tint = Color(0xFF38BDF8))
+                        }
+                    },
+                    colors = TopAppBarDefaults.topAppBarColors(containerColor = Color(0xFF0F172A))
+                )
+                if (onNavigateToTab != null) {
+                    SecurityTabRow(
+                        selectedTabIndex = 0,
+                        onTabSelected = onNavigateToTab
+                    )
+                }
+            }
         },
         containerColor = Color(0xFF090D16)
     ) { padding ->

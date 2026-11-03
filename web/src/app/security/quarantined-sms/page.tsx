@@ -5,6 +5,8 @@ import Link from 'next/link';
 import { UserShell } from '@/components/layout/UserShell';
 import { SecurityTabs } from '@/components/security/SecurityTabs';
 import { api } from '@/services/api';
+import { useAuth } from '@/context/AuthContext';
+import { setThreatQuarantineStatus, setThreatBlockStatus } from '@/services/threatFirestore';
 import { QuarantinedSmsItem } from '@/types';
 import {
   AlertTriangle,
@@ -20,6 +22,8 @@ import {
 import { RiskBadge, StatusBadge } from '@/components/ui/Badge';
 
 export default function QuarantinedSmsPage() {
+  const { user } = useAuth();
+  const currentUid = user?.firebase_uid || user?.id;
   const [messages, setMessages] = useState<QuarantinedSmsItem[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
@@ -49,6 +53,13 @@ export default function QuarantinedSmsPage() {
     try {
       setActionLoading(true);
       await api.security.quarantineAction(threatId, { action, reason });
+      if (currentUid) {
+        if (action === 'RELEASE' || action === 'MARK_SAFE') {
+          await setThreatQuarantineStatus(currentUid, threatId, false, reason || undefined).catch(() => {});
+        } else if (action === 'CONFIRM_SMISHING' || action === 'BLOCK') {
+          await setThreatBlockStatus(currentUid, threatId, true, reason || undefined).catch(() => {});
+        }
+      }
       await fetchQuarantined();
     } catch (err: any) {
       alert(`Action failed: ${err.message}`);

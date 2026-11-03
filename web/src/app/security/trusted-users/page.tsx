@@ -5,6 +5,8 @@ import Link from 'next/link';
 import { UserShell } from '@/components/layout/UserShell';
 import { SecurityTabs } from '@/components/security/SecurityTabs';
 import { api } from '@/services/api';
+import { useAuth } from '@/context/AuthContext';
+import { setSenderTrustStatus, setSenderBlockStatus } from '@/services/threatFirestore';
 import { SenderSecurityItem } from '@/types';
 import {
   ShieldCheck,
@@ -21,6 +23,8 @@ import {
 import { RiskBadge, StatusBadge } from '@/components/ui/Badge';
 
 export default function TrustedUsersPage() {
+  const { user } = useAuth();
+  const currentUid = user?.firebase_uid || user?.id;
   const [senders, setSenders] = useState<SenderSecurityItem[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
@@ -51,6 +55,9 @@ export default function TrustedUsersPage() {
     try {
       setActionLoading(true);
       await api.security.removeTrustedSender(senderId);
+      if (currentUid) {
+        await setSenderTrustStatus(currentUid, senderId, false).catch(() => {});
+      }
       await fetchTrustedSenders();
     } catch (err: any) {
       alert(`Error removing sender: ${err.message}`);
@@ -65,6 +72,9 @@ export default function TrustedUsersPage() {
     try {
       setActionLoading(true);
       await api.security.blockSender({ sender_id: senderId, reason });
+      if (currentUid) {
+        await setSenderBlockStatus(currentUid, senderId, true, reason).catch(() => {});
+      }
       await fetchTrustedSenders();
     } catch (err: any) {
       alert(`Error blocking sender: ${err.message}`);

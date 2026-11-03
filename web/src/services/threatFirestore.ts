@@ -15,6 +15,7 @@ import {
   getDocs,
 
   updateDoc,
+  setDoc,
 
   deleteDoc,
 
@@ -930,4 +931,111 @@ export async function getUserThreatById(uid: string, threatId: string): Promise<
 
   return null;
 
+}
+
+
+/**
+ * Sets sender trust status in users/{uid}/trusted_senders/{senderId} for real-time mobile sync.
+ */
+export async function setSenderTrustStatus(
+  uid: string,
+  senderId: string,
+  isTrusted: boolean,
+  reason?: string
+): Promise<void> {
+  if (!assertSessionMatch(uid, 'setSenderTrustStatus')) return;
+  const activeDb = getActiveDb();
+  if (!activeDb || !uid || !senderId) return;
+
+  const normalizedSender = senderId.trim().toUpperCase();
+  const docRef = doc(activeDb, 'users', uid, 'trusted_senders', normalizedSender);
+  if (isTrusted) {
+    await setDoc(docRef, {
+      senderId: normalizedSender,
+      trustStatus: 'TRUSTED',
+      reason: reason || 'Trusted via dashboard',
+      updatedAt: serverTimestamp(),
+      addedAt: serverTimestamp()
+    }, { merge: true });
+  } else {
+    await deleteDoc(docRef).catch(() => {});
+  }
+}
+
+/**
+ * Sets sender block status in users/{uid}/blocked_senders/{senderId} for real-time mobile sync.
+ */
+export async function setSenderBlockStatus(
+  uid: string,
+  senderId: string,
+  isBlocked: boolean,
+  reason?: string
+): Promise<void> {
+  if (!assertSessionMatch(uid, 'setSenderBlockStatus')) return;
+  const activeDb = getActiveDb();
+  if (!activeDb || !uid || !senderId) return;
+
+  const normalizedSender = senderId.trim().toUpperCase();
+  const docRef = doc(activeDb, 'users', uid, 'blocked_senders', normalizedSender);
+  if (isBlocked) {
+    await setDoc(docRef, {
+      senderId: normalizedSender,
+      isBlocked: true,
+      blockReason: reason || 'Blocked by user',
+      blockedAt: serverTimestamp(),
+      updatedAt: serverTimestamp()
+    }, { merge: true });
+  } else {
+    await deleteDoc(docRef).catch(() => {});
+  }
+}
+
+/**
+ * Synchronizes quarantine status to users/{uid}/threats/{threatId}
+ */
+export async function setThreatQuarantineStatus(
+  uid: string,
+  threatId: string,
+  isQuarantined: boolean,
+  reason?: string
+): Promise<void> {
+  if (!assertSessionMatch(uid, 'setThreatQuarantineStatus')) return;
+  const activeDb = getActiveDb();
+  if (!activeDb || !uid || !threatId) return;
+
+  const docRef = doc(activeDb, 'users', uid, 'threats', threatId);
+  await updateDoc(docRef, {
+    isQuarantined,
+    quarantineReason: reason || null,
+    actionTaken: isQuarantined ? 'QUARANTINED' : 'ALLOWED',
+    reviewStatus: isQuarantined ? 'QUARANTINED' : 'REVIEWED',
+    updatedAt: serverTimestamp()
+  }).catch((err) => {
+    console.warn(`Firestore quarantine update notice for ${threatId}:`, err);
+  });
+}
+
+/**
+ * Synchronizes message block status to users/{uid}/threats/{threatId}
+ */
+export async function setThreatBlockStatus(
+  uid: string,
+  threatId: string,
+  isBlocked: boolean,
+  reason?: string
+): Promise<void> {
+  if (!assertSessionMatch(uid, 'setThreatBlockStatus')) return;
+  const activeDb = getActiveDb();
+  if (!activeDb || !uid || !threatId) return;
+
+  const docRef = doc(activeDb, 'users', uid, 'threats', threatId);
+  await updateDoc(docRef, {
+    isBlocked,
+    blockReason: reason || null,
+    actionTaken: isBlocked ? 'BLOCK' : 'ALLOWED',
+    reviewStatus: isBlocked ? 'BLOCKED' : 'REVIEWED',
+    updatedAt: serverTimestamp()
+  }).catch((err) => {
+    console.warn(`Firestore block update notice for ${threatId}:`, err);
+  });
 }

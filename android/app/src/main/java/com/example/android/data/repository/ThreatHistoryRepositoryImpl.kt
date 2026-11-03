@@ -2,13 +2,23 @@ package com.example.android.data.repository
 
 import com.example.android.data.local.dao.ThreatHistoryDao
 import com.example.android.data.local.entity.ThreatHistoryEntity
+import com.example.android.data.remote.api.BackendApiService
+import com.example.android.data.remote.dto.QuarantineActionDto
+import com.example.android.data.remote.dto.SmsBlockActionDto
+import com.example.android.data.source.FirestoreDataSource
 import com.example.android.domain.model.ThreatRecord
+import com.example.android.domain.repository.AuthRepository
 import com.example.android.domain.repository.ThreatHistoryRepository
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.withContext
 
 class ThreatHistoryRepositoryImpl(
-    private val dao: ThreatHistoryDao
+    private val dao: ThreatHistoryDao,
+    private val backendApiService: BackendApiService? = null,
+    private val firestoreDataSource: FirestoreDataSource? = null,
+    private val authRepository: AuthRepository? = null
 ) : ThreatHistoryRepository {
 
     override suspend fun addThreat(threat: ThreatRecord): Result<Unit> {
@@ -74,9 +84,26 @@ class ThreatHistoryRepositoryImpl(
         }
     }
 
-    override suspend fun updateQuarantineStatus(id: String, isQuarantined: Boolean): Result<Unit> {
-        return try {
+    override suspend fun updateQuarantineStatus(id: String, isQuarantined: Boolean): Result<Unit> = withContext(Dispatchers.IO) {
+        try {
             dao.updateQuarantineStatus(id, isQuarantined)
+            dao.updateThreatAction(id, if (isQuarantined) "QUARANTINED" else "ALLOWED")
+
+            val currentUid = authRepository?.getCurrentUser()?.uid
+            if (firestoreDataSource != null && currentUid != null && currentUid.isNotBlank()) {
+                firestoreDataSource.updateQuarantineStatus(currentUid, id, isQuarantined)
+            }
+            if (backendApiService != null) {
+                try {
+                    backendApiService.quarantineAction(
+                        id,
+                        QuarantineActionDto(
+                            action = if (isQuarantined) "QUARANTINE" else "RELEASE",
+                            reason = if (isQuarantined) "Quarantined via Android" else "Released via Android"
+                        )
+                    )
+                } catch (ignored: Exception) {}
+            }
             Result.success(Unit)
         } catch (e: Exception) {
             Result.failure(e)
@@ -92,9 +119,28 @@ class ThreatHistoryRepositoryImpl(
         }
     }
 
-    override suspend fun updateThreatAction(id: String, action: String): Result<Unit> {
-        return try {
+    override suspend fun updateThreatAction(id: String, action: String): Result<Unit> = withContext(Dispatchers.IO) {
+        try {
             dao.updateThreatAction(id, action)
+            if (action == "RESOLVED" || action == "MARK_SAFE") {
+                dao.updateReviewStatus(id, "RESOLVED")
+            } else if (action == "BLOCK") {
+                dao.updateReviewStatus(id, "BLOCKED")
+            }
+
+            val currentUid = authRepository?.getCurrentUser()?.uid
+            if (firestoreDataSource != null && currentUid != null && currentUid.isNotBlank()) {
+                firestoreDataSource.updateThreatAction(currentUid, id, action)
+            }
+            if (backendApiService != null) {
+                try {
+                    if (action == "BLOCK") {
+                        backendApiService.blockedSmsAction(id, SmsBlockActionDto(action = "BLOCK", reason = "Blocked via Android"))
+                    } else if (action == "RESOLVED" || action == "MARK_SAFE") {
+                        backendApiService.quarantineAction(id, QuarantineActionDto(action = "RELEASE", reason = "Resolved via Android"))
+                    }
+                } catch (ignored: Exception) {}
+            }
             Result.success(Unit)
         } catch (e: Exception) {
             Result.failure(e)
@@ -139,15 +185,15 @@ class ThreatHistoryRepositoryImpl(
         details = details,
         rawContent = rawContent,
         extractedUrl = extractedUrl,
-        payloadType = payloadType,
-        severity = severity,
-        modelVersion = modelVersion,
+        payloadType = source,
+        severity = if (riskScore >= 70) "HIGH" else if (riskScore >= 40) "MEDIUM" else "LOW",
+        modelVersion = "tinybert-smishing-v2",
         isQuarantined = isQuarantined,
-        reviewStatus = reviewStatus,
-        contentRetentionMode = contentRetentionMode,
-        pendingOperation = pendingOperation,
-        syncStatus = syncStatus,
-        retryCount = retryCount,
+        reviewStatus = if (actionTaken == "RESOLVED") "RESOLVED" else "REVIEWED",
+        contentRetentionMode = "LOCAL_SAVED",
+        pendingOperation = ThreatHistoryEntity.OP_NONE,
+        syncStatus = ThreatHistoryEntity.STATUS_PENDING,
+        retryCount = 0,
         userId = userId
     )
 
@@ -162,15 +208,7 @@ class ThreatHistoryRepositoryImpl(
         details = details,
         rawContent = rawContent,
         extractedUrl = extractedUrl,
-        payloadType = payloadType,
-        severity = severity,
-        modelVersion = modelVersion,
-        isQuarantined = isQuarantined,
-        reviewStatus = reviewStatus,
-        contentRetentionMode = contentRetentionMode,
-        pendingOperation = pendingOperation,
-        syncStatus = syncStatus,
-        retryCount = retryCount,
-        userId = userId
+        userId = userId,
+        isQuarantined = isQuarantined
     )
 }

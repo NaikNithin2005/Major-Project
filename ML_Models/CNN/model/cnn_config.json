@@ -1,0 +1,13 @@
+{
+  "model_type": "CharCNN",
+  "vocab_size": 47,
+  "embed_dim": 16,
+  "conv_filters": 32,
+  "kernel_size": 4,
+  "output_classes": 2,
+  "max_seq_len": 128,
+  "class_mapping": {
+    "0": "legitimate",
+    "1": "phishing"
+  }
+}

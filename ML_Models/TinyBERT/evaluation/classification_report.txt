@@ -1,0 +1,10 @@
+                    precision    recall  f1-score   support
+
+LEGITIMATE_BANKING     0.6344    0.9077    0.7468       195
+LEGITIMATE_GENERAL     0.9739    0.8332    0.8981      1793
+          SMISHING     0.6512    0.8210    0.7263       514
+        SUSPICIOUS     0.6820    0.7208    0.7009       720
+
+          accuracy                         0.8107      3222
+         macro avg     0.7354    0.8207    0.7680      3222
+      weighted avg     0.8367    0.8107    0.8175      3222

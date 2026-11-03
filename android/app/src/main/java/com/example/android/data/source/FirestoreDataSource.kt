@@ -253,4 +253,121 @@ open class FirestoreDataSource {
             Result.failure(e)
         }
     }
+
+    /**
+     * Synchronizes sender trust status to users/{userId}/trusted_senders/{sender}
+     */
+    open suspend fun syncTrustedSender(userId: String, sender: String, isTrusted: Boolean, reason: String? = null): Result<Unit> {
+        val firestore = db ?: return Result.failure(IllegalStateException("Firestore is not available"))
+        if (userId.isBlank() || sender.isBlank()) return Result.failure(IllegalArgumentException("Invalid parameters"))
+        val normalized = sender.trim().uppercase()
+
+        return try {
+            withTimeoutOrNull(8000L) {
+                val docRef = firestore.collection("users")
+                    .document(userId)
+                    .collection("trusted_senders")
+                    .document(normalized)
+
+                if (isTrusted) {
+                    val map = hashMapOf(
+                        "senderId" to normalized,
+                        "trustStatus" to "TRUSTED",
+                        "reason" to (reason ?: "Trusted via Android"),
+                        "updatedAt" to FieldValue.serverTimestamp()
+                    )
+                    docRef.set(map, SetOptions.merge()).await()
+                } else {
+                    docRef.delete().await()
+                }
+            } ?: return Result.failure(IllegalStateException("Firestore sync timed out"))
+            Result.success(Unit)
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
+
+    /**
+     * Fetches all trusted senders from users/{userId}/trusted_senders
+     */
+    open suspend fun fetchUserTrustedSenders(userId: String): Result<List<Map<String, Any>>> {
+        val firestore = db ?: return Result.failure(IllegalStateException("Firestore is not available"))
+        if (userId.isBlank()) return Result.failure(IllegalArgumentException("Invalid user ID"))
+
+        return try {
+            val list = withTimeoutOrNull(10000L) {
+                val snap = firestore.collection("users")
+                    .document(userId)
+                    .collection("trusted_senders")
+                    .get()
+                    .await()
+                snap.documents.mapNotNull { it.data }
+            } ?: return Result.failure(IllegalStateException("Firestore fetch timed out"))
+            Result.success(list)
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
+
+    /**
+     * Updates quarantine status on users/{userId}/threats/{threatId}
+     */
+    open suspend fun updateQuarantineStatus(userId: String, threatId: String, isQuarantined: Boolean, reason: String? = null): Result<Unit> {
+        val firestore = db ?: return Result.failure(IllegalStateException("Firestore is not available"))
+        if (userId.isBlank() || threatId.isBlank()) return Result.failure(IllegalArgumentException("Invalid parameters"))
+
+        return try {
+            withTimeoutOrNull(8000L) {
+                val map = mutableMapOf<String, Any>(
+                    "isQuarantined" to isQuarantined,
+                    "actionTaken" to (if (isQuarantined) "QUARANTINED" else "ALLOWED"),
+                    "reviewStatus" to (if (isQuarantined) "QUARANTINED" else "REVIEWED"),
+                    "updatedAt" to FieldValue.serverTimestamp()
+                )
+                if (reason != null) {
+                    map["quarantineReason"] = reason
+                }
+                firestore.collection("users")
+                    .document(userId)
+                    .collection("threats")
+                    .document(threatId)
+                    .update(map)
+                    .await()
+            } ?: return Result.failure(IllegalStateException("Firestore timeout"))
+            Result.success(Unit)
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
+
+    /**
+     * Updates blocked status on users/{userId}/threats/{threatId}
+     */
+    open suspend fun updateBlockedStatus(userId: String, threatId: String, isBlocked: Boolean, reason: String? = null): Result<Unit> {
+        val firestore = db ?: return Result.failure(IllegalStateException("Firestore is not available"))
+        if (userId.isBlank() || threatId.isBlank()) return Result.failure(IllegalArgumentException("Invalid parameters"))
+
+        return try {
+            withTimeoutOrNull(8000L) {
+                val map = mutableMapOf<String, Any>(
+                    "isBlocked" to isBlocked,
+                    "actionTaken" to (if (isBlocked) "BLOCK" else "ALLOWED"),
+                    "reviewStatus" to (if (isBlocked) "BLOCKED" else "REVIEWED"),
+                    "updatedAt" to FieldValue.serverTimestamp()
+                )
+                if (reason != null) {
+                    map["blockReason"] = reason
+                }
+                firestore.collection("users")
+                    .document(userId)
+                    .collection("threats")
+                    .document(threatId)
+                    .update(map)
+                    .await()
+            } ?: return Result.failure(IllegalStateException("Firestore timeout"))
+            Result.success(Unit)
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
 }

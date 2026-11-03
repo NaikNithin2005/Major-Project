@@ -28,7 +28,8 @@ import kotlinx.coroutines.launch
 fun BlockedUsersScreen(
     threatHistoryRepository: ThreatHistoryRepository,
     onNavigateBack: () -> Unit,
-    onNavigateToSenderDetails: (String) -> Unit
+    onNavigateToSenderDetails: (String) -> Unit,
+    onNavigateToTab: ((Int) -> Unit)? = null
 ) {
     val threats by threatHistoryRepository.observeAllThreats().collectAsState(initial = emptyList())
     val context = LocalContext.current
@@ -49,20 +50,28 @@ fun BlockedUsersScreen(
 
     Scaffold(
         topBar = {
-            TopAppBar(
-                title = {
-                    Column {
-                        Text("Blocked Senders", fontSize = 16.sp, fontWeight = FontWeight.Bold, color = Color.White)
-                        Text("Restricted sender identities", fontSize = 11.sp, color = Color(0xFF94A3B8))
-                    }
-                },
-                navigationIcon = {
-                    IconButton(onClick = onNavigateBack) {
-                        Icon(Icons.Default.ArrowBack, contentDescription = "Back", tint = Color.White)
-                    }
-                },
-                colors = TopAppBarDefaults.topAppBarColors(containerColor = Color(0xFF0F172A))
-            )
+            Column {
+                TopAppBar(
+                    title = {
+                        Column {
+                            Text("Security Center", fontSize = 16.sp, fontWeight = FontWeight.Bold, color = Color.White)
+                            Text("Blocked Senders", fontSize = 11.sp, color = Color(0xFF94A3B8))
+                        }
+                    },
+                    navigationIcon = {
+                        IconButton(onClick = onNavigateBack) {
+                            Icon(Icons.Default.ArrowBack, contentDescription = "Back", tint = Color.White)
+                        }
+                    },
+                    colors = TopAppBarDefaults.topAppBarColors(containerColor = Color(0xFF0F172A))
+                )
+                if (onNavigateToTab != null) {
+                    SecurityTabRow(
+                        selectedTabIndex = 3,
+                        onTabSelected = onNavigateToTab
+                    )
+                }
+            }
         },
         containerColor = Color(0xFF090D16)
     ) { padding ->

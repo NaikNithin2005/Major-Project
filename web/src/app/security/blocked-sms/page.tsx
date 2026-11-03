@@ -5,6 +5,8 @@ import Link from 'next/link';
 import { UserShell } from '@/components/layout/UserShell';
 import { SecurityTabs } from '@/components/security/SecurityTabs';
 import { api } from '@/services/api';
+import { useAuth } from '@/context/AuthContext';
+import { setThreatBlockStatus } from '@/services/threatFirestore';
 import { BlockedSmsItem } from '@/types';
 import {
   FileX,
@@ -19,6 +21,8 @@ import {
 import { RiskBadge, StatusBadge } from '@/components/ui/Badge';
 
 export default function BlockedSmsPage() {
+  const { user } = useAuth();
+  const currentUid = user?.firebase_uid || user?.id;
   const [messages, setMessages] = useState<BlockedSmsItem[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');

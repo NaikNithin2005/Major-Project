@@ -10,4 +10,5 @@ interface TrustedSenderRepository {
     suspend fun addTrustedSender(sender: String, userId: String? = null): Result<Unit>
     suspend fun removeTrustedSender(sender: String): Result<Unit>
     suspend fun clearAll(): Result<Unit>
+    suspend fun syncTrustedSenders(userId: String? = null): Result<Int>
 }

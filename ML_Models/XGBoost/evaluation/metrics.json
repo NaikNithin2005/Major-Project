@@ -1,0 +1,56 @@
+{
+  "model_name": "XGBoost",
+  "n_samples": 9999,
+  "n_classes": 2,
+  "accuracy": 0.9887988798879888,
+  "accuracy_pct": 98.88,
+  "macro_metrics": {
+    "precision": 0.9911928096229751,
+    "recall": 0.9773567202996981,
+    "f1_score": 0.9840573518959241
+  },
+  "weighted_metrics": {
+    "precision": 0.9888783177727927,
+    "recall": 0.9887988798879888,
+    "f1_score": 0.9887188834501986
+  },
+  "per_class_metrics": {
+    "legitimate": {
+      "class_id": 0,
+      "precision": 0.9868759650025734,
+      "recall": 0.9986979166666666,
+      "f1_score": 0.9927517473466217,
+      "support": 7680
+    },
+    "phishing": {
+      "class_id": 1,
+      "precision": 0.9955096542433768,
+      "recall": 0.9560155239327296,
+      "f1_score": 0.9753629564452265,
+      "support": 2319
+    }
+  },
+  "binary_specifics": {
+    "true_negatives": 7670,
+    "false_positives": 10,
+    "false_negatives": 102,
+    "true_positives": 2217,
+    "false_positive_rate": 0.0013020833333333333,
+    "false_negative_rate": 0.04398447606727038
+  },
+  "confusion_matrix": [
+    [
+      7670,
+      10
+    ],
+    [
+      102,
+      2217
+    ]
+  ],
+  "class_labels": [
+    "legitimate",
+    "phishing"
+  ],
+  "classification_report": "              precision    recall  f1-score   support\n\n  legitimate     0.9869    0.9987    0.9928      7680\n    phishing     0.9955    0.9560    0.9754      2319\n\n    accuracy                         0.9888      9999\n   macro avg     0.9912    0.9774    0.9841      9999\nweighted avg     0.9889    0.9888    0.9887      9999\n"
+}

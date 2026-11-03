@@ -1,0 +1,245 @@
+{
+  "summary": [
+    {
+      "Model": "TinyBERT",
+      "Domain_Task": "4-Class SMS Smishing",
+      "Input_Type": "SMS Text",
+      "Test_Samples": 3222,
+      "Classes": 4,
+      "Accuracy": 0.8107,
+      "Accuracy_Pct": 81.07,
+      "Precision_Macro": 0.7354,
+      "Recall_Macro": 0.8207,
+      "F1_Score_Macro": 0.768,
+      "Precision_Weighted": 0.8367,
+      "Recall_Weighted": 0.8107,
+      "F1_Score_Weighted": 0.8175
+    },
+    {
+      "Model": "XGBoost",
+      "Domain_Task": "Binary URL Quishing",
+      "Input_Type": "URL String",
+      "Test_Samples": 9999,
+      "Classes": 2,
+      "Accuracy": 0.9888,
+      "Accuracy_Pct": 98.88,
+      "Precision_Macro": 0.9912,
+      "Recall_Macro": 0.9774,
+      "F1_Score_Macro": 0.9841,
+      "Precision_Weighted": 0.9889,
+      "Recall_Weighted": 0.9888,
+      "F1_Score_Weighted": 0.9887
+    },
+    {
+      "Model": "CNN",
+      "Domain_Task": "Binary URL Quishing",
+      "Input_Type": "URL String",
+      "Test_Samples": 9999,
+      "Classes": 2,
+      "Accuracy": 0.9914,
+      "Accuracy_Pct": 99.14,
+      "Precision_Macro": 0.9935,
+      "Recall_Macro": 0.9824,
+      "F1_Score_Macro": 0.9878,
+      "Precision_Weighted": 0.9915,
+      "Recall_Weighted": 0.9914,
+      "F1_Score_Weighted": 0.9914
+    }
+  ],
+  "detailed_metrics": {
+    "TinyBERT": {
+      "model_name": "TinyBERT",
+      "n_samples": 3222,
+      "n_classes": 4,
+      "accuracy": 0.8106765983860956,
+      "accuracy_pct": 81.07,
+      "macro_metrics": {
+        "precision": 0.7353912306587301,
+        "recall": 0.8206944233575102,
+        "f1_score": 0.7680383843847753
+      },
+      "weighted_metrics": {
+        "precision": 0.8366631805325554,
+        "recall": 0.8106765983860956,
+        "f1_score": 0.8174752712916225
+      },
+      "per_class_metrics": {
+        "LEGITIMATE_BANKING": {
+          "class_id": 0,
+          "precision": 0.6344086021505376,
+          "recall": 0.9076923076923077,
+          "f1_score": 0.7468354430379747,
+          "support": 195
+        },
+        "LEGITIMATE_GENERAL": {
+          "class_id": 1,
+          "precision": 0.9739243807040417,
+          "recall": 0.8332403792526492,
+          "f1_score": 0.8981064021641119,
+          "support": 1793
+        },
+        "SMISHING": {
+          "class_id": 2,
+          "precision": 0.6512345679012346,
+          "recall": 0.8210116731517509,
+          "f1_score": 0.7263339070567987,
+          "support": 514
+        },
+        "SUSPICIOUS": {
+          "class_id": 3,
+          "precision": 0.6819973718791065,
+          "recall": 0.7208333333333333,
+          "f1_score": 0.700877785280216,
+          "support": 720
+        }
+      },
+      "binary_specifics": {},
+      "confusion_matrix": [
+        [
+          177,
+          11,
+          4,
+          3
+        ],
+        [
+          64,
+          1494,
+          70,
+          165
+        ],
+        [
+          13,
+          5,
+          422,
+          74
+        ],
+        [
+          25,
+          24,
+          152,
+          519
+        ]
+      ],
+      "class_labels": [
+        "LEGITIMATE_BANKING",
+        "LEGITIMATE_GENERAL",
+        "SMISHING",
+        "SUSPICIOUS"
+      ],
+      "classification_report": "                    precision    recall  f1-score   support\n\nLEGITIMATE_BANKING     0.6344    0.9077    0.7468       195\nLEGITIMATE_GENERAL     0.9739    0.8332    0.8981      1793\n          SMISHING     0.6512    0.8210    0.7263       514\n        SUSPICIOUS     0.6820    0.7208    0.7009       720\n\n          accuracy                         0.8107      3222\n         macro avg     0.7354    0.8207    0.7680      3222\n      weighted avg     0.8367    0.8107    0.8175      3222\n"
+    },
+    "XGBoost": {
+      "model_name": "XGBoost",
+      "n_samples": 9999,
+      "n_classes": 2,
+      "accuracy": 0.9887988798879888,
+      "accuracy_pct": 98.88,
+      "macro_metrics": {
+        "precision": 0.9911928096229751,
+        "recall": 0.9773567202996981,
+        "f1_score": 0.9840573518959241
+      },
+      "weighted_metrics": {
+        "precision": 0.9888783177727927,
+        "recall": 0.9887988798879888,
+        "f1_score": 0.9887188834501986
+      },
+      "per_class_metrics": {
+        "legitimate": {
+          "class_id": 0,
+          "precision": 0.9868759650025734,
+          "recall": 0.9986979166666666,
+          "f1_score": 0.9927517473466217,
+          "support": 7680
+        },
+        "phishing": {
+          "class_id": 1,
+          "precision": 0.9955096542433768,
+          "recall": 0.9560155239327296,
+          "f1_score": 0.9753629564452265,
+          "support": 2319
+        }
+      },
+      "binary_specifics": {
+        "true_negatives": 7670,
+        "false_positives": 10,
+        "false_negatives": 102,
+        "true_positives": 2217,
+        "false_positive_rate": 0.0013020833333333333,
+        "false_negative_rate": 0.04398447606727038
+      },
+      "confusion_matrix": [
+        [
+          7670,
+          10
+        ],
+        [
+          102,
+          2217
+        ]
+      ],
+      "class_labels": [
+        "legitimate",
+        "phishing"
+      ],
+      "classification_report": "              precision    recall  f1-score   support\n\n  legitimate     0.9869    0.9987    0.9928      7680\n    phishing     0.9955    0.9560    0.9754      2319\n\n    accuracy                         0.9888      9999\n   macro avg     0.9912    0.9774    0.9841      9999\nweighted avg     0.9889    0.9888    0.9887      9999\n"
+    },
+    "CNN": {
+      "model_name": "CNN",
+      "n_samples": 9999,
+      "n_classes": 2,
+      "accuracy": 0.9913991399139914,
+      "accuracy_pct": 99.14,
+      "macro_metrics": {
+        "precision": 0.9935050692996732,
+        "recall": 0.9823605608559725,
+        "f1_score": 0.9877923832071356
+      },
+      "weighted_metrics": {
+        "precision": 0.9914557159802614,
+        "recall": 0.9913991399139914,
+        "f1_score": 0.9913500322789762
+      },
+      "per_class_metrics": {
+        "legitimate": {
+          "class_id": 0,
+          "precision": 0.9896827443899923,
+          "recall": 0.99921875,
+          "f1_score": 0.9944278864843851,
+          "support": 7680
+        },
+        "phishing": {
+          "class_id": 1,
+          "precision": 0.9973273942093541,
+          "recall": 0.9655023717119448,
+          "f1_score": 0.9811568799298861,
+          "support": 2319
+        }
+      },
+      "binary_specifics": {
+        "true_negatives": 7674,
+        "false_positives": 6,
+        "false_negatives": 80,
+        "true_positives": 2239,
+        "false_positive_rate": 0.00078125,
+        "false_negative_rate": 0.03449762828805519
+      },
+      "confusion_matrix": [
+        [
+          7674,
+          6
+        ],
+        [
+          80,
+          2239
+        ]
+      ],
+      "class_labels": [
+        "legitimate",
+        "phishing"
+      ],
+      "classification_report": "              precision    recall  f1-score   support\n\n  legitimate     0.9897    0.9992    0.9944      7680\n    phishing     0.9973    0.9655    0.9812      2319\n\n    accuracy                         0.9914      9999\n   macro avg     0.9935    0.9824    0.9878      9999\nweighted avg     0.9915    0.9914    0.9914      9999\n"
+    }
+  },
+  "notes": "TinyBERT evaluates 4-class SMS smishing. XGBoost and CNN evaluate binary URL quishing. Reported Precision, Recall, and F1 utilize macro-averaging for unbiased class representation."
+}
